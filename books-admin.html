@@ -478,6 +478,7 @@ function changed(e){
   return out;
 }
 
+window.addEventListener("unhandledrejection", e => { const r = e.reason || {}; const el = document.getElementById("status"); if (el) el.textContent = "⚠ خطأ في التحميل: " + (r.message || r.code || r); });
 async function load(){
   $("#status").textContent = "جارٍ التحميل…";
   const [acc, set, entries, rows, parties, audit, cheques, bank, recs, counts] = await Promise.all([B.Data.accounts(), B.Data.settings(), B.Data.entriesForPages(2000), B.Data.ledger(null, null), B.Data.parties(),
