@@ -222,7 +222,7 @@
     accounts: async () => (await sb.from("acc_accounts").select("*").order("sort")).data || [],
     parties: async () => (await sb.from("acc_parties").select("*").order("name")).data || [],
     settings: async () => { const { data } = await sb.from("acc_settings").select("*"); const o = {}; (data || []).forEach(r => o[r.key] = r.value); return o; },
-    employees: async () => (await sb.from("acc_employees").select("*, party:acc_parties(id,name)")).data || [],
+    employees: async () => (await sb.from("acc_employees").select("*, party:acc_parties!party_id(id,name)")).data || [],
     payrollRuns: async () => (await sb.from("acc_payroll_runs").select("*").order("id", { ascending: false }).limit(24)).data || [],
     invCounts: async () => (await sb.from("acc_inventory_counts").select("*").order("id", { ascending: false }).limit(12)).data || [],
     einvoices: async () => (await sb.from("acc_einvoices").select("entry_id,status,qr,message,icv,at")).data || [],
@@ -237,14 +237,14 @@
     obligationDone: async () => (await sb.from("acc_obligation_done").select("*")).data || [],
     budgets: async year => (await sb.from("acc_budgets").select("*").eq("year", year)).data || [],
     confirms: async () => (await sb.from("acc_confirms").select("*").order("id", { ascending: false }).limit(200)).data || [],
-    cheques: () => pageAll(() => sb.from("acc_cheques").select("*, party:acc_parties(name,kind)", { count: "exact" }).order("due_date").order("id")),
+    cheques: () => pageAll(() => sb.from("acc_cheques").select("*, party:acc_parties!party_id(name,kind)", { count: "exact" }).order("due_date").order("id")),
     bankLines: () => pageAll(() => sb.from("acc_bank_lines").select("*", { count: "exact" }).order("date").order("seq")),
     recs: async () => (await sb.from("acc_bank_recs").select("*").order("id", { ascending: false }).limit(12)).data || [],
     counts: async () => (await sb.from("acc_cash_counts").select("*").order("id", { ascending: false }).limit(20)).data || [],
     ledger: async (from, to) => { const all = await ledgerAll(); return from || to ? all.filter(r => (!from || r.date >= from) && (!to || r.date <= to)) : all.slice(); },
     // entries by filter; without a limit, every matching entry is loaded
     entries: (opts = {}) => pageAll(() => {
-      let q = sb.from("acc_entries").select("*, party:acc_parties(name,kind)", { count: "exact" }).order("no", { ascending: false });
+      let q = sb.from("acc_entries").select("*, party:acc_parties!party_id(name,kind)", { count: "exact" }).order("no", { ascending: false });
       if (opts.date) q = q.eq("date", opts.date);
       if (opts.from) q = q.gte("date", opts.from);
       if (opts.status) q = q.eq("status", opts.status);
