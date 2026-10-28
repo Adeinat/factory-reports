@@ -415,6 +415,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
           <label>حد الموافقة (دينار)<input id="s_appr" type="number" step="1"></label>
           <label>حد إلزامية الإيصال (دينار)<input id="s_rcpt" type="number" step="1"></label>
           <label>نسبة الضريبة العامة %<input id="s_tax" type="number" step="0.01"></label>
+          <label>أسعار البيع للعملاء · Sale prices are<select id="s_basis"><option value="before_tax">قبل الضريبة (تُضاف الضريبة فوق السعر)</option><option value="incl_tax">شاملة الضريبة</option><option value="no_tax">بدون ضريبة (معفى)</option></select></label>
           <label>أقصى عدد أيام للتاريخ القديم<input id="s_back" type="number" step="1" min="0"></label>
           <label>شراء المواد فوق هذا المبلغ يحتاج أمر شراء<input id="s_po" type="number" step="1" min="0"></label>
           <label>فترة السماح بعد مدة السداد (أيام)<input id="s_grace" type="number" step="1" min="0"></label>
@@ -633,7 +634,7 @@ function render(){
   table($("#tb"), [{ t: "الحساب" }, { t: "مدين" }, { t: "دائن" }], tb.map(x => `<tr><td>${x.a.code} ${esc(x.a.name_ar)}</td><td class="n">${x.v > 0 ? money(x.v) : ""}</td><td class="n">${x.v < 0 ? money(-x.v) : ""}</td></tr>`),
     tb.length ? `<tfoot><tr class="tot"><td>المجموع ${Math.abs(td - tc) < 0.0005 ? '<span class="pill good">متوازن</span>' : '<span class="pill bad">غير متوازن</span>'}</td><td class="n">${money(td)}</td><td class="n">${money(tc)}</td></tr></tfoot>` : "");
   // settings
-  $("#s_appr").value = num(S.settings.approval_limit); $("#s_rcpt").value = num(S.settings.receipt_limit); $("#s_tax").value = num(S.settings.tax_rate); $("#s_back").value = num(S.settings.backdate_days);
+  $("#s_appr").value = num(S.settings.approval_limit); $("#s_rcpt").value = num(S.settings.receipt_limit); $("#s_tax").value = num(S.settings.tax_rate); $("#s_basis").value = S.settings.sales_price_basis || "before_tax"; $("#s_back").value = num(S.settings.backdate_days);
   const PR = S.settings.payroll || {}, EI = S.settings.einvoice || {};
   $("#p_sse").value = num(PR.ss_employee); $("#p_ssr").value = num(PR.ss_employer); $("#p_cap").value = num(PR.ss_cap); $("#p_pex").value = num(PR.personal_exemption); $("#p_dex").value = num(PR.dependents_exemption);
   $("#p_br").value = (PR.brackets || []).map(b => `${b[0] == null ? "" : b[0]}:${b[1]}`).join(", ");
@@ -1171,7 +1172,7 @@ $("#s_save").onclick = async () => {
   const br = readBrackets(); if (!br) { $("#s_msg").textContent = "صيغة شرائح الضريبة غير صحيحة. مثال: 5000:5, 10000:10, :30"; return; }
   const p = { approval_limit: num($("#s_appr").value), receipt_limit: num($("#s_rcpt").value), tax_rate: num($("#s_tax").value), backdate_days: num($("#s_back").value),
     company: { name: $("#s_name").value.trim(), address: $("#s_addr").value.trim(), phone: $("#s_phone").value.trim(), tax_no: $("#s_taxno").value.trim() },
-    po_required_above: num($("#s_po").value), overdue_grace: num($("#s_grace").value),
+    po_required_above: num($("#s_po").value), overdue_grace: num($("#s_grace").value), sales_price_basis: $("#s_basis").value,
     currencies: Object.assign({}, S.settings.currencies || {}, num($("#s_usd").value) > 0 ? { USD: num($("#s_usd").value) } : {}, num($("#s_eur").value) > 0 ? { EUR: num($("#s_eur").value) } : {}),
     payroll: { ss_employee: num($("#p_sse").value), ss_employer: num($("#p_ssr").value), ss_cap: num($("#p_cap").value), personal_exemption: num($("#p_pex").value), dependents_exemption: num($("#p_dex").value), brackets: br },
     einvoice: { mode: $("#j_mode").value, income_source: $("#j_src").value.trim(), type_name_cash: $("#j_cash").value.trim() || "012", type_name_credit: $("#j_credit").value.trim() || "022", b2c_limit: num($("#j_b2c").value) } };
