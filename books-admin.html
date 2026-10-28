@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>دفاتر المصنع · Books manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: the manager's ledger desk. What needs a decision first, then position, then performance, then the journal. */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#1a2226; --muted:#5b676d; --line:#dbe1e4;
+  --accent:#2c5f8a; --accent-soft:#e1ebf4;
+  --good:#2f7a44; --warn:#b06a12; --bad:#b3372e;
+  --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#7fb0dc;--accent-soft:#1f3140;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#7fb0dc;--accent-soft:#1f3140;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:1200px;margin:0 auto;padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.eyebrow{font-size:12px;color:var(--muted)}
+h1{margin:0;font-size:26px;font-weight:700} h1 small{font-size:14px;font-weight:500;color:var(--muted);margin-inline-start:8px}
+h2{margin:0;font-size:16px;font-weight:600} h3{margin:0;font-size:14px;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)} .bar a{color:var(--accent)}
+.note{font-size:12px;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.okb{background:var(--good);border-color:var(--good);color:#fff}
+button.nob{color:var(--bad)}
+button.small{font-size:12px;padding:3px 9px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus,select:focus,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input,select{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+input[type=number]{font-family:var(--f-num);direction:ltr;text-align:right}
+label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.attn{border-top:4px solid var(--warn)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px;display:grid;gap:2px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-num);font-size:20px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11px;color:var(--muted)} .kpi.bad .v{color:var(--bad)} .kpi.good .v{color:var(--good)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.tablewrap{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th,table.t td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:start;white-space:nowrap;vertical-align:top}
+table.t th{font-weight:600;color:var(--muted);font-size:12px}
+table.t td.n{font-family:var(--f-num);direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+table.t td.w{white-space:normal;min-width:180px}
+table.t tr.tot td{font-weight:700}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.pill.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.item{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)} .item:last-child{border-bottom:0}
+.item .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.item .amt{font-family:var(--f-num);direction:ltr;font-weight:600}
+.item .story{font-size:13px;color:var(--muted);white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bars{display:grid;gap:6px}
+.bars .b{display:grid;grid-template-columns:minmax(90px,170px) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px}
+.bars .track{height:10px;background:var(--line);border-radius:5px;overflow:hidden} .bars .track i{display:block;height:100%;background:var(--accent)}
+.bars .v{font-family:var(--f-num);font-size:12px;direction:ltr;color:var(--muted)}
+details.panel>summary{cursor:pointer;font-weight:600}
+details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{max-width:100%}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
+.plist{display:grid;gap:6px} .plist .pr{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:6px}
+.plist.chq .pr{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,.9fr) auto}
+.msgbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.okbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--good) 15%,transparent)}
+.login{max-width:420px;width:100%;margin:40px auto;box-sizing:border-box;border-top:4px solid var(--accent)} .login form{display:grid;gap:12px}
+.empty{font-size:13px;color:var(--muted);padding:8px 0}
+.tabs{display:flex;gap:6px;position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0;flex-wrap:wrap}
+.tabs button{flex:1;min-width:140px;font-size:15px;font-weight:600;padding:10px 12px;border-radius:10px}
+.tabs button.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.tabs .badge{display:inline-block;direction:ltr;unicode-bidi:isolate;min-width:20px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px;line-height:20px;margin-inline-start:6px}
+.view{display:grid;gap:16px} .view[hidden]{display:none}
+.wrap>*,.view>*,.panel>*,.form>*{min-width:0}
+@media (max-width:600px){input,select,textarea{font-size:16px}.tabs button{min-width:calc(50% - 8px);font-size:14px;padding:9px 6px}.panel{padding:12px}h1{font-size:22px}
+  .plist .pr,.plist.chq .pr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.bars .b{grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto}}
+.jump{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:58px;z-index:4;background:var(--bg);padding:4px 0}
+.jump button{font-size:12.5px;padding:4px 10px;border-radius:999px}
+.anchor{scroll-margin-top:110px;height:0}
+.wizard{display:grid;gap:8px;padding:10px 12px;border:1px dashed var(--accent);border-radius:10px}
+.alerts{display:grid;gap:6px}
+.alerts .al{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border-radius:8px;border:1px solid var(--line)}
+.alerts .al.bad{border-color:var(--bad)} .alerts .al.warn{border-color:var(--warn)}
+.alerts .al button{font-size:12.5px;padding:3px 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>الدفاتر<small>Books, manager view</small></h1></div>
+    <div class="bar"><span id="status"></span><a href="books.html">صندوق القصص · Story box</a><a href="admin.html">لوحة الرقابة · HQ board</a><button type="button" id="refresh" hidden>تحديث</button><button type="button" id="signOut" hidden>خروج</button></div>
+  </header>
+
+  <section class="panel login" id="login" hidden>
+    <h2>دخول المدير <span class="note">Manager sign in</span></h2>
+    <div class="msgbox" id="loginMsg" hidden></div>
+    <form id="loginForm">
+      <label for="l_email">البريد الإلكتروني · Email<input id="l_email" type="email" autocomplete="username" required></label>
+      <label for="l_pass">كلمة المرور · Password<input id="l_pass" type="password" autocomplete="current-password" required></label>
+      <button class="primary" id="loginBtn" type="submit">دخول · Sign in</button>
+    </form>
+  </section>
+
+  <nav class="tabs" id="tabs" role="tablist" hidden>
+    <button type="button" role="tab" data-view="today" class="on" aria-selected="true">📌 اليوم <span class="badge" id="todayBadge" hidden></span></button>
+    <button type="button" role="tab" data-view="charts" aria-selected="false">📈 المؤشرات</button>
+    <button type="button" role="tab" data-view="books" aria-selected="false">📚 الدفاتر والتقارير</button>
+    <button type="button" role="tab" data-view="close" aria-selected="false">⚙️ الإقفال والإعداد</button>
+  </nav>
+  <div id="main" hidden style="display:grid;gap:16px">
+    <div class="view" data-view="today">
+      <section class="panel attn" id="setupPanel" hidden>
+        <h2>ابدأ بالأرصدة الافتتاحية <span class="note">Start with opening balances (once)</span></h2>
+        <p class="note" style="margin:0">أدخل الأرصدة كما هي في النظام القديم في نهاية يوم البدء. أي فرق يُسجّل تلقائياً كـ"أرصدة افتتاحية" في حقوق الملكية. Enter the old system's balances at the end of the start day; any difference goes to opening equity.</p>
+        <div class="row"><button type="button" id="o_tpl">⬇️ تنزيل نموذج Excel</button><button type="button" class="primary" id="o_up">⬆️ رفع النموذج بعد تعبئته</button><input type="file" id="o_file" accept=".xlsx,.xls,.csv" hidden><span class="note" id="o_upmsg"></span></div>
+        <div class="wizard">
+          <h3>🪄 الأسرع: ارفع تقارير النظام القديم <span class="note">Fastest: upload the old system's reports</span></h3>
+          <p class="note" style="margin:0">صدّر من النظام القديم بتاريخ البدء: ميزان المراجعة، أرصدة العملاء، أرصدة الموردين، الشيكات الواردة والصادرة، سجل الأصول، قائمة الموظفين أو آخر كشف رواتب، وكشوف القروض. Excel أو PDF أو صور. سأقرأها، أملأ كل شيء، وأتحقق أنها متطابقة مع بعضها.</p>
+          <div class="row"><button type="button" id="wz_pick">📎 اختر التقارير</button><span class="note" id="wz_fn"></span><button type="button" class="primary" id="wz_read" disabled>اقرأ التقارير</button><input type="file" id="wz_file" multiple accept=".xlsx,.xls,.csv,application/pdf,image/*" hidden></div>
+          <div id="wz_out"></div>
+        </div>
+        <p class="note" style="margin:0">أو: نزّل النموذج، اطلب من المحاسب تعبئته من تقارير النظام القديم، ثم ارفعه هنا. ستمتلئ الحقول تلقائياً لتراجعها قبل الحفظ. Easiest: download the template, have the accountant fill it from the old ERP's reports, upload it here, review, then save.</p>
+        <div class="form">
+          <label>التاريخ<input id="o_date" type="date"></label>
+          <label>الصندوق (دينار)<input id="o_cash" type="number" step="0.001"></label>
+          <label>البنك<input id="o_bank" type="number" step="0.001"></label>
+
+          <label>قيمة المخزون<input id="o_inv" type="number" step="0.001"></label>
+          <label>الأصول الثابتة (صافي القيمة)<input id="o_fixed" type="number" step="0.001"></label>
+        </div>
+        <details><summary>أرصدة أخرى (اختياري) · Other balances</summary><div class="form"><label>ضريبة مبيعات مدفوعة لم تُقاصّ (لنا)<input id="o_tax_in" type="number" step="0.001"></label><label>مصاريف مدفوعة مقدماً (لنا)<input id="o_prepaid" type="number" step="0.001"></label><label>هوامش وتأمينات لدى البنك (لنا)<input id="o_margins" type="number" step="0.001"></label><label>ضريبة مبيعات مستحقة للدائرة (علينا)<input id="o_tax_out" type="number" step="0.001"></label><label>رواتب مستحقة لم تُدفع (علينا)<input id="o_salaries_payable" type="number" step="0.001"></label><label>ضمان اجتماعي مستحق (علينا)<input id="o_ss_payable" type="number" step="0.001"></label><label>ضريبة دخل مقتطعة لم تُورّد (علينا)<input id="o_tax_withheld" type="number" step="0.001"></label><label>مصاريف مستحقة (علينا)<input id="o_accrued" type="number" step="0.001"></label><label>أرصدة القروض البنكية (علينا)<input id="o_loans" type="number" step="0.001"></label><label>مستحق للشريك (علينا)<input id="o_partner" type="number" step="0.001"></label></div>
+          <p class="note">القروض القائمة: أضفها أيضاً من «الإقفال والإعداد ‹ القروض» واختر «قرض قائم» ليُعرف رصيدها وأقساطها. Add existing loans in the loans section too.</p></details>
+        <div class="grid2">
+          <div class="plist" id="o_cust"><h3>العملاء: كم يدينون لنا <span class="note">Customers owe us</span></h3></div>
+          <div class="plist" id="o_supp"><h3>الموردون: كم ندين لهم <span class="note">We owe suppliers</span></h3></div>
+          <div class="plist chq" id="o_cin"><h3>شيكات واردة لم تُحصّل <span class="note">Cheques received, not yet cashed</span></h3></div>
+          <div class="plist chq" id="o_cout"><h3>شيكات صادرة لم تُصرف <span class="note">Our cheques not yet cleared</span></h3></div>
+          <div class="plist emp" id="o_emp"><h3>الموظفون: سلف وعهد <span class="note">Employee advances and custody</span></h3></div>
+        </div>
+        <div class="row"><button type="button" class="primary" id="o_save">حفظ الأرصدة الافتتاحية</button><span class="note" id="o_msg"></span></div>
+      </section>
+      <section class="panel attn" id="pendPanel">
+        <h2>بانتظار موافقتك <span class="note">Waiting for your approval</span></h2>
+        <div id="pending"><div class="empty">لا يوجد شيء بانتظارك. Nothing is waiting.</div></div>
+        <div id="pendPO"></div>
+      </section>
+      <section class="panel attn" id="namesPanel" hidden>
+        <h2>أسماء جديدة أضافها المحاسب <span class="note">New customer and supplier names to confirm</span></h2>
+        <p class="note" style="margin:0">تحقق أن كل اسم حقيقي وليس مكرراً باسم مختلف. Check that each name is real and not a duplicate of an existing one.</p>
+        <div id="names"></div>
+      </section>
+      <div class="kpis" id="kpis"></div>
+      <section class="panel" id="alertsPanel">
+        <h2>تنبيهات <span class="note">Needs your attention</span></h2>
+        <div id="alerts" class="alerts"></div>
+      </section>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>للمراجعة <span class="note">Worth a look</span></h2><span class="note">قيود لم يكن الذكاء الاصطناعي متأكداً منها، أو غيّر المحاسب اقتراحه، أو تصحيحات. Entries the AI was unsure about, changed by the accountant, or reversed.</span></div>
+        <div id="review"><div class="empty">لا يوجد. Nothing to review.</div></div>
+      </section>
+    </div>
+    <div class="view" data-view="charts" hidden>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>📈 المؤشرات عبر الوقت <span class="note">Key numbers over time</span></h2>
+          <div class="row"><select id="dashN" style="width:auto" aria-label="Months"><option value="6">6 أشهر</option><option value="12" selected>12 شهراً</option></select>
+            <button type="button" id="xlsBtn">⬇️ نسخة Excel كاملة</button><span class="note" id="xlsMsg"></span></div></div>
+        <div id="dash"></div>
+      </section>
+      <section class="panel">
+        <h2>مؤشرات الصحة المالية <span class="note">Financial health</span></h2>
+        <div class="kpis" id="ratios"></div>
+        <p class="note" style="margin:0">أيام التحصيل وأيام الدفع ومدة المخزون محسوبة على آخر 90 يوماً. القروض خارج الالتزامات المتداولة. Collection, payment and stock days use the last 90 days.</p>
+      </section>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>الموازنة مقابل الفعلي <span class="note">Budget vs actual</span></h2>
+          <div class="row"><select id="bdYear" style="width:auto" aria-label="Year"></select><select id="bdMonth" style="width:auto" aria-label="Month"></select></div></div>
+        <div class="tablewrap"><table class="t" id="bva"></table></div>
+        <details><summary>إعداد الموازنة السنوية · Set the budget</summary>
+          <p class="note">اكتب المبلغ السنوي لكل بند (يُوزّع بالتساوي على 12 شهراً)، أو انسخ الفعلي لسنة سابقة مع نسبة زيادة.</p>
+          <div class="row"><label style="display:flex;gap:6px;align-items:center">نسخ فعلي سنة<select id="bdFrom" style="width:auto"></select> + <input id="bdPct" type="number" value="5" style="width:70px">%</label><button type="button" id="bdCopy">نسخ</button></div>
+          <div class="tablewrap"><table class="t" id="bdEdit"></table></div>
+          <div class="row"><button type="button" class="primary" id="bdSave">حفظ الموازنة</button><span class="note" id="bdMsg"></span></div>
+        </details>
+      </section>
+      <section class="panel" id="trialPanel">
+        <h2>🧪 فترة التجربة <span class="note">Trial period: story box accuracy and comparison with the old ERP</span></h2>
+        <div id="trialAcc"></div>
+        <div class="grid2">
+          <div><h3>المقارنات مع النظام القديم</h3><div class="tablewrap"><table class="t" id="trialCmp"></table></div></div>
+          <div><h3>تحقق نهاية اليوم</h3><div class="tablewrap"><table class="t" id="trialChk"></table></div></div>
+        </div>
+        <h3>قيود تنتظر إيصالاً</h3><div class="tablewrap"><table class="t" id="trialHeld"></table></div>
+      </section>
+    </div>
+    <div class="view" data-view="books" hidden>
+      <nav class="jump" aria-label="Jump to"><button type="button" data-jump="bk5">النقد والبنك</button><button type="button" data-jump="bk7">الأرباح والذمم</button><button type="button" data-jump="bk8">الميزانية والضريبة</button><button type="button" data-jump="bk12">التدفقات النقدية</button><button type="button" data-jump="bk15">العملاء والائتمان</button><button type="button" data-jump="bk14">المشتريات</button><button type="button" data-jump="bk13">القروض</button><button type="button" data-jump="bk16">الأصول</button><button type="button" data-jump="bk10">دفتر اليومية</button><button type="button" data-jump="bk23">ميزان المراجعة</button></nav>
+      <div id="bk5" class="anchor"></div>
+      <div class="grid2">
+        <section class="panel">
+          <h2>التدفق النقدي المتوقع <span class="note">Cash forecast (cash + bank, with cheques by due date)</span></h2>
+          <div class="tablewrap"><table class="t" id="fc"></table></div>
+          <p class="note" style="margin:0">يعتمد على الشيكات المسجلة فقط. المبيعات والمصاريف المستقبلية غير محسوبة. Based on registered cheques only.</p>
+        </section>
+        <section class="panel">
+          <h2>الشيكات <span class="note">Cheques</span></h2>
+          <div class="kpis" id="chqK"></div>
+          <div class="tablewrap"><table class="t" id="chq"></table></div>
+        </section>
+        <section class="panel">
+          <h2>مطابقة البنك <span class="note">Bank reconciliation</span></h2>
+          <div id="recNow"></div>
+          <div class="tablewrap"><table class="t" id="recs"></table></div>
+        </section>
+        <section class="panel">
+          <h2>عدّ الصندوق <span class="note">Cash counts</span></h2>
+          <div class="tablewrap"><table class="t" id="counts"></table></div>
+        </section>
+      </div>
+      <div id="bk7" class="anchor"></div>
+      <div class="grid2">
+        <section class="panel">
+          <div class="bar" style="justify-content:space-between"><h2>الأرباح والخسائر <span class="note">Profit and loss</span></h2>
+            <select id="plMonth" style="width:auto" aria-label="Month"></select></div>
+          <div class="tablewrap"><table class="t" id="pl"></table></div>
+          <p class="note" style="margin:0">تكلفة البضاعة تشمل تغيّر المخزون بعد كل جرد. الاستهلاك غير محسوب بعد. Cost of goods includes the stock change after each count; depreciation is not included yet.</p>
+        </section>
+        <section class="panel">
+          <h2>المصاريف هذا الشهر <span class="note">Expenses this month</span></h2>
+          <div class="bars" id="exp"></div>
+        </section>
+        <section class="panel">
+          <h2>مستحق لنا على العملاء <span class="note">Customers owe us</span></h2>
+          <div class="tablewrap"><table class="t" id="cust"></table></div>
+        </section>
+        <section class="panel">
+          <h2>مستحق علينا للموردين <span class="note">We owe suppliers</span></h2>
+          <div class="tablewrap"><table class="t" id="supp"></table></div>
+        </section>
+      </div>
+      <div id="bk8" class="anchor"></div>
+      <div class="grid2">
+        <section class="panel">
+          <div class="bar" style="justify-content:space-between"><h2>الميزانية العمومية <span class="note">Balance sheet (today)</span></h2><button type="button" class="small" id="bsPrint">🖨️</button></div>
+          <div class="tablewrap"><table class="t" id="bs"></table></div>
+        </section>
+        <section class="panel">
+          <h2>ضريبة المبيعات <span class="note">Sales tax</span></h2>
+          <div class="form"><label>من<input id="tx_from" type="date"></label><label>إلى<input id="tx_to" type="date"></label></div>
+          <div class="tablewrap"><table class="t" id="tx"></table></div>
+          <div class="row"><button type="button" class="small" id="txPrint">🖨️ ملخص للإقرار</button><button type="button" id="txClose">إقفال ضريبة الفترة (مقاصة)</button><span class="note" id="txMsg"></span></div>
+          <p class="note" style="margin:0">المقاصة تخصم الضريبة المدفوعة على المشتريات من الضريبة المستحقة على المبيعات حتى تاريخ «إلى». بعدها يُسجّل الدفع للدائرة كقصة عادية: «دفعت ضريبة المبيعات 500 من البنك». The offset sets input tax against output tax; the payment is then a normal story.</p>
+        </section>
+        <section class="panel">
+          <div class="bar" style="justify-content:space-between"><h2>تكلفة الكرتونة <span class="note">Cost per carton</span></h2><select id="cpMonth" style="width:auto" aria-label="Month"></select></div>
+          <div class="tablewrap"><table class="t" id="cp"></table></div>
+          <p class="note" style="margin:0">التكاليف من الدفاتر (المواد والأجور والكهرباء والصيانة وتغيّر المخزون) ÷ الكراتين المنتجة من تقارير الإنتاج اليومية. Costs from the books ÷ cartons from the daily production reports.</p>
+        </section>
+        <section class="panel">
+          <h2>الجرد <span class="note">Stock counts</span></h2>
+          <div class="tablewrap"><table class="t" id="inv"></table></div>
+        </section>
+      </div>
+      <div id="bk12" class="anchor"></div>
+      <div class="grid2">
+        <section class="panel">
+          <div class="bar" style="justify-content:space-between"><h2>التدفقات النقدية <span class="note">Cash flow</span></h2>
+            <div class="row"><select id="cfPer" style="width:auto" aria-label="Period"><option value="m">هذا الشهر</option><option value="pm">الشهر الماضي</option><option value="y">هذه السنة</option><option value="py">السنة الماضية</option></select><button type="button" class="small" id="cfPrint">🖨️</button></div></div>
+          <div class="tablewrap"><table class="t" id="cf"></table></div>
+        </section>
+        <section class="panel">
+          <h2>القيود الشهرية الثابتة <span class="note">Recurring entries</span></h2>
+          <div class="tablewrap"><table class="t" id="recur"></table></div>
+          <p class="note" style="margin:0">يضيفها المحاسب بزر «كرّرها كل شهر»، وتظهر له كل شهر ليؤكدها، فتمر بكل الضوابط. The accountant confirms each one monthly, so every control still applies.</p>
+        </section>
+      </div>
+      <div id="bk15" class="anchor"></div>
+      <section class="panel">
+        <h2>الائتمان وأعمار الذمم <span class="note">Credit limits and aging</span></h2>
+        <p class="note" style="margin:0">حدد لكل عميل حداً أعلى للدين ومدة سداد. البيع الآجل فوق الحد، أو لعميل متأخر أكثر من مدة السداد + فترة السماح، ينتظر موافقتك. Credit sales over the limit, or to customers who are late, wait for you.</p>
+        <div class="tablewrap"><table class="t" id="aging"></table></div>
+        <h2 style="margin-top:8px">مدة السداد للموردين <span class="note">Supplier payment terms</span></h2>
+        <div class="tablewrap"><table class="t" id="supTerms"></table></div>
+      </section>
+      <div id="bk14" class="anchor"></div>
+      <section class="panel">
+        <h2>المشتريات: أوامر الشراء والمطابقة <span class="note">Purchase orders and three way match</span></h2>
+        <p class="note" style="margin:0">أمر الشراء ← استلام البضاعة ← فاتورة المورد. الفاتورة التي تزيد عن المستلم، أو تصل قبل البضاعة، أو شراء مواد بدون أمر شراء، تنتظر موافقتك. Order, goods received, supplier invoice: anything that doesn't match waits for you.</p>
+        <div class="tablewrap"><table class="t" id="pos"></table></div>
+      </section>
+      <div id="bk13" class="anchor"></div>
+      <section class="panel">
+        <h2>القروض والاعتمادات والكفالات <span class="note">Loans, letters of credit and guarantees</span></h2>
+        <div class="tablewrap"><table class="t" id="loans"></table></div>
+        <details><summary>إضافة أو تعديل · Add or edit</summary>
+          <div class="form"><input type="hidden" id="ln_id">
+            <label>البنك<input id="ln_bank"></label>
+            <label>النوع<select id="ln_kind"><option value="loan">قرض</option><option value="overdraft">جاري مدين</option><option value="lc">اعتماد مستندي</option><option value="guarantee">كفالة بنكية</option></select></label>
+            <label>المبلغ (أو السقف)<input id="ln_amount" type="number" step="0.001"></label><label>الفائدة السنوية %<input id="ln_rate" type="number" step="0.01"></label>
+            <label>عدد الأقساط<input id="ln_n" type="number" min="1"></label><label>كل (أشهر)<input id="ln_every" type="number" min="1" value="1"></label>
+            <label>تاريخ أول قسط<input id="ln_first" type="date"></label>
+            <label>طريقة الأقساط<select id="ln_method"><option value="annuity">قسط ثابت</option><option value="equal">أصل ثابت + فائدة متناقصة</option></select></label>
+            <label>تاريخ الانتهاء أو التجديد<input id="ln_exp" type="date"></label><label>ملاحظة<input id="ln_note"></label>
+            <label><span><input id="ln_exist" type="checkbox" style="width:auto"> قرض قائم قبل بدء النظام (المبلغ = الرصيد المتبقي، والأقساط = المتبقية)</span></label>
+          <label><span><input id="ln_closed" type="checkbox" style="width:auto"> مغلق</span></label>
+          </div>
+          <div class="row"><button type="button" class="primary" id="ln_save">حفظ</button><button type="button" class="ghost" id="ln_new">جديد</button><span class="note" id="ln_msg"></span></div>
+        </details>
+      </section>
+      <div id="bk16" class="anchor"></div>
+      <section class="panel">
+        <h2>الأصول الثابتة <span class="note">Fixed assets</span></h2>
+        <div class="row" id="assetCheck"></div>
+        <div class="tablewrap"><table class="t" id="assets"></table></div>
+      </section>
+      <div id="bk10" class="anchor"></div>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>دفتر اليومية <span class="note">Journal (latest 60)</span></h2></div>
+        <div class="tablewrap"><table class="t" id="journal"></table></div>
+      </section>
+      <div id="bk23" class="anchor"></div>
+      <details class="panel">
+        <summary>ميزان المراجعة · Trial balance</summary>
+        <div class="tablewrap"><table class="t" id="tb"></table></div>
+      </details>
+    </div>
+    <div class="view" data-view="close" hidden>
+      <div class="grid2">
+        <section class="panel">
+          <h2>المواعيد والالتزامات <span class="note">Deadlines</span></h2>
+          <div class="tablewrap"><table class="t" id="dl"></table></div>
+          <details><summary class="note">تعديل المواعيد · Edit deadlines</summary>
+            <div class="tablewrap"><table class="t" id="oblEdit"></table></div>
+            <div class="form"><input type="hidden" id="ob_key"><label>الاسم<input id="ob_title"></label>
+              <label>التكرار<select id="ob_freq"><option value="monthly">شهري</option><option value="bimonthly">كل شهرين</option><option value="quarterly">ربع سنوي</option><option value="yearly">سنوي</option></select></label>
+              <label>يوم الاستحقاق<input id="ob_day" type="number" min="1" max="31"></label><label>شهر الاستحقاق (للسنوي)<input id="ob_month" type="number" min="1" max="12"></label>
+              <label>بعد نهاية الفترة بـ (أشهر أو سنوات)<input id="ob_lag" type="number" min="0" max="12"></label><label><span><input id="ob_on" type="checkbox" checked style="width:auto"> مفعّل</span></label></div>
+            <div class="row"><button type="button" class="primary" id="ob_save">حفظ الموعد</button><button type="button" class="ghost" id="ob_new">موعد جديد</button><span class="note" id="ob_msg"></span></div>
+          </details>
+        </section>
+        <section class="panel">
+          <h2>نهاية الشهر <span class="note">Month end checklist</span></h2>
+          <div class="row"><input type="month" id="meMonth" style="width:auto" aria-label="Month"></div>
+          <div id="meList"></div>
+          <h2 style="margin-top:8px">مطابقة كشوف العملاء والموردين <span class="note">Statement matches</span></h2>
+          <div class="tablewrap"><table class="t" id="confirms"></table></div>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>إقفال الفترة <span class="note">Close a period</span></h2>
+        <p class="note" style="margin:0">بعد مراجعة الشهر، أقفله: لا أحد يستطيع التسجيل في تاريخ مقفل، ولا أنت. التصحيحات تُسجّل بتاريخ اليوم. After reviewing a month, close it. Nobody can post into a closed date, you included; corrections are dated today.</p>
+        <div class="row"><span id="lockNow" class="pill"></span></div>
+        <div class="form">
+          <label>إقفال حتى تاريخ<input id="lk_date" type="date"></label>
+          <label>السبب (مطلوب عند إعادة الفتح)<input id="lk_reason"></label>
+        </div>
+        <div class="row"><button type="button" class="primary" id="lk_save">إقفال حتى هذا التاريخ</button><button type="button" id="lk_open">إعادة فتح كل الفترات</button><span class="note" id="lk_msg"></span></div>
+      </section>
+      <section class="panel">
+        <h2>المخصصات وإقفال السنة <span class="note">Provisions and year end</span></h2>
+        <div class="form">
+          <label>مخصص الديون المشكوك فيها (الرصيد المطلوب)<input id="pv_bad" type="number" step="0.001"><span class="note" id="pv_badNow"></span></label>
+          <label>مخصص مكافأة نهاية الخدمة (الرصيد المطلوب)<input id="pv_eos" type="number" step="0.001"><span class="note" id="pv_eosNow"></span></label>
+        </div>
+        <div class="row"><button type="button" id="pv_save">تعديل المخصصات</button><span class="note" id="pv_msg"></span></div>
+        <p class="note" style="margin:0">عادةً في نهاية السنة مع المدقق. الفرق يُسجّل مصروفاً. Usually set at year end with your auditor.</p>
+        <div class="form"><label>إقفال السنة المالية<select id="yc_year"></select></label></div>
+        <div class="row"><button type="button" class="primary" id="yc_go">إقفال السنة</button><span class="note" id="yc_msg"></span></div>
+        <p class="note" style="margin:0">ينقل ربح السنة إلى الأرباح المحتجزة ويقفل السنة. افعله بعد أن ينهي المدقق مراجعته وتُسجّل تسوياته. Moves the year's profit to retained earnings and locks the year; do it after the auditor's adjustments.</p>
+      </section>
+      <section class="panel">
+        <h2>الموظفون والرواتب <span class="note">Employees and payroll</span></h2>
+        <div class="tablewrap"><table class="t" id="emps"></table></div>
+        <div class="form" id="empForm">
+          <input type="hidden" id="e_id">
+          <label>الاسم<input id="e_name"></label><label>الوظيفة<input id="e_job"></label>
+          <label>الراتب الأساسي<input id="e_basic" type="number" step="0.001" min="0"></label><label>العلاوات<input id="e_allow" type="number" step="0.001" min="0"></label>
+          <label>تاريخ التعيين<input id="e_start" type="date"></label>
+          <label>عمولة المبيعات % (للمندوبين)<input id="e_comm" type="number" step="0.01" min="0" max="20"></label>
+          <label><span><input id="e_ss" type="checkbox" checked style="width:auto"> مشترك بالضمان</span></label>
+          <label><span><input id="e_dep" type="checkbox" style="width:auto"> إعفاء المعالين</span></label>
+          <label><span><input id="e_act" type="checkbox" checked style="width:auto"> على رأس عمله</span></label>
+        </div>
+        <div class="row"><button type="button" class="primary" id="e_save">حفظ الموظف</button><button type="button" class="ghost" id="e_new">موظف جديد</button><span class="note" id="e_msg"></span></div>
+        <h2 style="margin-top:8px">كشوف الرواتب <span class="note">Payroll runs</span></h2>
+        <div class="tablewrap"><table class="t" id="runs"></table></div>
+        <p class="note" style="margin:0">المحاسب يجهّز رواتب الشهر من صندوق القصص، والقيد ينتظر موافقتك أعلاه. بعدها: «دفعت الرواتب 2,672 من البنك» و«دفعت الضمان 1,050». The accountant prepares the month; the entry waits for you above.</p>
+      </section>
+      <details class="panel" id="coaPanel">
+        <summary>شجرة الحسابات · Chart of accounts</summary>
+        <p class="note">🔒 الحسابات الأساسية تعتمد عليها القواعد ولا يمكن تعديلها. يمكنك إضافة بنود مصاريف أو مشتريات، وتعديل أسمائها، وإخفاء ما لا تستخدمه (لا يُحذف شيء). اطبع الشجرة واعرضها على المدقق قبل البدء. Core accounts are locked; you can add, rename and hide your own categories.</p>
+        <div class="row"><button type="button" class="small" id="coaPrint">🖨️ طباعة الشجرة</button></div>
+        <div class="tablewrap"><table class="t" id="coa"></table></div>
+        <h2 style="margin-top:8px">إضافة بند <span class="note">Add a category</span></h2>
+        <div class="form">
+          <label>النوع<select id="ac_kind"><option value="expense">مصروف تشغيلي (6xxx)</option><option value="purchase">مشتريات ومواد (5xxx)</option></select></label>
+          <label>الاسم بالعربية<input id="ac_name"></label><label>الاسم بالإنجليزية (اختياري)<input id="ac_en"></label>
+          <label>الرقم (اختياري، يُختار تلقائياً)<input id="ac_code" inputmode="numeric"></label>
+          <label><span><input id="ac_pc" type="checkbox" style="width:auto"> يدخل في تكلفة الكرتونة</span></label>
+        </div>
+        <div class="row"><button type="button" class="primary" id="ac_save">أضف البند</button><span class="note" id="ac_msg"></span></div>
+      </details>
+      <details class="panel">
+        <summary>الإعدادات · Settings</summary>
+        <div class="form">
+          <label>حد الموافقة (دينار)<input id="s_appr" type="number" step="1"></label>
+          <label>حد إلزامية الإيصال (دينار)<input id="s_rcpt" type="number" step="1"></label>
+          <label>نسبة الضريبة العامة %<input id="s_tax" type="number" step="0.01"></label>
+          <label>أقصى عدد أيام للتاريخ القديم<input id="s_back" type="number" step="1" min="0"></label>
+          <label>شراء المواد فوق هذا المبلغ يحتاج أمر شراء<input id="s_po" type="number" step="1" min="0"></label>
+          <label>فترة السماح بعد مدة السداد (أيام)<input id="s_grace" type="number" step="1" min="0"></label>
+          <label>سعر الدولار (دينار)<input id="s_usd" type="number" step="0.0001" min="0"></label>
+          <label>سعر اليورو (دينار)<input id="s_eur" type="number" step="0.0001" min="0"></label>
+          <label>اسم الشركة<input id="s_name"></label>
+          <label>العنوان<input id="s_addr"></label>
+          <label>الهاتف<input id="s_phone"></label>
+          <label>الرقم الضريبي<input id="s_taxno"></label>
+        </div>
+        <h2>الرواتب <span class="note">Payroll rates (confirm with Social Security and the Income Tax Department)</span></h2>
+        <div class="form">
+          <label>ضمان: حصة الموظف %<input id="p_sse" type="number" step="0.01"></label><label>ضمان: حصة الشركة %<input id="p_ssr" type="number" step="0.01"></label>
+          <label>سقف الراتب الخاضع للضمان<input id="p_cap" type="number" step="0.001"></label>
+          <label>الإعفاء الشخصي السنوي<input id="p_pex" type="number" step="1"></label><label>إعفاء المعالين السنوي<input id="p_dex" type="number" step="1"></label>
+          <label class="wide">شرائح ضريبة الدخل السنوية (حد:نسبة، مفصولة بفواصل)<input id="p_br" dir="ltr" placeholder="5000:5, 10000:10, 15000:15, 20000:20, 1000000:25, :30"></label>
+        </div>
+        <h2>الفوترة الوطنية <span class="note">JoFotara</span></h2>
+        <div class="form">
+          <label>الوضع<select id="j_mode"><option value="prepare">تجهيز فقط (بدون إرسال)</option><option value="live">إرسال مباشر</option></select></label>
+          <label>تسلسل مصدر الدخل<input id="j_src" dir="ltr"></label>
+          <label>رمز الفاتورة النقدية<input id="j_cash" dir="ltr"></label><label>رمز الفاتورة الآجلة<input id="j_credit" dir="ltr"></label>
+          <label>حد الفاتورة دون رقم ضريبي للمشتري<input id="j_b2c" type="number" step="1"></label>
+        </div>
+        <p class="note" style="margin:0">قبل تفعيل الإرسال المباشر: أضف Client-Id و Secret-Key في Supabase › Edge Functions › Secrets، وجرّب «تجهيز ومراجعة» على فاتورة، وراجع ملف XML مع محاسبك. Before going live, add the JoFotara keys as secrets and check a prepared invoice with your accountant.</p>
+        <div class="row"><button type="button" class="primary" id="s_save">حفظ</button><span class="note" id="s_msg"></span></div>
+        <p class="note" style="margin:0">لإضافة محاسب: أضف بريده في Supabase › Table Editor › accountants، ثم أنشئ له مستخدماً في Authentication › Users. To add an accountant, add their email to the accountants table and create their user.</p>
+      </details>
+      <details class="panel">
+        <summary>سجل التدقيق · Audit log <span class="note">(كل الموافقات والتصحيحات والإقفالات وتغيير الإعدادات، ولا يمكن تعديله)</span></summary>
+        <div class="tablewrap"><table class="t" id="audit"></table></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="books-core.js"></script>
+<script>
+(function(){
+const B = window.Books, sb = B.sb, $ = s => document.querySelector(s);
+document.head.insertAdjacentHTML("beforeend", `<style>${B.DOC_CSS}${B.DASH_CSS}</style>`);
+const S = { accounts:[], settings:{}, company:{}, entries:[], rows:[], parties:[] };
+const money = B.money, esc = B.esc, num = B.num;
+const tname = t => (B.TYPES[t] || {}).ar || t;
+
+function table(el, cols, rows, foot, empty){
+  el.innerHTML = rows.length || foot ? `<thead><tr>${cols.map(c => `<th>${c.t}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody>${foot || ""}` : `<tbody><tr><td class="empty">${empty || "لا توجد بيانات بعد. No data yet."}</td></tr></tbody>`;
+}
+async function signedLink(path){ const { data } = await sb.storage.from("receipts").createSignedUrl(path, 600); return data && data.signedUrl; }
+function attLinks(e){ return (e.attachments || []).map((p, i) => `<button type="button" class="small" data-att="${esc(p)}">📎 إيصال ${i + 1}</button>`).join(" "); }
+function wireAtt(root){ root.querySelectorAll("[data-att]").forEach(b => b.onclick = async () => { const u = await signedLink(b.dataset.att); if (u) { const a = document.createElement("a"); a.href = u; a.target = "_blank"; a.rel = "noopener"; a.click(); } }); }
+function changed(e){
+  const ai = e.ai; if (!ai) return [];
+  const out = [];
+  if (ai.amount != null && !(e.meta && e.meta.currency) && !(num(ai.amount) === 0 && ai.fx_amount) && Math.abs(num(ai.amount) - num(e.amount)) > 0.0005) out.push(`المبلغ ${money(ai.amount)} ← ${money(e.amount)}`);
+  if (ai.type && ai.type !== e.type) out.push(`النوع ${tname(ai.type)} ← ${tname(e.type)}`);
+  if (ai.method && e.method && ai.method !== e.method) out.push(`الدفع ${B.METHODS[ai.method]} ← ${B.METHODS[e.method]}`);
+  if (ai.category && e.category && ai.category !== e.category) out.push("التصنيف تغيّر");
+  return out;
+}
+
+async function load(){
+  $("#status").textContent = "جارٍ التحميل…";
+  const [acc, set, entries, rows, parties, audit, cheques, bank, recs, counts] = await Promise.all([B.Data.accounts(), B.Data.settings(), B.Data.entriesForPages(2000), B.Data.ledger(null, null), B.Data.parties(),
+    sb.from("acc_audit").select("*").order("id", { ascending: false }).limit(60), B.Data.cheques(), B.Data.bankLines(), B.Data.recs(), B.Data.counts()]);
+  const Y = +B.today().slice(0, 4);
+  const [pos, assets, assetDep, monthRuns, obls, oblDone, confirms, b1, b2, b3] = await Promise.all([B.Data.pos(), B.Data.assets(), B.Data.assetDep(), B.Data.monthRuns(), B.Data.obligations(), B.Data.obligationDone(), B.Data.confirms(),
+    B.Data.budgets(Y - 1), B.Data.budgets(Y), B.Data.budgets(Y + 1)]);
+  Object.assign(S, { pos, assets, assetDep, monthRuns, obls, oblDone, confirms, budgets: [...b1, ...b2, ...b3] });
+  [S.loans, S.recurring] = await Promise.all([B.Data.loans(), B.Data.recurring()]);
+  const [cmp, chk, held] = await Promise.all([sb.from("acc_erp_compares").select("*").order("id", { ascending: false }).limit(20), sb.from("acc_erp_checks").select("*").order("id", { ascending: false }).limit(30),
+    sb.from("acc_erp_staging").select("*").eq("status", "held").order("created_at")]);
+  Object.assign(S, { erpCmp: cmp.data || [], erpChk: chk.data || [], erpHeld: held.data || [] });
+  const [emps, runs, invc, einv, prod] = await Promise.all([B.Data.employees(), B.Data.payrollRuns(), B.Data.invCounts(), B.Data.einvoices(),
+    sb.from("reports").select("date,vals").eq("dept", "production").eq("form", "output").gte("date", B.addDays(B.today(), -400)).then(r => r.data || [], () => [])]);
+  Object.assign(S, { accounts: acc, settings: set, company: set.company || {}, entries, rows, parties, audit: audit.data || [], cheques, bank, recs, counts, emps, runs, invc, einv, prod });
+  if (S.company.name) $("#coName").textContent = S.company.name;
+  render();
+  $("#status").textContent = (S.settings.locked_until ? `مقفل حتى ${S.settings.locked_until} · ` : "") + `آخر تحديث ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function render(){
+  const today = B.today(), ms = B.monthStart(today), bal = B.Reports.accountBalances(S.rows);
+  // opening balances (once)
+  const hasOpening = S.entries.some(e => e.type === "opening" && e.status === "posted");
+  $("#setupPanel").hidden = hasOpening;
+  // pending approvals
+  const pend = S.entries.filter(e => e.status === "pending").sort((a, b) => a.no - b.no);
+  $("#pendPanel").hidden = false;
+  const pel = $("#pending");
+  if (!pend.length) pel.innerHTML = `<div class="empty">لا يوجد شيء بانتظارك. Nothing is waiting.</div>`;
+  else {
+    pel.innerHTML = pend.map(e => `<div class="item" data-id="${e.id}"><div class="top"><span><b>${esc(tname(e.type))}</b>${e.party ? " · " + esc(e.party.name) : ""} · ${esc(B.METHODS[e.method] || "")} · ${e.date} · #${e.no}</span><span class="amt">${money(e.amount)} JOD</span></div>
+      <div class="row">${B.flagPills(e.flags)}</div>${e.story ? `<div class="story">«${esc(e.story)}»</div>` : ""}<div class="note">${e.meta && e.meta.currency ? `<b>${money(e.meta.fx_amount)} ${esc(e.meta.currency)} × ${e.meta.fx_rate}</b> · ` : ""}${esc(e.description || "")} · سجّله ${esc(e.created_by)}</div>
+      <div class="row">${attLinks(e)}<button type="button" class="okb" data-ok>✓ موافقة</button><input placeholder="سبب الرفض" data-note style="max-width:220px"><button type="button" class="nob" data-no>رفض</button><span class="note" data-m></span></div></div>`).join("");
+    pel.querySelectorAll(".item").forEach(it => {
+      const id = it.dataset.id, m = it.querySelector("[data-m]");
+      it.querySelector("[data-ok]").onclick = async () => { const { error } = await sb.rpc("acc_decide", { p_id: id, p_approve: true, p_note: null }); if (error) m.textContent = B.errText(error); else load(); };
+      it.querySelector("[data-no]").onclick = async () => { const note = it.querySelector("[data-note]").value.trim(); if (!note) { m.textContent = "اكتب سبب الرفض."; return; }
+        const { error } = await sb.rpc("acc_decide", { p_id: id, p_approve: false, p_note: note }); if (error) m.textContent = B.errText(error); else load(); };
+    });
+    wireAtt(pel);
+  }
+  // key numbers
+  const pl = B.Reports.profitLoss(S.rows, ms, today, S.accounts);
+  const owe = B.Reports.partyBalances(S.rows, "customer"), weOwe = B.Reports.partyBalances(S.rows, "supplier");
+  const k = [
+    ["الصندوق", bal["1101"] || 0, "Cash box"], ["البنك", bal["1102"] || 0, "Bank"],
+    ["شيكات برسم التحصيل", bal["1103"] || 0, "Cheques received"], ["شيكات صادرة لم تُصرف", -(bal["2102"] || 0), "Cheques issued"],
+    ["مستحق لنا على العملاء", owe.reduce((a, x) => a + x.balance, 0), `${owe.length} عميل`], ["مستحق علينا للموردين", weOwe.reduce((a, x) => a + x.balance, 0), `${weOwe.length} مورد`],
+    ["مبيعات هذا الشهر", pl.ti, "Sales this month"], ["مصاريف ومشتريات الشهر", pl.tp + pl.te, "Costs this month"],
+    ["صافي الشهر", pl.net, "Net this month", pl.net >= 0 ? "good" : "bad"], ["ضريبة مبيعات مستحقة", -(bal["2201"] || 0) - (bal["1301"] || 0), "Tax owed minus paid"],
+  ];
+  $("#kpis").innerHTML = k.map(([l, v, s, c]) => `<div class="kpi ${c || ""}"><span class="l">${l}</span><span class="v">${money(v)}</span><span class="s">${s}</span></div>`).join("");
+  // review list
+  const watch = ["duplicate_confirmed", "duplicate_receipt", "new_party", "backdated", "negative_cash", "bounced", "cash_difference", "custody_exceeded", "no_po", "po_mismatch", "not_received", "credit_limit", "customer_overdue", "write_off"];
+  const rev = S.entries.filter(e => e.status !== "pending" && (e.reverses || e.status === "reversed" || e.status === "rejected" || (e.ai && e.ai.confidence === "low") || changed(e).length
+    || (e.flags || []).some(f => watch.includes(f)))).filter(e => e.date >= B.addDays(today, -30) || S.reviewAll).slice(0, S.reviewAll ? 60 : 6);
+  const rel = $("#review");
+  rel.innerHTML = rev.length ? rev.map(e => {
+    const why = [e.reverses ? "قيد تصحيح" : "", e.status === "reversed" ? "عُكس" : "", e.status === "rejected" ? `مرفوض: ${e.decision_note || ""}` : "", e.ai && e.ai.confidence === "low" ? "الذكاء الاصطناعي غير متأكد" : "", ...changed(e)].filter(Boolean);
+    return `<div class="item"><div class="top"><span>#${e.no} · ${esc(tname(e.type))}${e.party ? " · " + esc(e.party.name) : ""} · ${e.date}</span><span class="amt">${money(e.amount)}</span></div>
+      <div class="row">${why.map(w => `<span class="pill warn">${esc(w)}</span>`).join("")}${B.flagPills((e.flags || []).filter(f => f !== "over_limit"))}${attLinks(e)}</div>${e.description ? `<div class="note">${esc(e.description)}</div>` : ""}</div>`; }).join("")
+    : `<div class="empty">لا يوجد. Nothing to review.</div>`;
+  rel.insertAdjacentHTML("beforeend", `<div class="row"><button type="button" class="small" id="revMore">${S.reviewAll ? "عرض آخر 30 يوماً فقط" : "عرض المزيد (حتى 60)"}</button></div>`);
+  $("#revMore").onclick = () => { S.reviewAll = !S.reviewAll; render(); };
+  wireAtt(rel);
+  // P&L by month
+  const months = [...new Set(S.rows.map(r => r.date.slice(0, 7)).concat(today.slice(0, 7)))].sort().reverse();
+  const sel = $("#plMonth"), cur = sel.value || today.slice(0, 7);
+  sel.innerHTML = months.map(m => `<option${m === cur ? " selected" : ""}>${m}</option>`).join("");
+  renderPL();
+  // expenses this month
+  const by = {}; S.rows.filter(r => r.date >= ms && r.account_type === "expense" && r.type !== "year_close").forEach(r => by[r.account_name] = (by[r.account_name] || 0) + num(r.debit) - num(r.credit));
+  const ex = Object.entries(by).filter(x => x[1] > 0.0005).sort((a, b) => b[1] - a[1]), mx = Math.max(1, ...ex.map(x => x[1]));
+  $("#exp").innerHTML = ex.length ? ex.map(([n, v]) => `<div class="b"><span>${esc(n)}</span><span class="track"><i style="width:${v / mx * 100}%"></i></span><span class="v">${money(v)}</span></div>`).join("") : `<div class="empty">لا توجد مصاريف هذا الشهر بعد.</div>`;
+  // balances with statement links
+  const pt = (el, list, kind) => { table(el, [{ t: kind === "customer" ? "العميل" : "المورد" }, { t: "الرصيد (دينار)" }, { t: "" }],
+      list.map(x => `<tr><td>${esc(x.name)}</td><td class="n">${money(x.balance)}</td><td><button type="button" class="small" data-st="${esc(x.name)}">كشف حساب</button></td></tr>`),
+      list.length ? `<tfoot><tr class="tot"><td>الإجمالي</td><td class="n">${money(list.reduce((a, x) => a + x.balance, 0))}</td><td></td></tr></tfoot>` : "", "لا توجد أرصدة. No balances.");
+    el.querySelectorAll("[data-st]").forEach(b => b.onclick = () => B.printHTML(B.statementHTML(B.Reports.statement(S.rows, b.dataset.st, null, today), b.dataset.st, null, today, S.company))); };
+  pt($("#cust"), owe, "customer"); pt($("#supp"), weOwe, "supplier");
+  // journal
+  const J = S.entries.slice(0, 60), jel = $("#journal");
+  table(jel, [{ t: "#" }, { t: "التاريخ" }, { t: "النوع" }, { t: "الطرف" }, { t: "المبلغ" }, { t: "الحالة" }, { t: "المستند" }, { t: "بواسطة" }, { t: "" }],
+    J.map(e => `<tr data-id="${e.id}"><td>${e.no}</td><td>${e.date}</td><td>${esc(tname(e.type))}${e.reverses ? ' <span class="pill warn">تصحيح</span>' : ""}</td><td>${esc(e.party ? e.party.name : "")}</td><td class="n">${money(e.amount)}</td>
+      <td><span class="pill ${e.status === "posted" ? "good" : e.status === "pending" ? "warn" : "bad"}">${B.STATUS[e.status]}</span></td>
+      <td>${e.doc ? `${B.DOCS[e.doc]} ${e.doc_no}` : ""}${einvPill(e)}</td><td class="note">${esc((e.created_by || "").split("@")[0])}</td>
+      <td class="row">${attLinks(e)}${e.doc && e.doc !== "journal" ? '<button type="button" class="small" data-pr>🖨️</button>' : ""}${e.status === "posted" && !e.reverses && e.type !== "opening" ? '<button type="button" class="small nob" data-rev>عكس</button>' : ""}</td></tr>`), "", "لا توجد قيود بعد. No entries yet.");
+  jel.querySelectorAll("tr[data-id]").forEach(tr => {
+    const e = S.entries.find(x => x.id === tr.dataset.id);
+    const pr = tr.querySelector("[data-pr]"); if (pr) pr.onclick = () => B.printHTML(e.doc === "invoice" ? B.invoiceHTML(e, S.company, S.einv.find(x => x.entry_id === e.id)) : B.voucherHTML(e, S.company));
+    const rv = tr.querySelector("[data-rev]"); if (rv) rv.onclick = () => {
+      const cell = rv.parentElement; cell.innerHTML = `<input placeholder="سبب التصحيح" style="width:160px"><button type="button" class="small nob">تأكيد العكس</button>`;
+      cell.querySelector("button").onclick = async () => { const reason = cell.querySelector("input").value.trim(); if (!reason) return;
+        const { error } = await sb.rpc("acc_reverse", { p_id: e.id, p_reason: reason }); if (error) cell.insertAdjacentHTML("beforeend", `<span class="note">${esc(B.errText(error))}</span>`); else load(); };
+    };
+  });
+  wireAtt(jel);
+  // cash forecast
+  const F = B.forecast(bal, S.cheques, 8);
+  table($("#fc"), [{ t: "الأسبوع" }, { t: "شيكات واردة" }, { t: "شيكات صادرة" }, { t: "الرصيد المتوقع" }],
+    F.rows.map((r, i) => `<tr><td>${r.from.slice(5)} إلى ${r.to.slice(5)}${i === 0 ? ' <span class="note">(يشمل المتأخر)</span>' : ""}</td><td class="n">${r.ins ? money(r.ins) : "–"}</td><td class="n">${r.outs ? money(r.outs) : "–"}</td>
+      <td class="n"><span class="pill ${r.closing < 0 ? "bad" : r.closing < F.start * 0.2 ? "warn" : "good"}">${money(r.closing)}</span></td></tr>`),
+    `<tfoot><tr class="tot"><td>الآن (الصندوق + البنك)</td><td></td><td></td><td class="n">${money(F.start)}</td></tr></tfoot>`);
+  // cheques
+  const t = today, wk = B.addDays(t, 7), chq = S.cheques;
+  const inOpen = chq.filter(c => c.direction === "in" && ["held", "deposited"].includes(c.status)), outOpen = chq.filter(c => c.direction === "out" && c.status === "issued");
+  const lateIn = inOpen.filter(c => c.status === "held" && c.due_date < t), bounced = chq.filter(c => c.status === "bounced");
+  const sum = l => l.reduce((a, c) => a + num(c.amount), 0);
+  $("#chqK").innerHTML = [["واردة لم تُحصّل", sum(inOpen), `${inOpen.length} شيك`], ["صادرة لم تُصرف", sum(outOpen), `${outOpen.length} شيك`],
+    ["مستحقة ولم تُودَع", sum(lateIn), `${lateIn.length} شيك`, lateIn.length ? "bad" : ""], ["مرتجعة", sum(bounced), `${bounced.length} شيك`, bounced.length ? "bad" : ""]]
+    .map(([l, v, s2, c]) => `<div class="kpi ${c || ""}"><span class="l">${l}</span><span class="v">${money(v)}</span><span class="s">${s2}</span></div>`).join("");
+  const show = [...bounced, ...lateIn, ...inOpen.filter(c => !lateIn.includes(c) && c.due_date <= wk), ...outOpen.filter(c => c.due_date <= wk)];
+  table($("#chq"), [{ t: "" }, { t: "الاستحقاق" }, { t: "رقم" }, { t: "الطرف" }, { t: "المبلغ" }, { t: "الحالة" }],
+    show.map(c => `<tr><td>${c.direction === "in" ? "📥" : "📤"}</td><td>${c.due_date}</td><td>${esc(c.no)}</td><td>${esc(c.party ? c.party.name : "")}</td><td class="n">${money(c.amount)}</td>
+      <td><span class="pill ${c.status === "bounced" || (c.status === "held" && c.due_date < t) ? "bad" : "warn"}">${c.status === "held" && c.due_date < t ? "مستحق ولم يُودَع" : (B.CHQ[c.status] || {}).ar}</span></td></tr>`),
+    "", "لا شيكات تحتاج انتباهاً هذا الأسبوع. Nothing needs attention this week.");
+  // bank reconciliation
+  const lastRec = S.recs[0], unmatched = S.bank.filter(b => !b.matched_line && !b.ignored);
+  const lastLine = S.bank[S.bank.length - 1], recAge = lastRec ? Math.round((new Date(t) - new Date(lastRec.as_of)) / 864e5) : null;
+  $("#recNow").innerHTML = `<div class="row">${lastRec ? `<span class="pill ${num(lastRec.difference) === 0 ? "good" : "bad"}">آخر مطابقة ${lastRec.as_of}: ${num(lastRec.difference) === 0 ? "الفرق صفر" : "فرق " + money(lastRec.difference)}</span>${recAge > 35 ? ' <span class="pill bad">مضى أكثر من شهر</span>' : ""}` : '<span class="pill warn">لم تتم أي مطابقة بعد</span>'}
+    <span class="note">${unmatched.length} حركة على الكشف لم تُسجّل · آخر كشف حتى ${lastLine ? lastLine.date : "–"}</span></div>`;
+  table($("#recs"), [{ t: "حتى" }, { t: "رصيد الكشف" }, { t: "رصيد الدفاتر" }, { t: "الفرق" }, { t: "بواسطة" }],
+    S.recs.map(r => `<tr><td>${r.as_of}</td><td class="n">${money(r.statement_balance)}</td><td class="n">${money(r.book_balance)}</td><td><span class="pill ${num(r.difference) === 0 ? "good" : "bad"}">${money(r.difference)}</span></td><td class="note">${esc((r.by || "").split("@")[0])}</td></tr>`), "", "لا توجد مطابقات بعد.");
+  // cash counts
+  table($("#counts"), [{ t: "الوقت" }, { t: "المتوقع" }, { t: "الموجود" }, { t: "الفرق" }, { t: "بواسطة" }],
+    S.counts.map(c => `<tr><td class="note">${esc(String(c.at).slice(0, 16).replace("T", " "))}</td><td class="n">${money(c.expected)}</td><td class="n">${money(c.counted)}</td>
+      <td><span class="pill ${num(c.difference) === 0 ? "good" : "bad"}">${money(c.difference)}</span></td><td class="note">${esc((c.by || "").split("@")[0])}</td></tr>`), "", "لم يُعدّ الصندوق بعد.");
+  // new names to confirm
+  const fresh = S.parties.filter(p => p.approved === false);
+  $("#namesPanel").hidden = !fresh.length;
+  $("#names").innerHTML = fresh.map(p => { const uses = S.entries.filter(e => e.party_id === p.id), sum = uses.reduce((a, e) => a + num(e.amount), 0);
+    return `<div class="item"><div class="top"><span><b>${esc(p.name)}</b> · ${p.kind === "customer" ? "عميل" : "مورد"} · أضافه ${esc((p.created_by || "").split("@")[0])}</span><span class="note">${uses.length} قيد · ${money(sum)} دينار</span></div>
+      <div class="row"><button type="button" class="okb small" data-okp="${p.id}">✓ اسم صحيح</button><span class="note">إن كان مكرراً، اعكس قيوده وأعد تسجيلها بالاسم الصحيح. If it's a duplicate name, reverse its entries and record them under the right name.</span></div></div>`; }).join("");
+  $("#names").querySelectorAll("[data-okp]").forEach(b => b.onclick = async () => { const { error } = await sb.rpc("acc_party_ok", { p_id: b.dataset.okp }); if (!error) load(); });
+  // closed period
+  const lk = S.settings.locked_until;
+  $("#lockNow").textContent = lk ? `مقفلة حتى ${lk}` : "لا توجد فترة مقفلة"; $("#lockNow").className = "pill " + (lk ? "good" : "warn");
+  if (!$("#lk_date").value) { const d = new Date(); d.setDate(0); $("#lk_date").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+  // audit log
+  const AL = { opening: "أرصدة افتتاحية", approve: "موافقة", reject: "رفض", reverse: "عكس قيد", lock: "إقفال فترة", unlock: "إعادة فتح فترة", settings: "تغيير الإعدادات", approve_name: "تأكيد اسم",
+    employee: "تعديل موظف", erp_hold: "حجز قيود بانتظار إيصال", erp_held_posted: "تسجيل قيد محجوز", erp_held_discarded: "استبعاد قيد محجوز", erp_map: "ربط بند بالنظام القديم", erp_compare: "مقارنة مع النظام القديم", export: "تنزيل نسخة Excel", account: "شجرة الحسابات", loan: "قرض أو كفالة", recurring: "قيد شهري ثابت", po_create: "أمر شراء", po_approve: "موافقة أمر شراء", po_reject: "رفض أمر شراء", po_cancel: "إلغاء أمر شراء", grn: "استلام بضاعة",
+    party_terms: "حد ائتمان ومدة سداد", asset_add: "إضافة أصل", asset_update: "تعديل أصل", asset_verify: "جرد أصل", asset_dispose: "استبعاد أصل", month_run: "تشغيل نهاية الشهر",
+    provision: "تعديل مخصص", year_close: "إقفال سنة", budget: "الموازنة", deadline_done: "إنجاز موعد", deadline_undo: "تراجع عن موعد", deadline_edit: "تعديل موعد", confirm: "مطابقة كشف", payroll_prepare: "تجهيز رواتب", inventory_count: "جرد مخزون", tax_close: "مقاصة ضريبة", party_tax_no: "رقم ضريبي لعميل", einvoice: "فوترة وطنية",
+    cheque_deposit: "إيداع شيك", cheque_clear: "تحصيل/صرف شيك", cheque_bounce: "شيك مرتجع", cheque_cancel: "إلغاء شيك", bank_import: "استيراد كشف بنك", bank_ignore: "حركة بنك بلا قيد", bank_reconcile: "مطابقة بنك" };
+  table($("#audit"), [{ t: "الوقت" }, { t: "بواسطة" }, { t: "الإجراء" }, { t: "التفاصيل" }],
+    S.audit.map(a => `<tr><td class="note">${esc(String(a.at).slice(0, 16).replace("T", " "))}</td><td>${esc((a.by || "").split("@")[0])}</td><td>${esc(AL[a.action] || a.action)}</td><td class="w note">${esc(JSON.stringify(a.detail || {})).slice(0, 220)}</td></tr>`), "", "لا توجد إجراءات بعد.");
+  // trial balance
+  const tb = S.accounts.map(a => ({ a, v: bal[a.code] || 0 })).filter(x => Math.abs(x.v) > 0.0005);
+  const td = tb.reduce((s, x) => s + Math.max(0, x.v), 0), tc = tb.reduce((s, x) => s + Math.max(0, -x.v), 0);
+  table($("#tb"), [{ t: "الحساب" }, { t: "مدين" }, { t: "دائن" }], tb.map(x => `<tr><td>${x.a.code} ${esc(x.a.name_ar)}</td><td class="n">${x.v > 0 ? money(x.v) : ""}</td><td class="n">${x.v < 0 ? money(-x.v) : ""}</td></tr>`),
+    tb.length ? `<tfoot><tr class="tot"><td>المجموع ${Math.abs(td - tc) < 0.0005 ? '<span class="pill good">متوازن</span>' : '<span class="pill bad">غير متوازن</span>'}</td><td class="n">${money(td)}</td><td class="n">${money(tc)}</td></tr></tfoot>` : "");
+  // settings
+  $("#s_appr").value = num(S.settings.approval_limit); $("#s_rcpt").value = num(S.settings.receipt_limit); $("#s_tax").value = num(S.settings.tax_rate); $("#s_back").value = num(S.settings.backdate_days);
+  const PR = S.settings.payroll || {}, EI = S.settings.einvoice || {};
+  $("#p_sse").value = num(PR.ss_employee); $("#p_ssr").value = num(PR.ss_employer); $("#p_cap").value = num(PR.ss_cap); $("#p_pex").value = num(PR.personal_exemption); $("#p_dex").value = num(PR.dependents_exemption);
+  $("#p_br").value = (PR.brackets || []).map(b => `${b[0] == null ? "" : b[0]}:${b[1]}`).join(", ");
+  $("#j_mode").value = EI.mode || "prepare"; $("#j_src").value = EI.income_source || ""; $("#j_cash").value = EI.type_name_cash || "012"; $("#j_credit").value = EI.type_name_credit || "022"; $("#j_b2c").value = EI.b2c_limit != null ? EI.b2c_limit : 10000;
+  renderPhase2(bal); renderPhase3(bal);
+  $("#s_po").value = num(S.settings.po_required_above); $("#s_grace").value = num(S.settings.overdue_grace);
+  $("#s_usd").value = (S.settings.currencies || {}).USD || ""; $("#s_eur").value = (S.settings.currencies || {}).EUR || "";
+  renderPhase4(bal); renderCOA(bal); renderDash(); renderTrial(); renderAlerts(bal);
+  $("#s_name").value = S.company.name || ""; $("#s_addr").value = S.company.address || ""; $("#s_phone").value = S.company.phone || ""; $("#s_taxno").value = S.company.tax_no || "";
+}
+function renderDash(){ if (!S.rows || document.querySelector('.view[data-view="charts"]').hidden) return; B.renderDashboard($("#dash"), B.dashData(S.rows, S.entries, S.parties, S.accounts, B.today(), +$("#dashN").value)); }
+// four tabs
+let curView = "today";
+const SHOW_ALL = new URLSearchParams(location.search).has("all");   // books-admin.html?all shows every section on one page (handy for printing)
+function showView(v){
+  curView = v;
+  document.querySelectorAll(".view[data-view]").forEach(el => el.hidden = !SHOW_ALL && el.dataset.view !== v);
+  document.querySelectorAll("#tabs [data-view]").forEach(b => { const on = b.dataset.view === v; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+  if (v === "charts") renderDash();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("#tabs [data-view]").forEach(b => b.onclick = () => showView(b.dataset.view));
+if (SHOW_ALL) document.querySelectorAll(".view[data-view]").forEach(el => el.hidden = false);
+document.querySelectorAll(".jump [data-jump]").forEach(b => b.onclick = () => document.getElementById(b.dataset.jump).scrollIntoView({ behavior: "smooth" }));
+function goTo(view, id){ showView(view); if (id) setTimeout(() => { const el = document.getElementById(id); if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); const d = el.closest("details"); if (d) d.open = true; } }, 60); }
+// the alerts list on the Today tab
+function renderTrial(){
+  $("#trialAcc").innerHTML = B.accuracyHTML(B.Reports.accuracy(S.entries.filter(e => e.date >= B.addDays(B.today(), -60)), S.accounts));
+  table($("#trialCmp"), [{ t: "الفترة" }, { t: "التطابق" }, { t: "بند مختلف" }, { t: "ناقص" }, { t: "زائد" }],
+    S.erpCmp.map(c => `<tr><td>${c.date_from} إلى ${c.date_to}</td><td><span class="pill ${c.stats.score >= 90 ? "good" : c.stats.score < 75 ? "bad" : "warn"}">${c.stats.score == null ? "–" : c.stats.score + "%"}</span></td><td class="n">${c.stats.different_account}</td><td class="n">${c.stats.missing_in_new}</td><td class="n">${c.stats.extra_in_new}</td></tr>`), "", "لم تُحفظ أي مقارنة بعد.");
+  const L = { cash: "الصندوق", bank: "البنك", customers: "العملاء", suppliers: "الموردون" };
+  table($("#trialChk"), [{ t: "اليوم" }, { t: "النتيجة" }],
+    S.erpChk.map(c => `<tr><td>${c.date}</td><td>${c.ok ? '<span class="pill good">✓ متطابق</span>' : Object.entries(c.diff).filter(([, v]) => Math.abs(v) > 0.0005).map(([k, v]) => `<span class="pill bad">${L[k]} ${money(v)}</span>`).join(" ")}</td></tr>`), "", "لا يوجد تحقق بعد.");
+  table($("#trialHeld"), [{ t: "المرجع" }, { t: "التاريخ" }, { t: "البيان" }, { t: "المبلغ" }, { t: "منذ" }],
+    S.erpHeld.map(h => `<tr><td>${esc(h.line.erp_ref)}</td><td>${esc(h.line.date || "")}</td><td>${esc(h.line.party_name || h.line.description || "")}</td><td class="n">${money(h.line.amount)}</td><td class="note">${Math.round((Date.now() - new Date(h.created_at)) / 864e5)} يوم</td></tr>`), "", "لا شيء ✓");
+}
+function renderAlerts(bal){
+  const t = B.today(), A = [];
+  const pend = S.entries.filter(e => e.status === "pending").length + S.pos.filter(p => p.status === "pending").length;
+  const op = S.entries.find(e => e.type === "opening");
+  const dl = B.deadlines(S.obls, S.oblDone, t, op ? op.date : t), late = dl.filter(x => x.status === "late"), soon = dl.filter(x => x.status === "soon");
+  if (late.length) A.push(["bad", `⏰ ${late.length} موعد متأخر: ${late.slice(0, 3).map(x => esc(x.o.title_ar)).join("، ")}`, "close", "dl"]);
+  if (soon.length) A.push(["warn", `⏰ ${soon.length} موعد خلال 10 أيام: ${soon.slice(0, 3).map(x => esc(x.o.title_ar)).join("، ")}`, "close", "dl"]);
+  const lateIn = S.cheques.filter(c => c.direction === "in" && c.status === "held" && c.due_date < t), bounced = S.cheques.filter(c => c.status === "bounced");
+  if (bounced.length) A.push(["bad", `🧾 ${bounced.length} شيك مرتجع بقيمة ${money(bounced.reduce((a, c) => a + num(c.amount), 0))}`, "books", "bk5"]);
+  if (lateIn.length) A.push(["warn", `🧾 ${lateIn.length} شيك مستحق ولم يُودع`, "books", "bk5"]);
+  const lastRec = S.recs[0], age = lastRec ? Math.round((new Date(t) - new Date(lastRec.as_of)) / 864e5) : null;
+  if (!lastRec || age > 35 || num(lastRec.difference) !== 0) A.push([lastRec && num(lastRec.difference) !== 0 ? "bad" : "warn", !lastRec ? "🏦 لم تتم أي مطابقة للبنك بعد" : num(lastRec.difference) !== 0 ? `🏦 آخر مطابقة للبنك فيها فرق ${money(lastRec.difference)}` : `🏦 آخر مطابقة للبنك قبل ${age} يوماً`, "books", "bk5"]);
+  const pm = B.addDays(B.monthStart(t), -1).slice(0, 7), locked = S.settings.locked_until && S.settings.locked_until >= B.addDays(B.monthStart(t), -1);
+  if (!locked && +t.slice(8) >= 10 && op && op.date.slice(0, 7) <= pm) A.push(["warn", `📅 شهر ${pm} لم يُقفل بعد`, "close", "meList"]);
+  const ag = B.Reports.aging(S.rows, "customer", S.parties, t), lateAmt = ag.reduce((a, x) => a + x.late, 0);
+  if (lateAmt > 0) A.push([lateAmt > 0.3 * ag.reduce((a, x) => a + x.total, 0) ? "bad" : "warn", `💰 ${money(lateAmt, 0)} دينار متأخر على ${ag.filter(x => x.late > 0).length} عميل`, "books", "bk15"]);
+  if (S.erpHeld.length) A.push(["warn", `⏸ ${S.erpHeld.length} دفعة من تقرير النظام القديم تنتظر إيصالها (${money(S.erpHeld.reduce((a, h) => a + num(h.line.amount), 0))} دينار)`, "charts", "trialPanel"]);
+  const badChk = S.erpChk.filter(c => !c.ok && c.date >= B.addDays(t, -7));
+  if (badChk.length) A.push(["bad", `✔️ تحقق نهاية اليوم وجد فروقاً مع النظام القديم في ${badChk.length} يوم هذا الأسبوع`, "charts", "trialPanel"]);
+  const missing = S.assets.filter(a => a.status === "active" && a.verify_note && a.verify_note.startsWith("NOT FOUND"));
+  if (missing.length) A.push(["bad", `🏭 ${missing.length} أصل مفقود في الجرد`, "books", "bk16"]);
+  $("#alerts").innerHTML = A.length ? A.map(([c, txt, v, id]) => `<div class="al ${c}"><span>${txt}</span><button type="button" data-v="${v}" data-id="${id}">عرض</button></div>`).join("")
+    : `<div class="empty">لا شيء يحتاج انتباهك ✓ Nothing needs attention.</div>`;
+  $("#alerts").querySelectorAll("[data-v]").forEach(b => b.onclick = () => goTo(b.dataset.v, b.dataset.id));
+  const n = pend + late.length; $("#todayBadge").hidden = !n; $("#todayBadge").textContent = n > 9 ? "9+" : n;
+}
+$("#dashN").onchange = renderDash;
+$("#xlsBtn").onclick = async () => { $("#xlsBtn").disabled = true; $("#xlsMsg").textContent = "جارٍ التجهيز…";
+  try { const r = await B.exportBooks(S.company); $("#xlsMsg").textContent = `✓ ${r.file}`; } catch (e) { $("#xlsMsg").textContent = B.errText(e); } $("#xlsBtn").disabled = false; };
+function renderCOA(bal){
+  const T = { asset: "الأصول", liability: "الالتزامات", equity: "حقوق الملكية", income: "الإيرادات", expense: "التكاليف والمصاريف" };
+  const accs = S.accounts.slice().sort((a, b) => a.code.localeCompare(b.code));
+  const rows = [];
+  Object.entries(T).forEach(([t, label]) => { const L = accs.filter(a => a.type === t); if (!L.length) return;
+    rows.push(`<tr><th colspan="5">${label}</th></tr>`);
+    L.forEach(a => rows.push(`<tr data-c="${a.code}"${a.active === false ? ' style="opacity:.55"' : ""}><td>${a.code}</td>
+      <td>${a.system ? `🔒 ${esc(a.name_ar)}` : `<input data-n value="${esc(a.name_ar)}" style="max-width:220px">`} <span class="note">${esc(a.name_en || "")}</span>${a.active === false ? ' <span class="pill">مخفي</span>' : ""}</td>
+      <td class="n">${Math.abs(bal[a.code] || 0) > 0.0005 ? money(a.type === "asset" || a.type === "expense" ? bal[a.code] : -bal[a.code]) : "–"}</td>
+      <td>${a.type === "expense" ? `<label style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="checkbox" data-pc style="width:auto"${a.in_product_cost ? " checked" : ""}> تكلفة الكرتونة</label>` : ""}</td>
+      <td class="row">${a.system ? "" : `<button type="button" class="small" data-sv>حفظ</button><button type="button" class="small" data-hide>${a.active === false ? "إظهار" : "إخفاء"}</button>`}<span class="note" data-m></span></td></tr>`)); });
+  $("#coa").innerHTML = `<thead><tr><th>الرقم</th><th>الحساب</th><th>الرصيد</th><th></th><th></th></tr></thead><tbody>${rows.join("")}</tbody>`;
+  const save = async (tr, extra) => { const a = S.accounts.find(x => x.code === tr.dataset.c), n = tr.querySelector("[data-n]"), pc = tr.querySelector("[data-pc]");
+    const { error } = await sb.rpc("acc_account_save", { p: Object.assign({ mode: "edit", code: a.code, name_ar: n ? n.value.trim() : a.name_ar, in_product_cost: pc ? pc.checked : a.in_product_cost }, extra || {}) });
+    tr.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓"; if (!error && extra) load(); else if (!error) { if (n) a.name_ar = n.value.trim(); if (pc) a.in_product_cost = pc.checked; } };
+  $("#coa").querySelectorAll("tr[data-c]").forEach(tr => {
+    const sv = tr.querySelector("[data-sv]"); if (sv) sv.onclick = () => save(tr);
+    const hd = tr.querySelector("[data-hide]"); if (hd) hd.onclick = () => save(tr, { active: S.accounts.find(x => x.code === tr.dataset.c).active === false });
+    const pc = tr.querySelector("[data-pc]"); if (pc) pc.onchange = () => save(tr); });
+  $("#coaPrint").onclick = () => B.printHTML(`<div class="doc"><div class="doc-head"><div><div class="doc-co">${esc(S.company.name || "")}</div></div><div class="doc-title">شجرة الحسابات<div class="doc-small">${B.today()}</div></div></div>
+    <table class="doc-tbl"><thead><tr><th>الرقم</th><th>الحساب</th><th>Account</th><th>الرصيد</th></tr></thead><tbody>${Object.entries(T).map(([t, label]) => `<tr><th colspan="4">${label}</th></tr>` + accs.filter(a => a.type === t && a.active !== false)
+      .map(a => `<tr><td>${a.code}</td><td>${esc(a.name_ar)}</td><td>${esc(a.name_en || "")}</td><td class="n">${Math.abs(bal[a.code] || 0) > 0.0005 ? money(a.type === "asset" || a.type === "expense" ? bal[a.code] : -bal[a.code]) : ""}</td></tr>`).join("")).join("")}</tbody></table></div>`);
+}
+$("#ac_save").onclick = async () => {
+  const { data, error } = await sb.rpc("acc_account_save", { p: { kind: $("#ac_kind").value, name_ar: $("#ac_name").value.trim(), name_en: $("#ac_en").value.trim(), code: $("#ac_code").value.trim() || null, in_product_cost: $("#ac_pc").checked } });
+  $("#ac_msg").textContent = error ? B.errText(error) : `✓ أُضيف البند برقم ${data}. يستطيع المحاسب استخدامه الآن.`;
+  if (!error) { ["#ac_name", "#ac_en", "#ac_code"].forEach(i => $(i).value = ""); load(); }
+};
+function renderPhase4(bal){
+  const today = B.today();
+  // financial health
+  const R = B.Reports.ratios(S.rows, S.accounts, today, S.settings.tax_rate);
+  const tile = (l, v, s2, c) => `<div class="kpi ${c || ""}"><span class="l">${l}</span><span class="v">${v == null ? "–" : v}</span><span class="s">${s2}</span></div>`;
+  const lvl = (v, warn, bad, hi) => v == null ? "" : hi ? (v >= bad ? "bad" : v >= warn ? "warn" : "good") : (v <= bad ? "bad" : v <= warn ? "warn" : "good");
+  $("#ratios").innerHTML = [
+    tile("أيام التحصيل", R.dso, "كم يوماً يأخذ العملاء ليدفعوا", lvl(R.dso, 45, 60, true)),
+    tile("أيام الدفع للموردين", R.dpo, "كم يوماً نأخذ لندفع"),
+    tile("أيام المخزون", R.stockDays, "يكفي المخزون كم يوماً", lvl(R.stockDays, 60, 90, true)),
+    tile("نسبة التداول", R.current, "الأصول المتداولة ÷ الالتزامات (1.5 فأكثر جيد)", lvl(R.current, 1.5, 1)),
+    tile("النسبة السريعة", R.quick, "بدون المخزون (1 فأكثر جيد)", lvl(R.quick, 1, 0.7)),
+    tile("هامش الربح الإجمالي", R.gmMonth == null ? null : R.gmMonth + "%", `هذا الشهر · السنة ${R.gmYear == null ? "–" : R.gmYear + "%"}`, lvl(R.gmMonth, 20, 10)),
+    tile("صافي الربح من المبيعات", R.nmYear == null ? null : R.nmYear + "%", "منذ بداية السنة", lvl(R.nmYear, 5, 0)),
+    tile("القروض ÷ حقوق الملكية", R.debtEquity, `القروض ${money(R.loans)}`, lvl(R.debtEquity, 1, 2, true)),
+  ].join("");
+  // cash flow
+  const per = () => { const v = $("#cfPer").value, y = +today.slice(0, 4);
+    if (v === "m") return [B.monthStart(today), today];
+    if (v === "pm") { const e = B.addDays(B.monthStart(today), -1); return [B.monthStart(e), e]; }
+    if (v === "y") return [`${y}-01-01`, today];
+    return [`${y - 1}-01-01`, `${y - 1}-12-31`]; };
+  const cf = () => { const [f, t] = per(), F = B.Reports.cashFlow(S.rows, f, t), r = (l, v, b) => `<tr${b ? ' class="tot"' : ""}><td>${l}</td><td class="n">${money(v)}</td></tr>`;
+    $("#cf").innerHTML = `<tbody>${r("مقبوضات من العملاء", F.cust)}${r("مدفوعات للموردين", F.supp)}${r("رواتب وضمان وسلف", F.pay)}${r("ضرائب", F.tax)}${r("مصاريف أخرى", F.oth)}${r("صافي التشغيل", F.op, 1)}
+      ${r("أصول ثابتة", F.inv, 1)}${r("قروض", F.fin_loan)}${r("الشريك", F.fin_owner)}${r("هوامش بنكية", F.fin_oth)}${r("صافي التمويل", F.fin, 1)}
+      ${r("النقد في البداية", F.opening)}${r("صافي التغير", F.net)}${r(`النقد في النهاية ${F.ok ? '<span class="pill good">✓</span>' : '<span class="pill bad">لا يطابق</span>'}`, F.closing, 1)}</tbody>`; return F; };
+  $("#cfPer").onchange = cf; cf(); $("#cfPrint").onclick = () => B.printHTML(B.cashFlowHTML(cf(), S.company));
+  // loans
+  const LS = B.loanStatus(S.loans, S.entries, today);
+  table($("#loans"), [{ t: "النوع" }, { t: "البنك" }, { t: "المبلغ" }, { t: "الرصيد" }, { t: "القادم" }, { t: "" }],
+    LS.map(l => `<tr data-l="${l.id}"><td>${esc(B.LOAN_KIND[l.kind])}${l.status === "closed" ? ' <span class="pill">مغلق</span>' : ""}</td><td>${esc(l.bank)}${l.note ? ` <span class="note">${esc(l.note)}</span>` : ""}</td><td class="n">${money(l.amount)}</td>
+      <td class="n">${l.kind === "loan" ? money(l.balance) : "–"}</td>
+      <td>${l.alert ? `${l.alert}${l.kind === "loan" && l.next ? ` · ${money(l.next.total)}` : " · انتهاء"} ${l.days != null && l.days <= 30 ? `<span class="pill ${l.days < 0 ? "bad" : "warn"}">${l.days < 0 ? "متأخر" : `بعد ${l.days} يوم`}</span>` : ""}` : "–"}</td>
+      <td class="row"><button type="button" class="small" data-ed>تعديل</button>${l.schedule.length ? '<button type="button" class="small" data-sc>🖨️</button>' : ""}</td></tr>`), "", "لا توجد قروض أو كفالات.");
+  $("#loans").querySelectorAll("tr[data-l]").forEach(tr => { const l = LS.find(x => x.id === tr.dataset.l);
+    tr.querySelector("[data-ed]").onclick = () => { $("#ln_id").value = l.id; $("#ln_bank").value = l.bank; $("#ln_kind").value = l.kind; $("#ln_amount").value = num(l.amount); $("#ln_rate").value = num(l.rate);
+      $("#ln_n").value = l.installments || ""; $("#ln_every").value = l.every_months || 1; $("#ln_first").value = l.first_due || ""; $("#ln_method").value = l.method; $("#ln_exp").value = l.expiry || ""; $("#ln_note").value = l.note || "";
+      $("#ln_closed").checked = l.status === "closed"; $("#ln_exist").checked = num(l.opening_balance) > 0; document.querySelector("#ln_bank").closest("details").open = true; };
+    const sc = tr.querySelector("[data-sc]"); if (sc) sc.onclick = () => B.printHTML(B.loanHTML(l, S.company)); });
+  // recurring
+  table($("#recur"), [{ t: "القيد" }, { t: "يوم" }, { t: "المبلغ" }, { t: "آخر شهر" }, { t: "" }],
+    S.recurring.map(r => `<tr data-r="${r.id}"><td>${esc(r.title)} <span class="note">${esc(tname(r.template.type))}</span></td><td>${r.day}</td><td class="n">${money(r.template.amount)}</td><td>${r.last_month || "–"}</td>
+      <td><button type="button" class="small ${r.active ? "nob" : ""}">${r.active ? "إيقاف" : "تفعيل"}</button></td></tr>`), "", "لا توجد قيود شهرية بعد.");
+  $("#recur").querySelectorAll("tr[data-r]").forEach(tr => { const r = S.recurring.find(x => x.id === tr.dataset.r);
+    tr.querySelector("button").onclick = async () => { const { error } = await sb.rpc("acc_recurring_save", { p: { id: r.id, active: !r.active } }); if (!error) load(); }; });
+}
+$("#ln_new").onclick = () => { ["#ln_id", "#ln_bank", "#ln_amount", "#ln_rate", "#ln_n", "#ln_first", "#ln_exp", "#ln_note"].forEach(i => $(i).value = ""); $("#ln_every").value = 1; $("#ln_closed").checked = false; $("#ln_exist").checked = false; };
+$("#ln_save").onclick = async () => {
+  const p = { id: $("#ln_id").value || null, bank: $("#ln_bank").value.trim(), kind: $("#ln_kind").value, amount: num($("#ln_amount").value), rate: num($("#ln_rate").value),
+    installments: $("#ln_n").value || null, every_months: $("#ln_every").value || 1, first_due: $("#ln_first").value || null, method: $("#ln_method").value,
+    expiry: $("#ln_exp").value || null, note: $("#ln_note").value.trim(), status: $("#ln_closed").checked ? "closed" : "active", existing: $("#ln_exist").checked };
+  const { error } = await sb.rpc("acc_loan_save", { p }); $("#ln_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) { $("#ln_new").click(); load(); }
+};
+function renderPhase3(bal){
+  const today = B.today(), Y = +today.slice(0, 4);
+  // purchase orders waiting for approval
+  const pp = S.pos.filter(p => p.status === "pending");
+  $("#pendPO").innerHTML = pp.map(p => `<div class="item" data-po="${p.id}"><div class="top"><span><b>أمر شراء #${p.no}</b> · ${esc(p.supplier)} · ${p.date}</span><span class="amt">${money(p.total)} JOD</span></div>
+    <div class="note">${(p.items || []).map(i => `${esc(i.name)}: ${money(i.qty, 3)} × ${money(i.unit_price)}`).join(" · ")} · طلبه ${esc((p.created_by || "").split("@")[0])}</div>
+    <div class="row">${B.flagPills(p.flags)}<button type="button" class="okb" data-ok>✓ موافقة</button><input placeholder="سبب الرفض" data-note style="max-width:220px"><button type="button" class="nob" data-no>رفض</button><span class="note" data-m></span></div></div>`).join("");
+  $("#pendPO").querySelectorAll("[data-po]").forEach(it => { const id = it.dataset.po, m = it.querySelector("[data-m]");
+    it.querySelector("[data-ok]").onclick = async () => { const { error } = await sb.rpc("acc_po_decide", { p_id: id, p_approve: true, p_note: null }); if (error) m.textContent = B.errText(error); else load(); };
+    it.querySelector("[data-no]").onclick = async () => { const n = it.querySelector("[data-note]").value.trim(); if (!n) { m.textContent = "اكتب سبب الرفض."; return; }
+      const { error } = await sb.rpc("acc_po_decide", { p_id: id, p_approve: false, p_note: n }); if (error) m.textContent = B.errText(error); else load(); }; });
+  if (pp.length && !S.entries.some(e => e.status === "pending")) $("#pending").innerHTML = "";
+  // purchase orders and matching
+  const showPO = S.pos.filter(p => p.status !== "cancelled").slice(0, 40);
+  table($("#pos"), [{ t: "#" }, { t: "التاريخ" }, { t: "المورد" }, { t: "المطلوب" }, { t: "المستلم" }, { t: "المفوتر" }, { t: "الحالة" }, { t: "المطابقة" }],
+    showPO.map(p => { const st = B.PO_STATUS[p.status], gap = B.r3(num(p.received_value) - num(p.invoiced_value));
+      const match = p.status === "pending" ? "–" : num(p.invoice_pending) ? '<span class="pill warn">فاتورة بانتظارك</span>' : gap > 0.0005 ? `<span class="pill warn">بانتظار فاتورة ${money(gap)}</span>` : num(p.received_value) ? '<span class="pill good">✓ مطابق</span>' : '<span class="pill">لم يصل شيء</span>';
+      return `<tr><td>${p.no}</td><td>${p.date}</td><td>${esc(p.supplier)}</td><td class="n">${money(p.total)}</td><td class="n">${money(p.received_value)}</td><td class="n">${money(p.invoiced_value)}</td><td><span class="pill ${st[1]}">${st[0]}</span></td><td>${match}</td></tr>`; }),
+    "", "لا توجد أوامر شراء بعد. The accountant records orders from the story box.");
+  // credit control and aging
+  const ag = B.Reports.aging(S.rows, "customer", S.parties, today), custs = S.parties.filter(p => p.kind === "customer");
+  const rowsA = custs.map(p => ({ p, a: ag.find(x => x.id === p.id) })).sort((x, y) => (y.a ? y.a.late : 0) - (x.a ? x.a.late : 0) || (y.a ? y.a.total : 0) - (x.a ? x.a.total : 0));
+  table($("#aging"), [{ t: "العميل" }, { t: "الرصيد" }, { t: "0 إلى 30" }, { t: "31 إلى 60" }, { t: "61 إلى 90" }, { t: "+90" }, { t: "متأخر" }, { t: "حد الائتمان" }, { t: "مدة السداد (يوم)" }, { t: "" }],
+    rowsA.map(({ p, a }) => `<tr data-p="${p.id}"><td>${esc(p.name)}</td><td class="n">${money(a ? a.total : 0)}</td>${(a ? a.b : [0, 0, 0, 0]).map((v, i) => `<td class="n">${v ? `<span class="${i >= 2 ? "pill bad" : ""}">${money(v)}</span>` : "–"}</td>`).join("")}
+      <td class="n">${a && a.late ? `<span class="pill bad">${money(a.late)}</span>` : "–"}</td>
+      <td><input data-l type="number" step="1" min="0" value="${p.credit_limit != null ? num(p.credit_limit) : ""}" placeholder="بدون حد" style="width:100px"></td>
+      <td><input data-t type="number" step="1" min="0" value="${p.terms_days != null ? p.terms_days : ""}" placeholder="30" style="width:70px"></td><td><button type="button" class="small">حفظ</button> <span class="note" data-m></span></td></tr>`),
+    rowsA.length ? `<tfoot><tr class="tot"><td>المجموع</td><td class="n">${money(ag.reduce((x, a) => x + a.total, 0))}</td>${[0, 1, 2, 3].map(i => `<td class="n">${money(ag.reduce((x, a) => x + a.b[i], 0))}</td>`).join("")}<td class="n">${money(ag.reduce((x, a) => x + a.late, 0))}</td><td colspan="3"></td></tr></tfoot>` : "", "لا يوجد عملاء بعد.");
+  const saveTerms = el => async () => { const l = el.querySelector("[data-l]"), t = el.querySelector("[data-t]");
+    const { error } = await sb.rpc("acc_party_terms", { p_id: el.dataset.p, p_limit: l && l.value !== "" ? num(l.value) : null, p_terms: t.value !== "" ? Math.round(num(t.value)) : null });
+    el.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓"; if (!error) { const p = S.parties.find(x => x.id === el.dataset.p); if (l) p.credit_limit = l.value === "" ? null : num(l.value); p.terms_days = t.value === "" ? null : num(t.value); } };
+  $("#aging").querySelectorAll("tr[data-p]").forEach(el => el.querySelector("button").onclick = saveTerms(el));
+  const sag = B.Reports.aging(S.rows, "supplier", S.parties, today);
+  table($("#supTerms"), [{ t: "المورد" }, { t: "الرصيد" }, { t: "مستحق الآن" }, { t: "مدة السداد (يوم)" }, { t: "" }],
+    S.parties.filter(p => p.kind === "supplier").map(p => { const a = sag.find(x => x.id === p.id);
+      return `<tr data-p="${p.id}"><td>${esc(p.name)}</td><td class="n">${money(a ? a.total : 0)}</td><td class="n">${a && a.late ? money(a.late) : "–"}</td>
+        <td><input data-t type="number" step="1" min="0" value="${p.terms_days != null ? p.terms_days : ""}" placeholder="30" style="width:70px"></td><td><button type="button" class="small">حفظ</button> <span class="note" data-m></span></td></tr>`; }), "", "لا يوجد موردون بعد.");
+  $("#supTerms").querySelectorAll("tr[data-p]").forEach(el => el.querySelector("button").onclick = saveTerms(el));
+  // fixed assets
+  const AB = B.assetBook(S.assets, S.assetDep), act = AB.filter(a => a.status === "active");
+  const regCost = B.r3(act.reduce((x, a) => x + num(a.cost), 0)), regAcc = B.r3(act.reduce((x, a) => x + a.accumulated, 0));
+  const okCost = Math.abs(regCost - (bal["1501"] || 0)) < 0.01, okAcc = Math.abs(regAcc + (bal["1509"] || 0)) < 0.01;
+  $("#assetCheck").innerHTML = `<span class="pill ${okCost ? "good" : "bad"}">السجل ${money(regCost)} · الدفاتر ${money(bal["1501"] || 0)}${okCost ? " ✓" : ": الفرق " + money(regCost - (bal["1501"] || 0))}</span>
+    <span class="pill ${okAcc ? "good" : "bad"}">الاستهلاك المتراكم ${money(regAcc)}${okAcc ? " ✓" : " · الدفاتر " + money(-(bal["1509"] || 0))}</span>
+    <span class="note">${okCost ? "" : "إذا كان في الدفاتر أصول قبل بدء النظام، أضفها للسجل من صندوق المحاسب (الأصول الثابتة)."}</span><button type="button" class="small" id="assetPrint">🖨️ السجل</button>`;
+  $("#assetPrint").onclick = () => B.printHTML(B.assetsHTML(act, today, S.company));
+  table($("#assets"), [{ t: "#" }, { t: "الأصل" }, { t: "النوع" }, { t: "التكلفة" }, { t: "المتراكم" }, { t: "الدفترية" }, { t: "العمر (شهر)" }, { t: "الموقع" }, { t: "آخر جرد" }, { t: "" }],
+    AB.map(a => `<tr data-a="${a.id}"><td>${a.no}</td><td>${esc(a.name)}</td><td>${esc(B.ASSET_CATS[a.category] || a.category)}</td><td class="n">${money(a.cost)}</td><td class="n">${money(a.accumulated)}</td><td class="n">${money(a.book)}</td>
+      <td>${a.status === "active" ? `<input data-life type="number" min="1" value="${a.life_months}" style="width:70px">` : a.life_months}</td><td>${esc(a.location || "")}</td>
+      <td>${a.last_verified || "–"}${a.verify_note && a.verify_note.startsWith("NOT FOUND") ? ' <span class="pill bad">مفقود</span>' : ""}</td>
+      <td class="row">${a.status === "active" ? `<button type="button" class="small" data-sv>حفظ</button><button type="button" class="small nob" data-dp>بيع أو إتلاف</button>` : `<span class="pill">مستبعد ${a.disposed_on}</span>`}<span class="note" data-m></span></td></tr>`), "", "سجل الأصول فارغ. Fixed asset register is empty.");
+  $("#assets").querySelectorAll("tr[data-a]").forEach(tr => { const id = tr.dataset.a, m = tr.querySelector("[data-m]");
+    const sv = tr.querySelector("[data-sv]"); if (sv) sv.onclick = async () => { const { error } = await sb.rpc("acc_asset_update", { p: { id, life_months: tr.querySelector("[data-life]").value } }); m.textContent = error ? B.errText(error) : "✓"; };
+    const dp = tr.querySelector("[data-dp]"); if (dp) dp.onclick = () => { const cell = dp.parentElement;
+      cell.innerHTML = `<input data-pr type="number" step="0.001" min="0" placeholder="سعر البيع (0 للإتلاف)" style="width:150px"><select data-mt style="width:auto"><option value="bank">بنك</option><option value="cash">نقداً</option></select><button type="button" class="small nob">تأكيد</button><span class="note" data-m></span>`;
+      cell.querySelector("button").onclick = async () => { const pr = num(cell.querySelector("[data-pr]").value);
+        const { data, error } = await sb.rpc("acc_asset_dispose", { p_id: id, p_date: today, p_proceeds: pr, p_method: cell.querySelector("[data-mt]").value, p_note: null });
+        if (error) cell.querySelector("[data-m]").textContent = B.errText(error); else load(); }; }; });
+  // deadlines
+  const op = S.entries.find(e => e.type === "opening"), DLs = B.deadlines(S.obls, S.oblDone, today, op ? op.date : today);
+  table($("#dl"), [{ t: "الالتزام" }, { t: "الفترة" }, { t: "الاستحقاق" }, { t: "الحالة" }, { t: "" }],
+    DLs.map((x, i) => `<tr data-i="${i}"><td>${esc(x.o.title_ar)}</td><td>${esc(x.label)}</td><td>${x.due}</td><td><span class="pill ${B.DL[x.status][1]}">${B.DL[x.status][0]}${x.status === "late" ? ` ${-x.days} يوم` : ""}</span>${x.status === "done" ? ` <span class="note">${esc(x.doneOn || "")} ${esc(x.note || "")}</span>` : ""}</td>
+      <td>${x.status === "done" ? '<button type="button" class="small" data-undo>تراجع</button>' : ""}</td></tr>`), "", "لا شيء مستحق قريباً.");
+  $("#dl").querySelectorAll("[data-undo]").forEach(b => { const x = DLs[+b.closest("tr").dataset.i]; b.onclick = async () => { const { error } = await sb.rpc("acc_obligation_undo", { p_key: x.o.key, p_period: x.period }); if (!error) load(); }; });
+  const FREQ = { monthly: "شهري", bimonthly: "كل شهرين", quarterly: "ربع سنوي", yearly: "سنوي" };
+  table($("#oblEdit"), [{ t: "الالتزام" }, { t: "التكرار" }, { t: "الاستحقاق" }, { t: "" }],
+    S.obls.map(o => `<tr data-k="${esc(o.key)}"><td>${esc(o.title_ar)}${o.enabled ? "" : ' <span class="pill">متوقف</span>'}</td><td>${FREQ[o.freq]}</td><td>يوم ${o.due_day}${o.due_month ? ` / شهر ${o.due_month}` : ""} · بعد ${o.lag}</td><td><button type="button" class="small">تعديل</button></td></tr>`));
+  $("#oblEdit").querySelectorAll("tr[data-k]").forEach(tr => tr.querySelector("button").onclick = () => { const o = S.obls.find(x => x.key === tr.dataset.k);
+    $("#ob_key").value = o.key; $("#ob_title").value = o.title_ar; $("#ob_freq").value = o.freq; $("#ob_day").value = o.due_day; $("#ob_month").value = o.due_month || ""; $("#ob_lag").value = o.lag; $("#ob_on").checked = o.enabled; });
+  // month end checklist
+  if (!$("#meMonth").value) $("#meMonth").value = B.addDays(B.monthStart(today), -1).slice(0, 7);
+  const me = () => { const c = B.monthChecklist($("#meMonth").value, { entries: S.entries, recs: S.recs, counts: S.counts, invc: S.invc, runs: S.runs, monthRuns: S.monthRuns, cheques: S.cheques, dl: DLs, held: S.erpHeld });
+    const locked = S.settings.locked_until && S.settings.locked_until >= c.end;
+    $("#meList").innerHTML = c.items.map(i => `<div class="row" style="justify-content:space-between"><span>${i.ok ? "✅" : "⬜"} ${esc(i.t)}</span><span class="note">${esc(i.s || "")}</span></div>`).join("")
+      + `<div class="row">${locked ? '<span class="pill good">الشهر مقفل</span>' : `<button type="button" class="${c.done === c.items.length ? "primary" : ""}" id="meLock">${c.done === c.items.length ? "أقفل هذا الشهر" : `أقفل رغم ${c.items.length - c.done} بند ناقص`}</button>`}<span class="note" id="meMsg"></span></div>`;
+    const b = $("#meLock"); if (b) b.onclick = async () => { const { error } = await sb.rpc("acc_lock", { p_until: c.end, p_reason: null }); $("#meMsg").textContent = error ? B.errText(error) : "تم ✓"; if (!error) load(); }; };
+  $("#meMonth").onchange = me; me();
+  table($("#confirms"), [{ t: "الطرف" }, { t: "كما في" }, { t: "كشفهم" }, { t: "دفاترنا" }, { t: "الفرق" }],
+    S.confirms.slice(0, 20).map(c => { const p = S.parties.find(x => x.id === c.party_id) || {}; return `<tr><td>${esc(p.name || "")}</td><td>${c.as_of}</td><td class="n">${money(c.their_balance)}</td><td class="n">${money(c.our_balance)}</td><td><span class="pill ${num(c.difference) === 0 ? "good" : "bad"}">${money(c.difference)}</span></td></tr>`; }),
+    "", "لم تتم أي مطابقة بعد. The accountant does these from the story box.");
+  // budget vs actual
+  const by = $("#bdYear"), bm = $("#bdMonth");
+  if (!by.options.length) { by.innerHTML = [Y + 1, Y, Y - 1].map(y => `<option${y === Y ? " selected" : ""}>${y}</option>`).join("");
+    bm.innerHTML = `<option value="0">السنة حتى الآن</option>` + [...Array(12)].map((_, i) => `<option value="${i + 1}"${i + 1 === +today.slice(5, 7) ? " selected" : ""}>شهر ${i + 1}</option>`).join("");
+    $("#bdFrom").innerHTML = [Y, Y - 1].map(y => `<option>${y}</option>`).join(""); }
+  renderBudget();
+  // provisions and year end
+  $("#pv_badNow").textContent = `الحالي ${money(-(bal["1209"] || 0))} · ذمم أقدم من 90 يوماً ${money(ag.reduce((x, a) => x + a.b[3], 0))}`;
+  $("#pv_eosNow").textContent = `الحالي ${money(-(bal["2401"] || 0))}`;
+  const yrs = [...new Set(S.rows.map(r => +r.date.slice(0, 4)))].filter(y => y < Y).sort().reverse();
+  $("#yc_year").innerHTML = (yrs.length ? yrs : [Y - 1]).map(y => `<option>${y}</option>`).join("");
+}
+function actualBy(y, m){
+  const out = {}; S.rows.filter(r => r.type !== "year_close" && (r.account_type === "income" || r.account_type === "expense") && r.date.slice(0, 4) === String(y) && (!m || +r.date.slice(5, 7) <= m))
+    .forEach(r => out[r.account] = (out[r.account] || 0) + (r.account_type === "income" ? num(r.credit) - num(r.debit) : num(r.debit) - num(r.credit)));
+  return out;
+}
+function renderBudget(){
+  const y = +$("#bdYear").value, m = +$("#bdMonth").value, bud = S.budgets.filter(b => b.year === y), today = B.today();
+  const upto = m || (y < +today.slice(0, 4) ? 12 : +today.slice(5, 7));
+  const actM = {}; S.rows.filter(r => r.type !== "year_close" && (r.account_type === "income" || r.account_type === "expense") && r.date.slice(0, 7) === `${y}-${String(m).padStart(2, "0")}`)
+    .forEach(r => actM[r.account] = (actM[r.account] || 0) + (r.account_type === "income" ? num(r.credit) - num(r.debit) : num(r.debit) - num(r.credit)));
+  const actY = actualBy(y, upto);
+  const accs = S.accounts.filter(a => (a.type === "income" || a.type === "expense") && (bud.some(b => b.account === a.code) || actY[a.code]));
+  const line = a => { const b = bud.find(x => x.account === a.code), mb = b ? num(b.months[m - 1]) : 0, yb = b ? b.months.slice(0, upto).reduce((x, v) => x + num(v), 0) : 0;
+    const act = m ? (actM[a.code] || 0) : 0, ya = actY[a.code] || 0, inc = a.type === "income";
+    const v = (bb, aa) => { const d = B.r3(aa - bb), bad = inc ? d < -0.0005 : d > 0.0005, pct = bb ? Math.round(d / bb * 100) : null;
+      return `<td class="n"><span class="${bb && Math.abs(pct) >= 10 ? "pill " + (bad ? "bad" : "good") : ""}">${money(d)}${pct != null ? ` (${pct > 0 ? "+" : ""}${pct}%)` : ""}</span></td>`; };
+    return `<tr><td>${esc(a.name_ar)}</td>${m ? `<td class="n">${money(mb)}</td><td class="n">${money(act)}</td>${v(mb, act)}` : ""}<td class="n">${money(yb)}</td><td class="n">${money(ya)}</td>${v(yb, ya)}</tr>`; };
+  const cols = [{ t: "البند" }, ...(m ? [{ t: "موازنة الشهر" }, { t: "فعلي الشهر" }, { t: "الفرق" }] : []), { t: `موازنة حتى شهر ${upto}` }, { t: "الفعلي" }, { t: "الفرق" }];
+  table($("#bva"), cols, accs.filter(a => a.type === "income").map(line).concat(accs.filter(a => a.type === "expense").map(line)), "", "لا توجد موازنة لهذه السنة بعد. افتح «إعداد الموازنة السنوية» أدناه.");
+  table($("#bdEdit"), [{ t: "البند" }, { t: "المبلغ السنوي" }, { t: `فعلي ${y - 1}` }],
+    S.accounts.filter(a => a.type === "income" || a.type === "expense").map(a => { const b = bud.find(x => x.account === a.code);
+      return `<tr data-a="${a.code}"><td>${a.code} ${esc(a.name_ar)}</td><td><input type="number" step="1" min="0" value="${b ? B.r3(b.months.reduce((x, v) => x + num(v), 0)) : ""}" style="width:120px"></td><td class="n note">${money(actualBy(y - 1, 12)[a.code] || 0)}</td></tr>`; }));
+}
+$("#bdYear").onchange = renderBudget; $("#bdMonth").onchange = renderBudget;
+$("#bdCopy").onclick = () => { const src = actualBy(+$("#bdFrom").value, 12), k = 1 + num($("#bdPct").value) / 100;
+  $("#bdEdit").querySelectorAll("tr[data-a]").forEach(tr => { const v = src[tr.dataset.a]; if (v > 0) tr.querySelector("input").value = Math.round(v * k); }); };
+$("#bdSave").onclick = async () => {
+  const rows = [...$("#bdEdit").querySelectorAll("tr[data-a]")].map(tr => ({ account: tr.dataset.a, annual: num(tr.querySelector("input").value) })).filter(x => x.annual > 0)
+    .map(x => { const each = B.r3(x.annual / 12), months = Array(12).fill(each); months[11] = B.r3(x.annual - each * 11); return { account: x.account, months }; });
+  const { error } = await sb.rpc("acc_budget_save", { p_year: +$("#bdYear").value, p_rows: rows }); $("#bdMsg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) load();
+};
+$("#pv_save").onclick = async () => { const msgs = [];
+  for (const [id, kind] of [["#pv_bad", "bad_debt"], ["#pv_eos", "eos"]]) { if ($(id).value === "") continue;
+    const { data, error } = await sb.rpc("acc_provision_set", { p_kind: kind, p_target: num($(id).value), p_date: B.today() }); msgs.push(error ? B.errText(error) : `✓ قيد ${data.entry_no}`); $(id).value = ""; }
+  $("#pv_msg").textContent = msgs.join(" · "); load(); };
+$("#yc_go").onclick = async () => { const y = +$("#yc_year").value; const { data, error } = await sb.rpc("acc_year_close", { p_year: y });
+  $("#yc_msg").textContent = error ? B.errText(error) : `✓ أُقفلت سنة ${y}: ${data.profit >= 0 ? "ربح" : "خسارة"} ${money(Math.abs(data.profit))} نُقل إلى الأرباح المحتجزة (قيد ${data.entry_no}).`; if (!error) load(); };
+$("#ob_new").onclick = () => { ["#ob_key", "#ob_title", "#ob_day", "#ob_month"].forEach(i => $(i).value = ""); $("#ob_lag").value = 1; $("#ob_freq").value = "monthly"; $("#ob_on").checked = true; };
+$("#ob_save").onclick = async () => { const p = { key: $("#ob_key").value || null, title_ar: $("#ob_title").value.trim(), freq: $("#ob_freq").value, due_day: num($("#ob_day").value) || 30,
+    due_month: $("#ob_month").value || null, lag: num($("#ob_lag").value), enabled: $("#ob_on").checked };
+  const { error } = await sb.rpc("acc_obligation_save", { p }); $("#ob_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) load(); };
+function einvPill(e){
+  const x = (S.einv || []).find(i => i.entry_id === e.id); if (!x) return "";
+  const m = { prepared: ["JoFotara: جاهزة", "warn"], SUBMITTED: ["JoFotara ✓", "good"], ALREADY_SUBMITTED: ["JoFotara ✓", "good"], NOT_SUBMITTED: ["JoFotara: رُفضت", "bad"], error: ["JoFotara: خطأ", "bad"] }[x.status] || [x.status, ""];
+  return ` <span class="pill ${m[1]}">${m[0]}</span>`;
+}
+function monthRange(m){ const end = new Date(+m.slice(0, 4), +m.slice(5, 7), 0); return [m + "-01", m + "-" + String(end.getDate()).padStart(2, "0")]; }
+function renderPhase2(bal){
+  const today = B.today();
+  // balance sheet
+  const b = B.Reports.balanceSheet(S.rows, S.accounts, today);
+  const sec = (t, l) => `<tr><th colspan="2">${t}</th></tr>` + l.map(x => `<tr><td>${esc(x.name)}</td><td class="n">${money(x.v)}</td></tr>`).join("");
+  $("#bs").innerHTML = `<tbody>${sec("الأصول", b.assets)}<tr class="tot"><td>مجموع الأصول</td><td class="n">${money(b.ta)}</td></tr>${sec("الالتزامات", b.liab)}<tr class="tot"><td>مجموع الالتزامات</td><td class="n">${money(b.tl)}</td></tr>
+    ${sec("حقوق الملكية", b.equity)}<tr><td>${b.profit >= 0 ? "ربح" : "خسارة"} حتى تاريخه</td><td class="n">${money(b.profit)}</td></tr><tr class="tot"><td>الالتزامات + حقوق الملكية ${b.balanced ? '<span class="pill good">متوازنة</span>' : '<span class="pill bad">غير متوازنة</span>'}</td><td class="n">${money(b.tl + b.te)}</td></tr></tbody>`;
+  $("#bsPrint").onclick = () => B.printHTML(B.balanceSheetHTML(b, today, S.company));
+  // sales tax
+  if (!$("#tx_from").value) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (d.getMonth() % 2 === 0 ? 2 : 1)); $("#tx_from").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; $("#tx_to").value = today; }
+  const tx = () => { const t = B.Reports.taxSummary(S.rows, $("#tx_from").value, $("#tx_to").value);
+    $("#tx").innerHTML = `<tbody><tr><td>المبيعات (صافي)</td><td class="n">${money(t.sales)}</td></tr><tr><td>ضريبة على المبيعات</td><td class="n">${money(t.out)}</td></tr>
+      <tr><td>ضريبة مدفوعة على المشتريات</td><td class="n">${money(t.inp)}</td></tr><tr class="tot"><td>الصافي عن الفترة</td><td class="n">${money(t.net)}</td></tr>
+      <tr><td class="note">الرصيد الحالي: مستحق للدائرة ${money(t.owedNow)} · ضريبة مشتريات لم تُقاصّ ${money(t.inputNow)}</td><td></td></tr></tbody>`; return t; };
+  tx(); $("#tx_from").onchange = tx; $("#tx_to").onchange = tx;
+  $("#txPrint").onclick = () => B.printHTML(B.taxSummaryHTML(tx(), S.company));
+  $("#txClose").onclick = async () => { const { data, error } = await sb.rpc("acc_tax_close", { p_to: $("#tx_to").value });
+    $("#txMsg").textContent = error ? B.errText(error) : `✓ قيد رقم ${data.entry_no}: مقاصة ${money(data.input_tax)}`; if (!error) load(); };
+  // cost per carton
+  const months = [...new Set(S.rows.map(r => r.date.slice(0, 7)).concat(today.slice(0, 7)))].sort().reverse();
+  const cs = $("#cpMonth"), cur = cs.value || today.slice(0, 7);
+  cs.innerHTML = months.map(m => `<option${m === cur ? " selected" : ""}>${m}</option>`).join("");
+  const cp = () => { const [f, t] = monthRange(cs.value), codes = S.accounts.filter(a => a.in_product_cost);
+    const lines = codes.map(a => ({ a, v: B.r3(S.rows.filter(r => r.account === a.code && r.type !== "year_close" && r.date >= f && r.date <= t).reduce((x, r) => x + num(r.debit) - num(r.credit), 0)) })).filter(x => Math.abs(x.v) > 0.0005);
+    const cost = B.r3(lines.reduce((x, l) => x + l.v, 0)), cartons = S.prod.filter(r => r.date >= f && r.date <= t).reduce((x, r) => x + num(r.vals && r.vals.produced), 0);
+    $("#cp").innerHTML = `<tbody>${lines.map(l => `<tr><td>${esc(l.a.name_ar)}</td><td class="n">${money(l.v)}</td></tr>`).join("")}<tr class="tot"><td>مجموع التكاليف</td><td class="n">${money(cost)}</td></tr>
+      <tr><td>الكراتين المنتجة (تقارير الإنتاج)</td><td class="n">${cartons ? money(cartons, 0) : "–"}</td></tr>
+      <tr class="tot"><td>تكلفة الكرتونة</td><td class="n">${cartons ? money(cost / cartons) : '<span class="note">لا توجد تقارير إنتاج لهذا الشهر</span>'}</td></tr></tbody>`; };
+  cs.onchange = cp; cp();
+  // stock counts
+  table($("#inv"), [{ t: "التاريخ" }, { t: "القيمة" }, { t: "الدفاتر قبل" }, { t: "الفرق" }, { t: "" }],
+    S.invc.map(c => `<tr data-c="${c.id}"><td>${c.date}</td><td class="n">${money(c.total)}</td><td class="n">${money(c.book_before)}</td><td><span class="pill ${num(c.total) === num(c.book_before) ? "good" : "warn"}">${money(num(c.total) - num(c.book_before))}</span></td><td><button type="button" class="small">🖨️</button></td></tr>`), "", "لم يُسجّل أي جرد بعد. The accountant records counts from the story box.");
+  $("#inv").querySelectorAll("tr[data-c]").forEach(tr => tr.querySelector("button").onclick = () => B.printHTML(B.stockCountHTML(S.invc.find(c => String(c.id) === tr.dataset.c), S.company)));
+  // employees
+  const advBal = id => B.r3(S.rows.filter(r => r.account === "1202" && r.party_id === id).reduce((x, r) => x + num(r.debit) - num(r.credit), 0));
+  const cusBal = id => B.r3(S.rows.filter(r => r.account === "1203" && r.party_id === id).reduce((x, r) => x + num(r.debit) - num(r.credit), 0));
+  table($("#emps"), [{ t: "الموظف" }, { t: "الوظيفة" }, { t: "الأساسي" }, { t: "العلاوات" }, { t: "ضمان" }, { t: "سلفة عليه" }, { t: "عهدة معه" }, { t: "" }],
+    S.emps.map(e => `<tr data-e="${e.party_id}"><td>${esc(e.party ? e.party.name : "")}${e.active ? "" : ' <span class="pill">غير نشط</span>'}</td><td>${esc(e.job)}</td><td class="n">${money(e.basic)}</td><td class="n">${money(e.allowances)}</td>
+      <td>${e.ss_enrolled ? "✓" : "–"}</td><td class="n">${advBal(e.party_id) ? money(advBal(e.party_id)) : "–"}</td><td class="n">${cusBal(e.party_id) ? money(cusBal(e.party_id)) : "–"}</td><td><button type="button" class="small">تعديل</button></td></tr>`), "", "لا يوجد موظفون. أضفهم بالنموذج أدناه. No employees yet.");
+  $("#emps").querySelectorAll("tr[data-e]").forEach(tr => tr.querySelector("button").onclick = () => { const e = S.emps.find(x => x.party_id === tr.dataset.e);
+    $("#e_id").value = e.party_id; $("#e_name").value = e.party ? e.party.name : ""; $("#e_job").value = e.job || ""; $("#e_basic").value = num(e.basic); $("#e_allow").value = num(e.allowances);
+    $("#e_start").value = e.start_date || ""; $("#e_comm").value = num(e.commission_rate) || ""; $("#e_ss").checked = e.ss_enrolled; $("#e_dep").checked = e.dependents; $("#e_act").checked = e.active; $("#e_name").focus(); });
+  // payroll runs
+  table($("#runs"), [{ t: "الشهر" }, { t: "الإجمالي" }, { t: "الضمان" }, { t: "الضريبة" }, { t: "الصافي" }, { t: "الحالة" }, { t: "" }],
+    S.runs.map(r => { const e = S.entries.find(x => x.id === r.entry_id) || {}; const T = r.totals || {};
+      return `<tr data-r="${r.id}"><td>${esc(r.month)}</td><td class="n">${money(T.gross)}</td><td class="n">${money(num(T.ss_employee) + num(T.ss_employer))}</td><td class="n">${money(T.tax)}</td><td class="n">${money(T.net)}</td>
+        <td><span class="pill ${e.status === "posted" ? "good" : e.status === "pending" ? "warn" : "bad"}">${B.STATUS[e.status] || ""}</span></td><td><button type="button" class="small">🖨️ كشف</button></td></tr>`; }), "", "لم تُجهّز رواتب بعد.");
+  $("#runs").querySelectorAll("tr[data-r]").forEach(tr => tr.querySelector("button").onclick = () => B.printHTML(B.payrollHTML(S.runs.find(r => String(r.id) === tr.dataset.r), S.company)));
+}
+function renderPL(){
+  const m = $("#plMonth").value, from = m + "-01", end = new Date(+m.slice(0, 4), +m.slice(5, 7), 0), to = m + "-" + String(end.getDate()).padStart(2, "0");
+  const p = B.Reports.profitLoss(S.rows, from, to, S.accounts);
+  const sec = (t, l) => l.length ? `<tr><th colspan="2">${t}</th></tr>` + l.map(x => `<tr><td>${esc(x.name)}</td><td class="n">${money(x.v)}</td></tr>`).join("") : "";
+  $("#pl").innerHTML = `<tbody>${sec("الإيرادات", p.income)}<tr class="tot"><td>إجمالي الإيرادات</td><td class="n">${money(p.ti)}</td></tr>${sec("المشتريات", p.purchases)}
+    <tr class="tot"><td>مجمل الربح</td><td class="n">${money(p.gross)}</td></tr>${sec("المصاريف", p.expenses)}
+    <tr class="tot"><td>صافي ${p.net >= 0 ? "الربح" : "الخسارة"}</td><td class="n">${money(p.net)}</td></tr></tbody>`;
+}
+$("#plMonth").onchange = renderPL;
+
+/* opening balances form */
+function prow(host){ const d = document.createElement("div"); d.className = "pr"; d.innerHTML = `<input placeholder="الاسم" data-n><input type="number" step="0.001" placeholder="الرصيد" data-b><button type="button" class="small" aria-label="Remove">×</button>`;
+  d.querySelector("button").onclick = () => d.remove(); host.insertBefore(d, host.querySelector(".addrow")); }
+function crow(host){ const d = document.createElement("div"); d.className = "pr"; d.innerHTML = `<input placeholder="${host.id === "o_cin" ? "العميل" : "المورد"}" data-p><input placeholder="رقم الشيك" data-no><input type="date" data-due aria-label="تاريخ الاستحقاق"><input type="number" step="0.001" placeholder="المبلغ" data-a><button type="button" class="small" aria-label="Remove">×</button>`;
+  d.querySelector("button").onclick = () => d.remove(); host.insertBefore(d, host.querySelector(".addrow")); }
+function erow(host){ const d = document.createElement("div"); d.className = "pr"; d.innerHTML = `<input placeholder="الموظف" data-n><input type="number" step="0.001" placeholder="سلفة عليه" data-adv><input type="number" step="0.001" placeholder="عهدة معه" data-cus><button type="button" class="small" aria-label="Remove">×</button>`;
+  d.querySelector("button").onclick = () => d.remove(); host.insertBefore(d, host.querySelector(".addrow")); return d; }
+["#o_cust", "#o_supp", "#o_cin", "#o_cout", "#o_emp"].forEach(id => { const h = $(id), mk = h.classList.contains("chq") ? crow : h.classList.contains("emp") ? erow : prow; const a = document.createElement("button"); a.type = "button"; a.className = "small addrow"; a.textContent = "+ إضافة"; a.onclick = () => mk(h); h.appendChild(a); mk(h); });
+$("#o_date").value = B.today();
+/* opening balances from an Excel template */
+const OTHER_KEYS = ["tax_in", "prepaid", "margins", "tax_out", "salaries_payable", "ss_payable", "tax_withheld", "accrued", "loans", "partner"];
+const OPEN_ROWS = [["date", "تاريخ الأرصدة (نهاية يوم البدء)"], ["cash", "الصندوق"], ["bank", "البنك"], ["inventory", "قيمة المخزون"], ["fixed_assets", "الأصول الثابتة (صافي القيمة)"],
+  ["tax_in", "ضريبة مبيعات مدفوعة لم تُقاصّ (لنا)"], ["prepaid", "مصاريف مدفوعة مقدماً (لنا)"], ["margins", "هوامش وتأمينات لدى البنك (لنا)"], ["tax_out", "ضريبة مبيعات مستحقة للدائرة (علينا)"], ["salaries_payable", "رواتب مستحقة لم تُدفع (علينا)"], ["ss_payable", "ضمان اجتماعي مستحق (علينا)"], ["tax_withheld", "ضريبة دخل مقتطعة لم تُورّد (علينا)"], ["accrued", "مصاريف مستحقة (علينا)"], ["loans", "أرصدة القروض البنكية (علينا)"], ["partner", "مستحق للشريك (علينا)"]];
+$("#o_tpl").onclick = async () => {
+  try { await B.needLib("xlsx"); } catch (e) { $("#o_upmsg").textContent = "تعذر تحميل مكتبة Excel."; return; }
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  const add = (name, rows, widths) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  add("تعليمات", [["نموذج الأرصدة الافتتاحية"], ["1. خذ الأرقام من تقارير النظام القديم في نهاية يوم البدء (مثلاً 31 تشرين الأول)."], ["2. عبّئ كل ورقة. اترك الخانة فارغة إذا لم يكن هناك رصيد."],
+    ["3. التواريخ بصيغة 2026-11-15. المبالغ بالدينار بدون رموز."], ["4. لا تغيّر أسماء الأوراق أو العناوين في الصف الأول."], ["5. أرسل الملف للمدير ليرفعه في صفحته، ويراجع الأرقام قبل الحفظ."]], [80]);
+  add("الأرصدة", [["البند", "المبلغ", "ملاحظة", "key"], ...OPEN_ROWS.map(([k, t]) => [t, k === "date" ? B.today() : "", "", k])], [42, 16, 30, 0]);
+  add("العملاء", [["اسم العميل", "الرصيد المستحق علينا له (موجب = يدين لنا)"]], [40, 30]);
+  add("الموردون", [["اسم المورد", "الرصيد (موجب = ندين له)"]], [40, 26]);
+  add("شيكات واردة", [["العميل", "رقم الشيك", "تاريخ الاستحقاق", "المبلغ"]], [36, 14, 16, 14]);
+  add("شيكات صادرة", [["المورد", "رقم الشيك", "تاريخ الاستحقاق", "المبلغ"]], [36, 14, 16, 14]);
+  add("الموظفون", [["اسم الموظف", "سلفة عليه", "عهدة معه"]], [36, 14, 14]);
+  XLSX.writeFile(wb, "opening-balances-template.xlsx");
+};
+$("#o_up").onclick = () => $("#o_file").click();
+function xlDate(v){
+  if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}-${String(v.getDate()).padStart(2, "0")}`;
+  if (typeof v === "number" && v > 20000 && v < 80000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+  const t = String(v || "").trim(); let m;
+  if ((m = t.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/))) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  if ((m = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/))) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return "";
+}
+const xlNum = v => typeof v === "number" ? v : v == null || v === "" ? "" : Number(String(v).replace(/[,\s]/g, "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))) || "";
+$("#o_file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const msg = $("#o_upmsg"); msg.textContent = "جارٍ القراءة…";
+  try {
+    await B.needLib("xlsx");
+    const wb = XLSX.read(await f.arrayBuffer());   // dates stay as Excel serial numbers (no timezone shift)
+    const rows = name => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: "" }).slice(1).filter(r => r.some(c => c !== "")) : [];
+    if (!wb.Sheets["الأرصدة"]) { msg.textContent = "هذا ليس نموذج الأرصدة الافتتاحية. Use the downloaded template."; return; }
+    const warn = [];
+    rows("الأرصدة").forEach(r => { const k = String(r[3] || "").trim(), id = { date: "o_date", cash: "o_cash", bank: "o_bank", inventory: "o_inv", fixed_assets: "o_fixed" }[k] || (OTHER_KEYS.includes(k) ? "o_" + k : null);
+      if (!id) return; const el = $("#" + id); if (k === "date") { const d = xlDate(r[1]); if (d) el.value = d; else warn.push("تاريخ الأرصدة غير مفهوم"); } else el.value = xlNum(r[1]); });
+    if (OTHER_KEYS.some(k => $("#o_" + k).value)) $("#o_tax_in").closest("details").open = true;
+    const fill = (host, mk, list, set) => { host.querySelectorAll(".pr").forEach(x => x.remove()); list.forEach(r => set(mk(host) || host.querySelectorAll(".pr")[host.querySelectorAll(".pr").length - 1], r)); if (!list.length) mk(host); };
+    const C = rows("العملاء"), S2 = rows("الموردون"), CI = rows("شيكات واردة"), CO = rows("شيكات صادرة"), E = rows("الموظفون");
+    fill($("#o_cust"), prow, C, (d, r) => { d.querySelector("[data-n]").value = String(r[0]).trim(); d.querySelector("[data-b]").value = xlNum(r[1]); });
+    fill($("#o_supp"), prow, S2, (d, r) => { d.querySelector("[data-n]").value = String(r[0]).trim(); d.querySelector("[data-b]").value = xlNum(r[1]); });
+    const chqSet = (d, r) => { d.querySelector("[data-p]").value = String(r[0]).trim(); d.querySelector("[data-no]").value = String(r[1]).trim(); const dd = xlDate(r[2]); if (!dd) warn.push(`تاريخ الشيك ${r[1]} غير مفهوم`); d.querySelector("[data-due]").value = dd; d.querySelector("[data-a]").value = xlNum(r[3]); };
+    fill($("#o_cin"), crow, CI, chqSet); fill($("#o_cout"), crow, CO, chqSet);
+    fill($("#o_emp"), erow, E, (d, r) => { d.querySelector("[data-n]").value = String(r[0]).trim(); d.querySelector("[data-adv]").value = xlNum(r[1]); d.querySelector("[data-cus]").value = xlNum(r[2]); });
+    const sum = l => l.reduce((a, r) => a + (Number(xlNum(r[1])) || 0), 0);
+    msg.innerHTML = `✓ تمت التعبئة: ${C.length} عميل (${money(sum(C))})، ${S2.length} مورد (${money(sum(S2))})، ${CI.length} شيك وارد، ${CO.length} شيك صادر، ${E.length} موظف. <b>راجع الأرقام ثم اضغط «حفظ الأرصدة الافتتاحية».</b>`
+      + (warn.length ? `<br><span class="pill bad">${esc(warn.join(" · "))}</span>` : "");
+  } catch (err) { msg.textContent = "تعذرت قراءة الملف. Couldn't read the file."; }
+};
+/* ---------- setup wizard: read the old system's reports and fill everything ---------- */
+const WZ_KEYS = { cash: "الصندوق", bank: "البنك", cheques_in: "شيكات برسم التحصيل", customers: "العملاء", advances: "سلف الموظفين", custody: "عهد الموظفين", tax_in: "ضريبة مدفوعة على المشتريات",
+  prepaid: "مصاريف مدفوعة مقدماً", margins: "هوامش وتأمينات بنكية", inventory: "المخزون", fixed_assets: "الأصول الثابتة (التكلفة)", acc_dep: "مجمع الاستهلاك", suppliers: "الموردون",
+  cheques_out: "شيكات صادرة مؤجلة", tax_out: "ضريبة مبيعات مستحقة", salaries_payable: "رواتب مستحقة", ss_payable: "ضمان اجتماعي مستحق", tax_withheld: "ضريبة دخل مقتطعة",
+  accrued: "مصاريف مستحقة", loans: "قروض بنكية", partner: "جاري الشريك", equity: "رأس المال والأرباح المحتجزة", profit_loss: "إيرادات ومصاريف السنة", ignore: "تجاهل" };
+const WZ_KIND = { trial_balance: "ميزان المراجعة", customers: "أرصدة العملاء", suppliers: "أرصدة الموردين", cheques: "الشيكات", assets: "سجل الأصول", employees: "الموظفون", loans: "القروض", chart: "شجرة الحسابات", other: "غير معروف" };
+const CREDIT_KEYS = ["suppliers", "cheques_out", "tax_out", "salaries_payable", "ss_payable", "tax_withheld", "accrued", "loans", "partner", "equity"];
+let W = null;
+const fileB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+$("#wz_pick").onclick = () => $("#wz_file").click();
+$("#wz_file").onchange = e => { W = { files: [...e.target.files].slice(0, 10) }; $("#wz_fn").textContent = W.files.map(f => f.name).join("، "); $("#wz_read").disabled = !W.files.length; };
+$("#wz_read").onclick = async () => {
+  const out = $("#wz_out"); out.innerHTML = `<span class="note">جارٍ قراءة ${W.files.length} تقرير… Reading</span>`;
+  try { await B.needLib("xlsx"); } catch (e) {}
+  const readOne = async f => {
+    const body = { mode: "setup", today: B.today(), text: "", files: [] };
+    if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer()); wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
+    else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) body.text = await f.text();
+    else if (f.size < 6e6) body.files = [{ media_type: f.type === "application/pdf" ? "application/pdf" : (f.type || "image/jpeg"), data: await fileB64(f) }];
+    body.text = body.text.slice(0, 60000);
+    const { data, error } = await sb.functions.invoke("ai-story", { body });
+    return error || !data || !data.result ? { file: f.name, error: true } : { file: f.name, ...data.result };
+  };
+  const res = []; for (let i = 0; i < W.files.length; i += 3) res.push(...await Promise.all(W.files.slice(i, i + 3).map(readOne)));
+  W.res = res;
+  W.tb = res.filter(r => r.kind === "trial_balance").flatMap(r => (r.accounts || []).map(a => ({ ...a, bal: B.r3(num(a.debit) - num(a.credit)) })));
+  W.cust = res.filter(r => r.kind === "customers").flatMap(r => r.parties || []); W.supp = res.filter(r => r.kind === "suppliers").flatMap(r => r.parties || []);
+  W.chq = res.flatMap(r => r.cheques || []); W.assets = res.flatMap(r => r.assets || []); W.emps = res.flatMap(r => r.employees || []); W.loans = res.flatMap(r => r.loans || []);
+  W.asOf = (res.find(r => r.as_of) || {}).as_of || null;
+  drawWizard();
+};
+function wzSums(){ const s = {}; W.tb.forEach(a => s[a.key] = B.r3((s[a.key] || 0) + a.bal)); return s; }
+function drawWizard(){
+  const out = $("#wz_out"), S2 = wzSums(), sumL = (l, k) => B.r3(l.reduce((a, x) => a + num(x[k]), 0));
+  const tbD = B.r3(W.tb.reduce((a, x) => a + Math.max(0, x.bal), 0)), tbC = B.r3(W.tb.reduce((a, x) => a + Math.max(0, -x.bal), 0));
+  const checks = [];
+  const ck = (label, a, b, need) => { if (need === false) return; const d = B.r3(a - b); checks.push([label, Math.abs(d) < 0.01, `${money(a)} مقابل ${money(b)}${Math.abs(d) >= 0.01 ? ` · الفرق ${money(d)}` : ""}`]); };
+  if (W.tb.length) checks.push(["ميزان المراجعة متوازن", Math.abs(tbD - tbC) < 0.01, `مدين ${money(tbD)} · دائن ${money(tbC)}`]);
+  const has = k => W.tb.some(a => a.key === k);
+  if (W.cust.length || has("customers")) ck("قائمة العملاء = حساب العملاء في الميزان", sumL(W.cust, "balance"), S2.customers || 0, W.tb.length > 0);
+  if (W.supp.length || has("suppliers")) ck("قائمة الموردين = حساب الموردين في الميزان", sumL(W.supp, "balance"), -(S2.suppliers || 0), W.tb.length > 0);
+  const cin = W.chq.filter(c => c.direction === "in"), cout = W.chq.filter(c => c.direction === "out");
+  if (cin.length || has("cheques_in")) ck("الشيكات الواردة = حسابها في الميزان", sumL(cin, "amount"), S2.cheques_in || 0, W.tb.length > 0);
+  if (cout.length || has("cheques_out")) ck("الشيكات الصادرة = حسابها في الميزان", sumL(cout, "amount"), -(S2.cheques_out || 0), W.tb.length > 0);
+  if (W.assets.length) ck("سجل الأصول (صافي) = الأصول في الميزان", B.r3(sumL(W.assets, "cost") - sumL(W.assets, "accumulated")), B.r3((S2.fixed_assets || 0) + (S2.acc_dep || 0)), W.tb.length > 0);
+  if (W.emps.some(e => num(e.advance)) || has("advances")) ck("سلف الموظفين = حسابها في الميزان", sumL(W.emps, "advance"), S2.advances || 0, W.tb.length > 0);
+  if (W.loans.length) ck("كشوف القروض = القروض في الميزان", sumL(W.loans, "balance"), -(S2.loans || 0), W.tb.length > 0);
+  const dates = [...new Set(W.res.map(r => r.as_of).filter(Boolean))];
+  if (dates.length > 1) checks.push(["كل التقارير بنفس التاريخ", false, dates.join(" · ")]);
+  const ign = W.tb.filter(x => x.key === "ignore" && Math.abs(x.bal) > 0.005);
+  if (ign.length) checks.push(["كل حساب له مكان", false, `متجاهلة: ${ign.map(x => x.name).join("، ")} (${money(ign.reduce((s, x) => s + x.bal, 0))}). لن تدخل الأرصدة الافتتاحية وسيذهب فرقها إلى رأس المال`]);
+  const missing = [["customers", W.cust, "كشف أرصدة العملاء"], ["suppliers", W.supp, "كشف أرصدة الموردين"], ["cheques_in", cin, "كشف الشيكات الواردة"], ["cheques_out", cout, "كشف الشيكات الصادرة"]]
+    .filter(([k, l]) => Math.abs(S2[k] || 0) > 0.005 && !l.length).map(x => x[2]);
+  out.innerHTML = `<div class="tablewrap"><table class="t"><thead><tr><th>الملف</th><th>نوع التقرير</th><th>ما قرأته</th></tr></thead><tbody>${W.res.map(r => `<tr><td>${esc(r.file)}</td><td>${r.error ? '<span class="pill bad">تعذرت القراءة</span>' : esc(WZ_KIND[r.kind] || r.kind)}</td>
+      <td class="note">${r.error ? "" : [r.accounts && r.accounts.length ? `${r.accounts.length} حساب` : "", r.parties && r.parties.length ? `${r.parties.length} اسم` : "", r.cheques && r.cheques.length ? `${r.cheques.length} شيك` : "", r.assets && r.assets.length ? `${r.assets.length} أصل` : "",
+        r.employees && r.employees.length ? `${r.employees.length} موظف` : "", r.loans && r.loans.length ? `${r.loans.length} قرض` : "", r.doubts ? "⚠ " + esc(r.doubts) : ""].filter(Boolean).join(" · ")}</td></tr>`).join("")}</tbody></table></div>
+    ${W.tb.length ? `<h3>حسابات ميزان المراجعة <span class="note">تأكد أن كل حساب في مكانه الصحيح</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>الرصيد</th><th>يذهب إلى</th></tr></thead><tbody>
+      ${W.tb.map((a, i) => `<tr><td>${esc(a.code || "")} ${esc(a.name)}</td><td class="n">${money(a.bal)}</td><td><select data-wk="${i}" style="width:auto">${Object.entries(WZ_KEYS).map(([k, l]) => `<option value="${k}"${k === a.key ? " selected" : ""}>${l}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>` : ""}
+    <h3>التحقق <span class="note">Cross-checks</span></h3>
+    <div class="alerts">${checks.map(([l, ok, d]) => `<div class="al ${ok ? "" : "bad"}"><span>${ok ? "✅" : "❌"} ${esc(l)}</span><span class="note">${esc(d)}</span></div>`).join("") || '<div class="note">ارفع ميزان المراجعة لإجراء التحقق.</div>'}
+      ${missing.length ? `<div class="al warn"><span>⚠ ينقص: ${esc(missing.join("، "))}. بدونها يدخل الرصيد كسطر واحد إجمالي.</span></div>` : ""}</div>
+    <div class="row"><button type="button" class="primary" id="wz_fill">املأ النموذج من هذه التقارير</button><span class="note" id="wz_msg"></span></div>`;
+  out.querySelectorAll("[data-wk]").forEach(sel => sel.onchange = () => { W.tb[+sel.dataset.wk].key = sel.value; drawWizard(); });
+  $("#wz_fill").onclick = fillFromWizard;
+}
+function fillFromWizard(){
+  const S2 = wzSums(), set = (id, v) => { $("#" + id).value = v ? B.r3(v) : ""; };
+  if (W.asOf) $("#o_date").value = W.asOf;
+  if (W.tb.length) {
+    set("o_cash", S2.cash); set("o_bank", S2.bank); set("o_inv", S2.inventory); set("o_fixed", (S2.fixed_assets || 0) + (S2.acc_dep || 0));
+    ["tax_in", "prepaid", "margins"].forEach(k => set("o_" + k, S2[k]));
+    ["tax_out", "salaries_payable", "ss_payable", "tax_withheld", "accrued", "loans", "partner"].forEach(k => set("o_" + k, -(S2[k] || 0)));
+    if (OTHER_KEYS.some(k => $("#o_" + k).value)) $("#o_tax_in").closest("details").open = true;
+  }
+  const fill = (host, mk, list, setRow) => { host.querySelectorAll(".pr").forEach(x => x.remove()); list.forEach(r => { mk(host); const rows = host.querySelectorAll(".pr"); setRow(rows[rows.length - 1], r); }); if (!list.length) mk(host); };
+  const cust = W.cust.length ? W.cust : Math.abs(S2.customers || 0) > 0.005 ? [{ name: "أرصدة العملاء (إجمالي من الميزان)", balance: S2.customers }] : [];
+  const supp = W.supp.length ? W.supp : Math.abs(S2.suppliers || 0) > 0.005 ? [{ name: "أرصدة الموردين (إجمالي من الميزان)", balance: -S2.suppliers }] : [];
+  fill($("#o_cust"), prow, cust, (d, r) => { d.querySelector("[data-n]").value = r.name; d.querySelector("[data-b]").value = B.r3(num(r.balance)); });
+  fill($("#o_supp"), prow, supp, (d, r) => { d.querySelector("[data-n]").value = r.name; d.querySelector("[data-b]").value = B.r3(num(r.balance)); });
+  const cs = (d, r) => { d.querySelector("[data-p]").value = r.party || ""; d.querySelector("[data-no]").value = r.no || ""; d.querySelector("[data-due]").value = r.due || ""; d.querySelector("[data-a]").value = B.r3(num(r.amount)); };
+  fill($("#o_cin"), crow, W.chq.filter(c => c.direction === "in"), cs); fill($("#o_cout"), crow, W.chq.filter(c => c.direction === "out"), cs);
+  fill($("#o_emp"), erow, W.emps.filter(e => num(e.advance) || num(e.custody)), (d, r) => { d.querySelector("[data-n]").value = r.name; d.querySelector("[data-adv]").value = num(r.advance) || ""; d.querySelector("[data-cus]").value = num(r.custody) || ""; });
+  W.ready = true;
+  $("#wz_msg").innerHTML = `✓ امتلأ النموذج. ${W.emps.length ? `بعد الحفظ سيُضاف ${W.emps.length} موظف برواتبهم، ` : ""}${W.assets.length ? `${W.assets.length} أصل إلى السجل، ` : ""}${W.loans.length ? `${W.loans.length} قرض، ` : ""}<b>راجع الأرقام ثم اضغط «حفظ الأرصدة الافتتاحية».</b>`;
+  $("#o_save").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+// after the opening balances are saved: employees, assets, loans and customer terms from the reports
+async function saveWizardExtras(){
+  if (!W || !W.ready) return "";
+  const asOf = $("#o_date").value || B.today(), done = { emp: 0, asset: 0, loan: 0, terms: 0 }, errs = [];
+  for (const e of W.emps) { if (!num(e.basic) && !num(e.allowances)) continue;
+    const { error } = await sb.rpc("acc_employee_save", { p: { name: e.name, job: e.job || "", basic: num(e.basic), allowances: num(e.allowances), ss_enrolled: e.ss_enrolled !== false } }); error ? errs.push(e.name) : done.emp++; }
+  const monthsBetween = (a, b) => Math.max(0, (new Date(b).getFullYear() - new Date(a).getFullYear()) * 12 + new Date(b).getMonth() - new Date(a).getMonth());
+  for (const a of W.assets) { const net = B.r3(num(a.cost) - num(a.accumulated)); if (net <= 0) continue;
+    const used = a.in_service ? monthsBetween(a.in_service, asOf) : 0, left = a.life_months ? Math.max(1, a.life_months - used) : null;
+    const { error } = await sb.rpc("acc_asset_add", { p: { name: a.name, category: a.category || "machines", cost: net, life_months: left, in_service: asOf, location: a.location || "" } }); error ? errs.push(a.name) : done.asset++; }
+  for (const l of W.loans) { const { error } = await sb.rpc("acc_loan_save", { p: { bank: l.bank, kind: "loan", amount: num(l.balance), rate: num(l.rate), installments: l.installments_left || null, first_due: l.next_due || null, existing: true } }); error ? errs.push(l.bank) : done.loan++; }
+  const parties = await B.Data.parties();
+  for (const r of [...W.cust, ...W.supp]) { if (r.credit_limit == null && r.terms_days == null) continue; const p = parties.find(x => x.name === r.name); if (!p) continue;
+    const { error } = await sb.rpc("acc_party_terms", { p_id: p.id, p_limit: r.credit_limit == null ? null : num(r.credit_limit), p_terms: r.terms_days == null ? null : r.terms_days }); if (!error) done.terms++; }
+  W = null;
+  return ` · أُضيف ${done.emp} موظف، ${done.asset} أصل، ${done.loan} قرض، وشروط ${done.terms} طرف${errs.length ? ` · لم يُضف: ${errs.join("، ")}` : ""}`;
+}
+$("#o_save").onclick = async () => {
+  const list = id => [...$(id).querySelectorAll(".pr")].map(r => ({ name: r.querySelector("[data-n]").value.trim(), balance: r.querySelector("[data-b]").value })).filter(x => x.name && num(x.balance));
+  const chq = id => [...$(id).querySelectorAll(".pr")].map(r => ({ party: r.querySelector("[data-p]").value.trim(), no: r.querySelector("[data-no]").value.trim(), due: r.querySelector("[data-due]").value, amount: r.querySelector("[data-a]").value })).filter(x => num(x.amount) > 0);
+  const p = { date: $("#o_date").value, cash: $("#o_cash").value, bank: $("#o_bank").value, cheques_in_list: chq("#o_cin"), cheques_out_list: chq("#o_cout"),
+              inventory: $("#o_inv").value, fixed_assets: $("#o_fixed").value, customers: list("#o_cust"), suppliers: list("#o_supp"),
+              employees: [...$("#o_emp").querySelectorAll(".pr")].map(r => ({ name: r.querySelector("[data-n]").value.trim(), advance: r.querySelector("[data-adv]").value, custody: r.querySelector("[data-cus]").value })).filter(x => x.name) };
+  OTHER_KEYS.forEach(k => p[k] = $("#o_" + k).value);
+  $("#o_save").disabled = true; const { error } = await sb.rpc("acc_opening", { p }); $("#o_save").disabled = false;
+  if (error) { $("#o_msg").textContent = B.errText(error); return; }
+  $("#o_msg").textContent = "تم الحفظ ✓ جارٍ إضافة الموظفين والأصول والقروض…";
+  const extra = await saveWizardExtras(); $("#o_msg").textContent = "تم الحفظ ✓" + extra; load();
+};
+/* settings */
+$("#s_save").onclick = async () => {
+  const p = { approval_limit: num($("#s_appr").value), receipt_limit: num($("#s_rcpt").value), tax_rate: num($("#s_tax").value), backdate_days: num($("#s_back").value),
+              company: { name: $("#s_name").value.trim(), address: $("#s_addr").value.trim(), phone: $("#s_phone").value.trim(), tax_no: $("#s_taxno").value.trim() } };
+  const { error } = await sb.rpc("acc_save_settings", { p }); $("#s_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) load();
+};
+
+/* payroll and e-invoice settings */
+function readBrackets(){
+  const out = []; for (const part of $("#p_br").value.split(",").map(x => x.trim()).filter(Boolean)) {
+    const [hi, rate] = part.split(":").map(x => x.trim()); if (rate === undefined || isNaN(+rate)) return null; out.push([hi === "" ? null : +hi, +rate]); }
+  return out.length ? out : null;
+}
+$("#s_save").onclick = async () => {
+  const br = readBrackets(); if (!br) { $("#s_msg").textContent = "صيغة شرائح الضريبة غير صحيحة. مثال: 5000:5, 10000:10, :30"; return; }
+  const p = { approval_limit: num($("#s_appr").value), receipt_limit: num($("#s_rcpt").value), tax_rate: num($("#s_tax").value), backdate_days: num($("#s_back").value),
+    company: { name: $("#s_name").value.trim(), address: $("#s_addr").value.trim(), phone: $("#s_phone").value.trim(), tax_no: $("#s_taxno").value.trim() },
+    po_required_above: num($("#s_po").value), overdue_grace: num($("#s_grace").value),
+    currencies: Object.assign({}, S.settings.currencies || {}, num($("#s_usd").value) > 0 ? { USD: num($("#s_usd").value) } : {}, num($("#s_eur").value) > 0 ? { EUR: num($("#s_eur").value) } : {}),
+    payroll: { ss_employee: num($("#p_sse").value), ss_employer: num($("#p_ssr").value), ss_cap: num($("#p_cap").value), personal_exemption: num($("#p_pex").value), dependents_exemption: num($("#p_dex").value), brackets: br },
+    einvoice: { mode: $("#j_mode").value, income_source: $("#j_src").value.trim(), type_name_cash: $("#j_cash").value.trim() || "012", type_name_credit: $("#j_credit").value.trim() || "022", b2c_limit: num($("#j_b2c").value) } };
+  const { error } = await sb.rpc("acc_save_settings", { p }); $("#s_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) load();
+};
+/* employees */
+$("#e_new").onclick = () => { ["#e_id", "#e_name", "#e_job", "#e_basic", "#e_allow", "#e_start", "#e_comm"].forEach(id => $(id).value = ""); $("#e_ss").checked = true; $("#e_dep").checked = false; $("#e_act").checked = true; $("#e_name").focus(); };
+$("#e_save").onclick = async () => {
+  if (!$("#e_name").value.trim()) { $("#e_msg").textContent = "اكتب اسم الموظف."; return; }
+  const p = { party_id: $("#e_id").value || null, name: $("#e_name").value.trim(), job: $("#e_job").value.trim(), basic: num($("#e_basic").value), allowances: num($("#e_allow").value),
+    start_date: $("#e_start").value || null, commission_rate: num($("#e_comm").value), ss_enrolled: $("#e_ss").checked, dependents: $("#e_dep").checked, active: $("#e_act").checked };
+  const { error } = await sb.rpc("acc_employee_save", { p }); $("#e_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) { $("#e_new").click(); load(); }
+};
+
+/* close or reopen a period */
+$("#lk_save").onclick = async () => { const { error } = await sb.rpc("acc_lock", { p_until: $("#lk_date").value, p_reason: $("#lk_reason").value.trim() || null });
+  $("#lk_msg").textContent = error ? B.errText(error) : "تم ✓"; if (!error) { $("#lk_reason").value = ""; load(); } };
+$("#lk_open").onclick = async () => { const reason = $("#lk_reason").value.trim(); if (!reason) { $("#lk_msg").textContent = "اكتب سبب إعادة الفتح أولاً."; return; }
+  const { error } = await sb.rpc("acc_lock", { p_until: null, p_reason: reason }); $("#lk_msg").textContent = error ? B.errText(error) : "تم ✓"; if (!error) { $("#lk_reason").value = ""; load(); } };
+
+/* sign in */
+function showLogin(msg){ $("#login").hidden = false; $("#main").hidden = true; const m = $("#loginMsg"); m.hidden = !msg; m.textContent = msg || ""; }
+$("#loginForm").addEventListener("submit", async e => { e.preventDefault(); $("#loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("#l_email").value.trim(), password: $("#l_pass").value });
+  $("#loginBtn").disabled = false; if (error) return showLogin("البريد أو كلمة المرور غير صحيحة. Wrong email or password."); start(); });
+$("#signOut").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$("#refresh").onclick = load;
+async function start(){
+  const s = await B.session(); if (!s) return showLogin();
+  const r = await B.roles();
+  if (!r.manager) { await sb.auth.signOut(); return showLogin("هذه الصفحة للمدير فقط. This page is for the manager only."); }
+  $("#login").hidden = true; $("#main").hidden = false; $("#tabs").hidden = false; $("#signOut").hidden = false; $("#refresh").hidden = false;
+  await load(); setInterval(load, 60000);
+}
+if (!sb) { document.body.innerHTML = `<p style="padding:24px">الإعداد غير مكتمل: أضف مفاتيح Supabase في config.js.</p>`; return; }
+start();
+})();
+</script>
+</body>
+</html>

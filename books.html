@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>دفتر المحاسب · Books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a ledger conversation. The story thread is the page; the day's entries sit beside it like the cash book page. */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#1a2226; --muted:#5b676d; --line:#dbe1e4;
+  --accent:#2c5f8a; --accent-soft:#e1ebf4; --me:#e9f0f7;
+  --good:#2f7a44; --warn:#b06a12; --bad:#b3372e;
+  --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#7fb0dc;--accent-soft:#1f3140;--me:#1d2a35;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#7fb0dc;--accent-soft:#1f3140;--me:#1d2a35;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+[hidden]{display:none!important}
+.app{max-width:1200px;margin:0 auto;padding-block:14px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px;min-height:100%;box-sizing:border-box;grid-template-rows:auto auto 1fr;align-content:start}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.eyebrow{font-size:12px;color:var(--muted);letter-spacing:.04em}
+h1{margin:0;font-size:24px;font-weight:700} h1 small{font-size:14px;font-weight:500;color:var(--muted);margin-inline-start:8px}
+h2{margin:0;font-size:16px;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.bar a{color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.ghost{background:transparent}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+input,select,textarea{font:inherit;font-size:15px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+input[type=number]{font-family:var(--f-num);direction:ltr;text-align:right}
+label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
+.note{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:16px;align-items:start;min-height:0}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+/* thread */
+.chat{display:grid;grid-template-rows:1fr auto;min-height:calc(100dvh - 120px);background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.chips button{font-size:12.5px;padding:5px 10px;border-radius:999px;background:var(--accent-soft);border-color:transparent}
+.tabs{display:flex;gap:6px;margin:0 0 12px;position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0;align-self:start;align-items:center;height:auto}
+.tabs button{flex:1;max-width:240px;font-size:16px;font-weight:600;padding:10px 16px;border-radius:10px}
+.tabs button.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.tabs .badge{display:inline-block;direction:ltr;unicode-bidi:isolate;min-width:20px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px;line-height:20px;margin-inline-start:6px}
+.reports{display:grid;gap:12px}
+.dashview{display:grid;gap:12px}
+#dashRange{display:flex;gap:4px} #dashRange button{font-size:12.5px;padding:5px 12px;border-radius:999px} #dashRange button.on{background:var(--accent-soft);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:2px}
+.kpi .l{font-size:12.5px;color:var(--muted)} .kpi .v{font-family:var(--f-num);font-size:22px;font-weight:700;direction:ltr;text-align:right} .kpi .s{font-size:12px;color:var(--muted)}
+.kpi.bad{border-color:var(--bad)} .kpi.good{border-color:var(--good)}
+.reports .attn{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 10px;border-radius:10px;background:var(--accent-soft);font-size:13.5px}
+.reports .attn button{font-size:12.5px;padding:3px 10px}
+#repHome{display:grid;gap:10px}
+#repRes .thread{max-height:none;padding:4px 0}
+.reports .rtop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.reports .rtabs{display:flex;gap:4px}
+.reports .rtabs button{font-size:12.5px;padding:5px 12px;border-radius:999px}
+.reports .rtabs button.on{background:var(--accent-soft);font-weight:600}
+.reports #repSearch{flex:1;min-width:140px}
+.reports .rgroup{display:grid;gap:6px}
+.reports .rgroup h3{margin:4px 0 0;font-size:13px;color:var(--muted,#667)}
+.reports .ritems{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.reports .ritems button{text-align:right;font-size:13px;padding:7px 10px;display:grid;gap:2px}
+.reports .ritems button small{color:var(--muted,#667);font-size:11.5px}
+.reports .rpick{border-top:1px dashed var(--line);padding-top:8px;display:grid;gap:8px}
+.thread{padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0;max-height:calc(100dvh - 260px)}
+.msg{max-width:min(640px,94%);display:grid;gap:8px}
+.msg.me{align-self:flex-start;background:var(--me);border-radius:12px 12px 12px 4px;padding:10px 12px}
+.msg.sys{align-self:flex-end}
+#repOut .msg{max-width:100%;width:100%;align-self:stretch}
+.bubble{background:var(--bg);border:1px solid var(--line);border-radius:12px 12px 4px 12px;padding:10px 12px}
+.bubble.err{border-color:var(--bad);color:var(--bad)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap}
+.thumbs img,.thumbs .pdf{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.typing{color:var(--muted);font-size:13px}
+/* draft card */
+.card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:10px;padding:12px;display:grid;gap:10px}
+.card .sum{font-weight:600;font-size:15px}
+.card .sum .amt{font-family:var(--f-num);direction:ltr;unicode-bidi:isolate}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px}
+.fields .wide{grid-column:1/-1}
+.doubt{font-size:13px;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--ink);border-radius:8px;padding:6px 9px}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.pill.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.pill.new{background:var(--accent-soft);color:var(--accent)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.done{border-top-color:var(--good)} .waiting{border-top-color:var(--warn)}
+/* composer */
+.composer{border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;background:var(--surface);border-radius:0 0 12px 12px;position:sticky;bottom:0}
+.composer .row{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{min-height:48px;max-height:180px;resize:none}
+.iconbtn{width:46px;height:46px;padding:0;display:grid;place-items:center;font-size:20px;flex:none}
+.iconbtn.rec{background:var(--bad);border-color:var(--bad);color:#fff}
+.sendbtn{height:46px;flex:none}
+.att{display:flex;gap:6px;flex-wrap:wrap}
+.att span{font-size:12px;background:var(--accent-soft);border-radius:999px;padding:3px 4px 3px 10px;display:inline-flex;gap:6px;align-items:center}
+.att button{padding:0 7px;border:0;background:transparent;color:var(--bad);font-size:14px}
+/* side */
+.side{display:grid;gap:12px;position:sticky;top:10px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0;align-content:start}
+.kp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kp div{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:1px}
+.kp b{font-family:var(--f-num);font-size:16px;direction:ltr;text-align:right;font-weight:500}
+.kp span{font-size:11.5px;color:var(--muted)}
+.entries{display:grid;gap:0;max-height:52vh;overflow-y:auto}
+.entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.entry:last-child{border-bottom:0}
+.entry .a{font-family:var(--f-num);direction:ltr}
+.entry .m{grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.entry button{font-size:11.5px;padding:2px 8px}
+.login{max-width:420px;width:100%;margin:40px auto;box-sizing:border-box;border-top:4px solid var(--accent)}
+.login form{display:grid;gap:12px}
+.msgbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.docwrap{display:grid;gap:8px;overflow-x:auto}
+@media (max-width:600px){input,select,textarea{font-size:16px}.tabs button{padding:9px 4px;font-size:15px;white-space:nowrap}h1{font-size:22px}
+  .composer .row{flex-wrap:wrap}.composer textarea{order:-1;flex:1 1 100%}.composer .sendbtn{flex:1}.msg{max-width:100%}.thread{padding:10px}.card{padding:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>دفتر المحاسب<small>Accounting story box</small></h1></div>
+    <div class="bar"><span id="who"></span><a href="books-admin.html" id="mgrLink" hidden>لوحة المدير · Manager view</a><button type="button" class="ghost" id="signOut" hidden>خروج · Sign out</button></div>
+  </header>
+
+  <section class="panel login" id="login" hidden>
+    <h2>تسجيل الدخول <span class="note">Sign in</span></h2>
+    <div class="msgbox" id="loginMsg" hidden></div>
+    <form id="loginForm">
+      <label for="l_email">البريد الإلكتروني · Email<input id="l_email" type="email" autocomplete="username" required></label>
+      <label for="l_pass">كلمة المرور · Password<input id="l_pass" type="password" autocomplete="current-password" required></label>
+      <button class="primary" id="loginBtn" type="submit">دخول · Sign in</button>
+    </form>
+  </section>
+
+  <nav class="tabs" id="tabs" role="tablist" hidden>
+    <button type="button" role="tab" data-view="write" id="writeTab" class="on" aria-selected="true">✍️ سجّل</button>
+    <button type="button" role="tab" data-view="reports" id="repBtn" aria-selected="false">📋 التقارير <span class="badge" id="repBadge" hidden></span></button>
+    <button type="button" role="tab" data-view="dash" id="dashTab" aria-selected="false">📈 المؤشرات</button>
+  </nav>
+
+  <div class="layout" id="main" hidden>
+    <section class="chat" aria-label="Story box">
+      <div class="thread" id="thread" aria-live="polite"></div>
+      <form class="composer" id="composer">
+        <div class="att" id="att"></div>
+        <div class="row">
+          <button type="button" class="iconbtn" id="attachBtn" title="إرفاق صورة أو ملف · Attach" aria-label="Attach a photo or file">📎</button>
+          <button type="button" class="iconbtn" id="micBtn" title="تحدّث · Speak" aria-label="Speak" hidden>🎤</button>
+          <textarea id="story" rows="2" placeholder="اكتب ما حدث… مثال: دفعت 25 دينار بنزين كاش · أو: اطبع سند قبض لبقالة السلام" aria-label="What happened"></textarea>
+          <button type="submit" class="primary sendbtn" id="sendBtn">إرسال</button>
+        </div>
+        <input type="file" id="file" accept="image/*,application/pdf" multiple hidden>
+      </form>
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <h2>الآن <span class="note">Right now</span></h2>
+        <div class="note" id="chqDue" style="display:grid;gap:4px;font-size:12.5px"></div>
+        <div class="kp" id="kp"><div><b>–</b><span>الصندوق</span></div><div><b>–</b><span>البنك</span></div><div><b>–</b><span>شيكات برسم التحصيل</span></div><div><b>–</b><span>مستحق على العملاء</span></div></div>
+      </section>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>قيود اليوم <span class="note">Today's entries</span></h2><span class="note" id="todayCount"></span></div>
+        <div class="entries" id="entries"><span class="note">لا توجد قيود اليوم بعد. No entries today yet.</span></div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="dashview" id="dash" hidden aria-label="KPIs">
+    <div class="bar" style="justify-content:space-between"><h2 style="margin:0">المؤشرات <span class="note">Key numbers over time</span></h2>
+      <div class="rtabs" id="dashRange"><button type="button" data-n="6">6 أشهر</button><button type="button" data-n="12" class="on">12 شهراً</button></div></div>
+    <div id="dashBody"><span class="typing">جارٍ التحميل…</span></div>
+  </section>
+
+  <section class="reports panel" id="reports" hidden aria-label="Reports">
+    <div class="attn" id="repAttn" hidden></div>
+    <div id="repHome">
+      <div class="rtop"><div class="rtabs"><button type="button" data-tab="time" class="on">حسب الوقت</button><button type="button" data-tab="topic">حسب الموضوع</button></div>
+        <input id="repSearch" type="search" placeholder="ابحث عن تقرير…" aria-label="Search reports"></div>
+      <div id="repList"></div>
+      <div class="rpick" id="repPick" hidden></div>
+    </div>
+    <div id="repRes" hidden>
+      <div class="rtop"><button type="button" id="repBack">→ كل التقارير</button><b id="repTitle"></b></div>
+      <div class="thread" id="repOut" aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="books-core.js"></script>
+<script>
+(function(){
+const B = window.Books, sb = B.sb, $ = s => document.querySelector(s);
+document.head.insertAdjacentHTML("beforeend", `<style>${B.DOC_CSS}${B.DASH_CSS}</style>`);
+const S = { user:null, roles:{}, parties:[], accounts:[], settings:{}, company:{}, files:[], clarify:null, pos:[], grns:[], loans:[], loanEntries:[], recurring:[] };
+
+/* ---------- small UI helpers ---------- */
+const thread = $("#thread");
+function scrollDown(){ thread.scrollTop = thread.scrollHeight; }
+function addMe(text, files){
+  const m = document.createElement("div"); m.className = "msg me";
+  if (text) { const p = document.createElement("div"); p.textContent = text; p.style.whiteSpace = "pre-wrap"; m.appendChild(p); }
+  if (files && files.length) m.appendChild(thumbs(files));
+  thread.appendChild(m); scrollDown();
+}
+let outEl = null;   // where results go: the story thread, or the reports tab
+function addSys(node){ const m = document.createElement("div"); m.className = "msg sys"; m.appendChild(node); (outEl || thread).appendChild(m); if (!outEl) scrollDown(); return m; }
+function bubble(html, cls){ const b = document.createElement("div"); b.className = "bubble" + (cls ? " " + cls : ""); b.innerHTML = html; return b; }
+function thumbs(files){
+  const t = document.createElement("div"); t.className = "thumbs";
+  files.forEach(f => { if (f.preview) { const i = document.createElement("img"); i.src = f.preview; i.alt = f.name; t.appendChild(i); } else { const d = document.createElement("div"); d.className = "pdf"; d.textContent = "PDF"; t.appendChild(d); } });
+  return t;
+}
+
+/* ---------- files: shrink photos before sending ---------- */
+async function prepFile(file){
+  if (file.type.startsWith("image/")) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+    const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    const data = await blobB64(blob);
+    return { name: file.name, type: "image/jpeg", blob, data, preview: URL.createObjectURL(blob) };
+  }
+  if (file.type === "application/pdf") {
+    if (file.size > 8 * 1024 * 1024) throw new Error("الملف أكبر من 8 ميغابايت. File is over 8 MB.");
+    return { name: file.name, type: "application/pdf", blob: file, data: file.size <= 4.5 * 1024 * 1024 ? await blobB64(file) : null };
+  }
+  throw new Error("نوع الملف غير مدعوم. Use a photo or a PDF.");
+}
+const blobB64 = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1]); fr.readAsDataURL(b); });
+async function upload(files){
+  const out = [];
+  for (const [i, f] of files.entries()) {
+    if (f.path) { out.push(f.path); continue; }
+    const ext = f.type === "application/pdf" ? "pdf" : f.raw ? ((f.name.match(/\.(xlsx|xls|csv)$/i) || [, "csv"])[1].toLowerCase()) : "jpg";
+    const path = `${S.user.id}/${B.today()}/${Date.now()}-${i}.${ext}`;
+    const { error } = await sb.storage.from("receipts").upload(path, f.blob, { contentType: f.type, upsert: false });
+    if (error) throw new Error("تعذر رفع الصورة. Couldn't upload the photo.");
+    f.path = path; out.push(path);
+  }
+  return out;
+}
+function renderAtt(){
+  const a = $("#att"); a.innerHTML = "";
+  S.files.forEach((f, i) => { const s = document.createElement("span"); s.textContent = (f.type === "application/pdf" ? "📄 " : "🖼️ ") + f.name.slice(0, 24);
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove"); x.onclick = () => { S.files.splice(i, 1); renderAtt(); };
+    s.appendChild(x); a.appendChild(s); });
+}
+$("#attachBtn").onclick = () => $("#file").click();
+$("#file").onchange = async e => {
+  for (const f of [...e.target.files].slice(0, 4 - S.files.length)) { try { S.files.push(await prepFile(f)); } catch (err) { addSys(bubble(B.esc(err.message), "err")); } }
+  e.target.value = ""; renderAtt();
+};
+
+/* ---------- voice ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const mic = $("#micBtn"); mic.hidden = false; let rec = null;
+  mic.onclick = () => {
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = "ar-JO"; rec.interimResults = true; rec.continuous = true;
+    const base = $("#story").value ? $("#story").value + " " : "";
+    rec.onresult = ev => { let t = ""; for (const r of ev.results) t += r[0].transcript; $("#story").value = base + t; };
+    rec.onend = () => { rec = null; mic.classList.remove("rec"); mic.textContent = "🎤"; };
+    rec.onerror = () => { rec && rec.stop(); };
+    rec.start(); mic.classList.add("rec"); mic.textContent = "■";
+  };
+}
+
+/* ---------- send a story ---------- */
+$("#story").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#composer").requestSubmit(); } });
+$("#composer").addEventListener("submit", async e => {
+  e.preventDefault();
+  outEl = null;
+  let text = $("#story").value.trim(); let files = S.files.slice();
+  if (!text && !files.length) return;
+  addMe(text, files);
+  if (S.clarify) { text = S.clarify.text + "\nتوضيح: " + text; files = S.clarify.files.concat(files); S.clarify = null; }
+  $("#story").value = ""; S.files = []; renderAtt();
+  const wait = addSys(bubble(`<span class="typing">جارٍ القراءة… Reading</span>`));
+  $("#sendBtn").disabled = true;
+  try {
+    const { data, error } = await sb.functions.invoke("ai-story", { body: { text, today: B.today(),
+      files: files.filter(f => f.data).map(f => ({ media_type: f.type, data: f.data })) } });
+    wait.remove();
+    if (error || !data || data.error) throw new Error(data && data.error === "not_allowed" ? "not_allowed" : "ai");
+    handle(data.result || {}, text, files);
+  } catch (err) {
+    wait.remove();
+    addSys(bubble(err.message === "not_allowed" ? B.errText("not_allowed") : "تعذر قراءة الرسالة الآن. حاول مرة أخرى بعد قليل. Couldn't read the message right now; try again shortly.", "err"));
+  } finally { $("#sendBtn").disabled = false; }
+});
+
+function handle(r, text, files){
+  if (r.kind === "transactions" && Array.isArray(r.transactions) && r.transactions.length) {
+    if (r.reply) addSys(bubble(B.esc(r.reply)));
+    r.transactions.forEach(t => addSys(B.CHQ_ACTIONS[t.type] ? chequeCard(t) : t.type === "cash_count" ? cashCountCard(t.amount)
+      : t.type === "purchase_order" ? poCard(t) : t.type === "goods_received" ? grnCard(t) : draftCard(t, text, files)));
+  } else if (r.kind === "request" && r.request) {
+    showRequest(r.request);
+  } else if (r.kind === "clarify") {
+    S.clarify = { text, files };
+    addSys(bubble(`❓ ${B.esc(r.question || r.reply || "ممكن توضح أكثر؟")}`));
+  } else {
+    addSys(bubble(B.esc(r.reply || "اكتب ما حدث، مثلاً: دفعت 25 دينار بنزين كاش.")));
+  }
+}
+
+/* ---------- the confirmation card ---------- */
+function opt(v, label, sel){ return `<option value="${B.esc(v)}"${v === sel ? " selected" : ""}>${B.esc(label)}</option>`; }
+function draftCard(t, story, files){
+  const ai = JSON.parse(JSON.stringify(t)); if (!ai.at) ai.at = new Date().toISOString();
+  const d = { type: t.type, date: t.date || B.today(), amount: t.amount, tax: t.tax || 0, method: t.method, party_name: t.party_name || "",
+              category: t.category || "", description: t.description || "", items: Array.isArray(t.items) ? t.items : [], cheque: t.cheque || null };
+  const card = document.createElement("div"); card.className = "card"; card.files = files.slice();
+  const typeOpts = Object.entries(B.TYPES).filter(([k]) => B.NEEDS[k]).map(([k, v]) => opt(k, v.ar, d.type)).join("");
+  card.innerHTML = `<div class="sum" data-sum></div>
+    ${t.doubts ? `<div class="doubt">⚠ ${B.esc(t.doubts)}</div>` : ""}
+    <div class="fields">
+      <label>النوع<select data-k="type">${typeOpts}</select></label>
+      <label>المبلغ الإجمالي (دينار)<input data-k="amount" type="number" step="0.001" min="0" value="${d.amount ?? ""}"></label>
+      <label data-show="tax">منها ضريبة<input data-k="tax" type="number" step="0.001" min="0" value="${d.tax || 0}"></label>
+      <label data-show="method">طريقة الدفع<select data-k="method"></select></label>
+      <label data-show="party"><span data-plabel>الطرف</span><input data-k="party_name" list="dl-${Math.random().toString(36).slice(2)}" value="${B.esc(d.party_name)}"><datalist></datalist></label>
+      <label data-show="cust">صاحب العهدة<select data-k="custodian_name"></select></label>
+      <label data-show="po" class="wide">أمر الشراء (للمطابقة)<select data-k="po_id"></select></label>
+      <label data-show="fx">العملة<select data-k="currency"></select></label>
+      <label data-show="fxa">المبلغ بالعملة الأجنبية<input data-k="fx_amount" type="number" step="0.001" min="0" value="${t.fx_amount || ""}"></label>
+      <label data-show="fxa">السعر (دينار لكل وحدة)<input data-k="fx_rate" type="number" step="0.0001" min="0" value="${t.fx_rate || ""}"></label>
+      <label data-show="loan" class="wide">القرض<select data-k="loan_id"></select></label>
+      <label data-show="principal">منه أصل القرض (الباقي فائدة)<input data-k="principal" type="number" step="0.001" min="0" value="${t.principal != null ? t.principal : ""}"></label>
+      <label data-show="months">عدد الأشهر التي يغطيها<input data-k="months" type="number" min="2" max="60" value="${t.months || ""}"></label>
+      <label data-show="rep">المندوب (للعمولة)<select data-k="rep_name"></select></label>
+      <label data-show="cat">النوع المحاسبي<select data-k="category"></select></label>
+      <label>التاريخ<input data-k="date" type="date" value="${d.date}"></label>
+      <label data-show="cheque">رقم الشيك<input data-k="cheque_no" value="${B.esc(d.cheque && d.cheque.no || "")}"></label>
+      <label data-show="cheque">تاريخ استحقاق الشيك<input data-k="cheque_due" type="date" value="${B.esc(d.cheque && d.cheque.due_date || "")}"></label>
+      <label class="wide">البيان<input data-k="description" value="${B.esc(d.description)}"></label>
+    </div>
+    <div class="thumbs" data-thumbs></div>
+    <div class="actions"><button type="button" class="primary" data-act="ok">✓ تأكيد وتسجيل</button>
+      <button type="button" data-act="att">📎 إرفاق إيصال</button><button type="button" class="ghost" data-act="no">إلغاء</button>
+      <span class="note" data-msg></span></div>
+    <input type="file" accept="image/*,application/pdf" hidden data-file>`;
+  const q = s => card.querySelector(s), val = k => q(`[data-k="${k}"]`).value;
+  const dl = q("datalist"); dl.id = q('[data-k="party_name"]').getAttribute("list");
+  function refresh(){
+    const type = val("type"), N = B.NEEDS[type] || {};
+    // methods
+    const ms = q('[data-k="method"]'), cur = ms.value || d.method;
+    ms.innerHTML = N.methods.map(m => opt(m, B.METHODS[m], cur)).join(""); if (!N.methods.includes(cur) && N.methods[0]) ms.value = N.methods[0];
+    q('[data-show="method"]').hidden = !N.methods.length;
+    q('[data-show="tax"]').hidden = !N.tax;
+    // party
+    q('[data-show="party"]').hidden = !N.party;
+    q("[data-plabel]").textContent = (N.party === "customer" ? "العميل" : N.party === "employee" ? "الموظف" : "المورد") + (N.req || N.party === "customer" ? "" : " (اختياري)");
+    // custody: which employee paid from their custody
+    const cu = q('[data-k="custodian_name"]'), cuv = cu.value || t.custodian_name || "";
+    const emps = S.parties.filter(p => p.kind === "employee");
+    cu.innerHTML = `<option value="">اختر…</option>` + emps.map(p => opt(p.name, p.name, cuv)).join("");
+    q('[data-show="cust"]').hidden = ms.value !== "custody";
+    // purchase order to match against (three way match)
+    const ps = q('[data-k="po_id"]'), pv = ps.dataset.init ? ps.value : (() => { ps.dataset.init = 1;
+      const pn0 = (t.party_name || "").trim(), c = S.pos.filter(p => ["open", "received"].includes(p.status) && B.num(p.received_value) - B.num(p.invoiced_value) - B.num(p.invoice_pending) > 0.0005);
+      const hit = c.find(p => t.po_no && p.no === Number(t.po_no)) || (pn0 ? c.filter(p => p.supplier.includes(pn0) || pn0.includes(p.supplier)) : []).slice(-1)[0];
+      return hit ? hit.id : ""; })();
+    const pos = S.pos.filter(p => ["open", "received"].includes(p.status));
+    ps.innerHTML = `<option value="">بدون أمر شراء</option>` + pos.map(p => opt(p.id, poLabel(p), pv)).join("");
+    q('[data-show="po"]').hidden = (type !== "purchase" && type !== "import_cost") || !(type === "import_cost" ? S.pos.some(p => p.status !== "cancelled" && p.status !== "pending") : pos.length);
+    if (type === "import_cost" && !ps.dataset.ic) { ps.dataset.ic = 1; ps.innerHTML = `<option value="">بدون أمر شراء</option>` + S.pos.filter(p => p.status !== "cancelled" && p.status !== "pending").map(p => opt(p.id, poLabel(p), S.pos.find(x => t.po_no && x.no === Number(t.po_no)) ? S.pos.find(x => x.no === Number(t.po_no)).id : "")).join(""); }
+    if (type === "purchase" && ps.value) { const p = S.pos.find(x => x.id === ps.value); if (p && val("party_name") !== p.supplier) q('[data-k="party_name"]').value = p.supplier; }
+    q('[data-show="months"]').hidden = !N.months;
+    // foreign currency: the JOD amount comes from the rate
+    const cu2 = q('[data-k="currency"]'), cv = cu2.value || (t.currency || "JOD").toUpperCase(), rates = S.settings.currencies || {};
+    cu2.innerHTML = ["JOD", ...Object.keys(rates)].map(c => opt(c, c === "JOD" ? "دينار" : c, cv)).join("");
+    const foreign = N.fx && cu2.value !== "JOD";
+    q('[data-show="fx"]').hidden = !N.fx; card.querySelectorAll('[data-show="fxa"]').forEach(el => el.hidden = !foreign);
+    const amtIn = q('[data-k="amount"]'); amtIn.readOnly = !!foreign;
+    if (foreign) { const ri = q('[data-k="fx_rate"]'); if (!ri.value) ri.value = rates[cu2.value] || ""; amtIn.value = B.r3(B.num(val("fx_amount")) * B.num(ri.value)) || ""; q('[data-show="tax"]').hidden = true; q('[data-k="tax"]').value = 0; }
+    // loans
+    const ls = q('[data-k="loan_id"]'), lv = ls.value || t.loan_id || "";
+    ls.innerHTML = `<option value="">اختر…</option>` + (S.loans || []).filter(l => l.kind === "loan" && l.status === "active").map(l => opt(l.id, `${l.bank} · ${B.money(l.amount)}`, lv)).join("");
+    q('[data-show="loan"]').hidden = !N.loan; q('[data-show="principal"]').hidden = !N.principal;
+    const rs = q('[data-k="rep_name"]'), rv = rs.value || t.rep_name || "";
+    rs.innerHTML = `<option value="">بدون</option>` + emps.map(p => opt(p.name, p.name, rv)).join("");
+    q('[data-show="rep"]').hidden = !(type === "sale" || type === "sales_return") || !emps.length;
+    dl.innerHTML = S.parties.filter(p => p.kind === N.party).map(p => `<option value="${B.esc(p.name)}">`).join("");
+    // categories
+    const cs = q('[data-k="category"]'), cc = cs.value || d.category;
+    const cats = S.accounts.filter(a => a.active !== false).filter(a => N.cat === "purchase" ? ["purchase","inventory","fixed"].includes(a.kind) : N.cat === "expense" ? a.kind === "expense" : N.cat === "tax" ? ["2201","2303"].includes(a.code) : false);
+    cs.innerHTML = `<option value="">اختر…</option>` + cats.map(a => opt(a.code, a.name_ar, cc)).join("");
+    q('[data-show="cat"]').hidden = !N.cat;
+    const isCheque = ms.value === "cheque" && N.methods.length; card.querySelectorAll('[data-show="cheque"]').forEach(el => el.hidden = !isCheque);
+    // summary in plain words
+    const pn = val("party_name").trim(), known = S.parties.some(p => p.kind === N.party && p.name === pn);
+    const cat = S.accounts.find(a => a.code === cs.value);
+    q("[data-sum]").innerHTML = `${B.esc(B.TYPES[type].ar)}${cat ? " · " + B.esc(cat.name_ar) : ""} · <span class="amt">${B.money(B.num(val("amount")))}</span> دينار`
+      + (N.methods.length ? ` · ${B.esc(B.METHODS[ms.value] || "")}` : "") + (N.party && pn ? ` · ${B.esc(pn)} ${known ? "" : '<span class="pill new">جديد</span>'}` : "")
+      + ` · ${B.esc(val("date"))} ` + (t.confidence === "low" ? '<span class="pill bad">غير متأكد</span>' : t.confidence === "medium" ? '<span class="pill warn">راجع</span>' : "");
+    const th = q("[data-thumbs]"); th.innerHTML = "";
+    card.files.forEach((f, i) => { const w = document.createElement("span"); w.className = "att"; w.style.display = "inline-flex";
+      const lab = document.createElement("span"); lab.textContent = (f.type === "application/pdf" ? "📄 " : "🖼️ ") + f.name.slice(0, 22);
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove photo");
+      x.onclick = () => { card.files.splice(i, 1); refresh(); }; lab.appendChild(x); w.appendChild(lab); th.appendChild(w); });
+  }
+  card.addEventListener("input", refresh); card.addEventListener("change", refresh); refresh();
+  q('[data-act="att"]').onclick = () => q("[data-file]").click();
+  q("[data-file]").onchange = async e => { for (const f of [...e.target.files]) { try { card.files.push(await prepFile(f)); } catch (err) { q("[data-msg]").textContent = err.message; } } e.target.value = ""; refresh(); };
+  q('[data-act="no"]').onclick = () => { card.innerHTML = `<span class="note">أُلغي ولم يُسجّل. Cancelled; nothing was recorded.</span>`; };
+  const submit = async (confirmDup) => {
+    const msg = q("[data-msg]"), btn = q('[data-act="ok"]'); msg.textContent = "";
+    const old = card.querySelector("[data-dup]"); if (old) old.remove();
+    const type = val("type"), N = B.NEEDS[type] || {}, amount = B.num(val("amount")), method = N.methods.length ? val("method") : null;
+    if (!(amount > 0)) { msg.textContent = B.errText("amount"); return; }
+    if (N.req && !val("party_name").trim()) { msg.textContent = B.errText("party required"); return; }
+    if (method === "credit" && !val("party_name").trim()) { msg.textContent = B.errText("party required"); return; }
+    if (N.cat && !val("category")) { msg.textContent = B.errText("category"); return; }
+    if (method === "cheque" && (!val("cheque_no").trim() || !val("cheque_due"))) { msg.textContent = B.errText("cheque details"); return; }
+    if (method === "custody" && !val("custodian_name")) { msg.textContent = B.errText("custodian required"); return; }
+    if (N.months && !(B.num(val("months")) >= 2)) { msg.textContent = B.errText("invalid: months"); return; }
+    if (N.loan && !val("loan_id")) { msg.textContent = B.errText("invalid: loan"); return; }
+    const foreign = N.fx && val("currency") !== "JOD";
+    if (foreign && !(B.num(val("fx_amount")) > 0 && B.num(val("fx_rate")) > 0)) { msg.textContent = "اكتب المبلغ بالعملة الأجنبية والسعر. Enter the foreign amount and rate."; return; }
+    if (B.MONEY_OUT.includes(type) && method !== "credit" && amount > B.num(S.settings.receipt_limit) && !card.files.length) { msg.textContent = B.errText("receipt_required"); return; }
+    btn.disabled = true; msg.textContent = "جارٍ التسجيل…";
+    try {
+      const attachments = await upload(card.files);
+      for (const f of card.files) if (!f.hash) f.hash = await B.fileHash(f.blob);
+      const p = { type, date: val("date"), amount, tax: N.tax ? B.num(val("tax")) : 0, method, party_name: N.party ? val("party_name").trim() : "",
+        category: N.cat ? val("category") : "", description: val("description"), items: d.items,
+        custodian_name: method === "custody" ? val("custodian_name") : null,
+        po_id: (type === "purchase" || type === "import_cost") && val("po_id") ? val("po_id") : null,
+        currency: foreign ? val("currency") : null, fx_amount: foreign ? B.num(val("fx_amount")) : null, fx_rate: foreign ? B.num(val("fx_rate")) : null,
+        erp_ref: t.erp_ref || null,
+        loan_id: N.loan ? val("loan_id") : null, principal: N.principal && val("principal") !== "" ? B.num(val("principal")) : null, months: N.months ? B.num(val("months")) : null,
+        rep_name: (type === "sale" || type === "sales_return") && val("rep_name") ? val("rep_name") : null,
+        cheque: method === "cheque" ? { no: val("cheque_no"), due_date: val("cheque_due"), bank: d.cheque && d.cheque.bank || "" } : null,
+        story, attachments, ai, att_hashes: card.files.map(f => f.hash), confirm_duplicate: !!confirmDup };
+      const { data, error } = await sb.rpc("acc_post", { p });
+      if (error) {
+        if (/possible_duplicate/.test(error.message || "")) {
+          // looks like a repeat: show the warning and let the person decide
+          btn.disabled = false; msg.textContent = "";
+          const w = document.createElement("div"); w.className = "doubt"; w.dataset.dup = "1";
+          w.innerHTML = `⚠ ${B.esc(B.errText(error))}<div class="actions" style="margin-top:6px"><button type="button" data-again>ليس تكراراً، سجّل · Not a repeat, record it</button><button type="button" class="ghost" data-stop>إلغاء</button></div>`;
+          q(".actions").before(w);
+          w.querySelector("[data-again]").onclick = () => submit(true);
+          w.querySelector("[data-stop]").onclick = () => { card.innerHTML = `<span class="note">أُلغي ولم يُسجّل. Cancelled; nothing was recorded.</span>`; };
+          return;
+        }
+        throw error;
+      }
+      const pending = data.status === "pending";
+      card.className = "card " + (pending ? "waiting" : "done");
+      card.innerHTML = pending
+        ? `<div class="sum">⏳ ${B.esc(B.TYPES[type].ar)} · <span class="amt">${B.money(amount)}</span> دينار</div><div class="note">قيد رقم ${data.no} بانتظار موافقة المدير. It waits for the manager's approval.</div><div>${B.flagPills(data.flags)}</div>`
+        : `<div class="sum">✓ سُجّل · ${B.esc(B.TYPES[type].ar)} · <span class="amt">${B.money(amount)}</span> دينار</div>
+           <div class="actions"><span class="note">قيد رقم ${data.no}${data.doc ? ` · ${B.DOCS[data.doc]} رقم ${data.doc_no}` : ""}</span>${data.doc && data.doc !== "journal" ? `<button type="button" data-print="${data.no}">🖨️ طباعة ${B.DOCS[data.doc]}</button>` : ""}</div>
+           ${(data.flags || []).length ? `<div class="note">يظهر للمدير للمراجعة: ${B.flagPills(data.flags)}</div>` : ""}`;
+      const pb = card.querySelector("[data-print]"); if (pb) pb.onclick = () => printEntry(data.no);
+      if (!pending && type === "sale") { const e = await entryByNo(data.no); if (e) card.appendChild(einvBox(e)); }
+      if (!pending && type === "purchase" && p.category === "1501") card.appendChild(assetForm(data.no, B.r3(amount - p.tax), p.description));
+      if (p.po_id) await loadPOs();
+      if (N.loan) loadLoans();
+      if (t._recurring) { await sb.rpc("acc_recurring_mark", { p_id: t._recurring, p_month: B.today().slice(0, 7) }); S.recurring = await B.Data.recurring(); }
+      else if (!pending && REC_TYPES.includes(type) && !p.currency) {
+        const rb = document.createElement("div"); rb.className = "actions"; rb.innerHTML = `<button type="button">🔁 كرّرها كل شهر</button><span class="note"></span>`;
+        rb.querySelector("button").onclick = async () => { const { data: rid, error } = await sb.rpc("acc_recurring_save", { p: { title: p.description || B.TYPES[type].ar, day: Math.min(28, +p.date.slice(8)),
+            template: { type, amount, tax: p.tax, method: p.method, category: p.category, party_name: p.party_name, description: p.description, loan_id: p.loan_id, principal: p.principal } } });
+          if (!error && rid) await sb.rpc("acc_recurring_mark", { p_id: rid, p_month: p.date.slice(0, 7) });
+          rb.querySelector(".note").textContent = error ? B.errText(error) : "✓ ستظهر لك كل شهر لتأكيدها"; rb.querySelector("button").disabled = !error; S.recurring = await B.Data.recurring(); };
+        card.appendChild(rb);
+      }
+      await Promise.all([loadParties(), loadToday()]);
+    } catch (err) { btn.disabled = false; msg.textContent = B.errText(err); }
+  };
+  q('[data-act="ok"]').onclick = () => submit(false);
+  return card;
+}
+
+/* ---------- cheque actions ---------- */
+function chqLabel(c){ return `${c.no || "؟"}${c.bank ? " · " + c.bank : ""}${c.party ? " · " + c.party.name : ""} · ${B.money(c.amount)} · ${c.due_date} · ${(B.CHQ[c.status] || {}).ar}`; }
+function chequeCard(t){
+  const A = B.CHQ_ACTIONS[t.type];
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">🧾 ${B.esc(A.ar)}</div><div class="fields"><label class="wide">أي شيك؟<select data-c><option>جارٍ التحميل…</option></select></label>
+    <label>التاريخ<input type="date" data-d value="${B.today()}" max="${B.today()}"></label>${A.note ? `<label class="wide">السبب<input data-n value="${B.esc(t.description || "")}"></label>` : ""}</div>
+    <div class="actions"><button type="button" class="primary" data-ok>✓ تأكيد</button><button type="button" class="ghost" data-x>إلغاء</button><span class="note" data-m></span></div>`;
+  (async () => {
+    const all = await B.Data.cheques(), list = all.filter(c => c.direction === A.dir && A.from.includes(c.status));
+    const sel = card.querySelector("[data-c]");
+    if (!list.length) { card.innerHTML = `<div class="note">لا يوجد شيك ${A.dir === "in" ? "وارد" : "صادر"} مفتوح لهذا الإجراء. No open cheque for this action.</div>`; return; }
+    const no = t.cheque && t.cheque.no ? String(t.cheque.no).trim() : "", amt = B.num(t.amount), pn = (t.party_name || "").trim();
+    let best = list.find(c => no && c.no === no) || list.find(c => amt && Math.abs(B.num(c.amount) - amt) < 0.0005 && (!pn || (c.party && (c.party.name.includes(pn) || pn.includes(c.party.name)))));
+    sel.innerHTML = (best ? "" : `<option value="">اختر الشيك…</option>`) + list.map(c => `<option value="${c.id}"${best && c.id === best.id ? " selected" : ""}>${B.esc(chqLabel(c))}</option>`).join("");
+  })();
+  card.querySelector("[data-x]").onclick = () => { card.innerHTML = `<span class="note">أُلغي.</span>`; };
+  card.querySelector("[data-ok]").onclick = async () => {
+    const m = card.querySelector("[data-m]"), id = card.querySelector("[data-c]").value; if (!id) { m.textContent = "اختر الشيك."; return; }
+    const note = card.querySelector("[data-n]"); if (A.note && note && !note.value.trim()) { m.textContent = "اكتب السبب."; return; }
+    const { data, error } = await sb.rpc("acc_cheque_act", { p_id: id, p_action: A.action, p_date: card.querySelector("[data-d]").value, p_note: note ? note.value.trim() : null });
+    if (error) { m.textContent = B.errText(error); return; }
+    card.className = "card " + (data.status === "bounced" ? "waiting" : "done");
+    card.innerHTML = `<div class="sum">${data.status === "bounced" ? "⚠ سُجّل الشيك مرتجعاً، وعاد المبلغ على حساب العميل" : "✓ " + B.esc(A.ar)}</div>${data.entry_no ? `<div class="note">قيد رقم ${data.entry_no}</div>` : `<div class="note">تم تحديث حالة الشيك.</div>`}`;
+    loadToday();
+  };
+  return card;
+}
+async function chequeListCard(){
+  const all = await B.Data.cheques(), t = B.today();
+  const open = all.filter(c => ["held", "deposited", "issued"].includes(c.status)), bounced = all.filter(c => c.status === "bounced");
+  const w = document.createElement("div"); w.className = "card";
+  const row = c => { const late = c.due_date < t && c.status !== "deposited";
+    const acts = c.direction === "in" ? (c.status === "held" ? [["deposit", "إيداع"], ["clear", "تحصّل"], ["bounce", "مرتجع"]] : [["clear", "تحصّل"], ["bounce", "مرتجع"]]) : [["clear", "صُرف"], ["cancel", "إلغاء"]];
+    return `<div class="entry" data-id="${c.id}"><span>${c.direction === "in" ? "📥" : "📤"} ${B.esc(c.no || "؟")} · ${B.esc(c.party ? c.party.name : "")} ${late ? '<span class="pill bad">مستحق</span>' : ""}</span><span class="a">${B.money(c.amount)}</span>
+      <span class="m">${c.due_date} · <span class="pill ${(B.CHQ[c.status] || {}).sev}">${(B.CHQ[c.status] || {}).ar}</span> ${acts.map(([a, l]) => `<button type="button" data-a="${a}">${l}</button>`).join("")}</span><span class="m" data-msg></span></div>`; };
+  w.innerHTML = `<div class="sum">🧾 الشيكات المفتوحة <span class="note">${open.length} شيك</span></div>
+    <div class="entries" style="max-height:none">${open.length ? open.map(row).join("") : '<span class="note">لا توجد شيكات مفتوحة.</span>'}</div>
+    ${bounced.length ? `<div class="note">مرتجعة: ${bounced.map(c => B.esc(`${c.no} · ${c.party ? c.party.name : ""} · ${B.money(c.amount)}`)).join(" ، ")}</div>` : ""}
+    <div class="actions"><button type="button" data-print>🖨️ طباعة كشف الشيكات</button></div>`;
+  w.querySelector("[data-print]").onclick = () => B.printHTML(B.chequesHTML(all, S.company));
+  w.querySelectorAll(".entry[data-id]").forEach(el => el.querySelectorAll("[data-a]").forEach(b => b.onclick = async () => {
+    const a = b.dataset.a, msg = el.querySelector("[data-msg]");
+    let note = null;
+    if (a === "bounce" || a === "cancel") {
+      if (!el.querySelector("[data-note]")) { msg.innerHTML = `<input data-note placeholder="السبب" style="max-width:200px"> <button type="button" data-go>تأكيد</button>`; msg.querySelector("[data-go]").onclick = () => b.click(); return; }
+      note = el.querySelector("[data-note]").value.trim(); if (!note) return;
+    }
+    const { error } = await sb.rpc("acc_cheque_act", { p_id: el.dataset.id, p_action: a, p_date: B.today(), p_note: note });
+    if (error) { msg.textContent = B.errText(error); return; }
+    const fresh = await chequeListCard(); w.replaceWith(fresh); loadToday();
+  }));
+  return w;
+}
+
+/* ---------- cash count ---------- */
+function cashCountCard(amount){
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">💵 عدّ الصندوق</div><div class="note" data-exp>…</div>
+    <div class="fields"><label>المبلغ الموجود فعلاً (دينار)<input type="number" step="0.001" min="0" data-v value="${amount ? B.num(amount) : ""}"></label><label class="wide">ملاحظة<input data-n></label></div>
+    <div class="actions"><button type="button" class="primary" data-ok>✓ سجّل العدّ</button><span class="note" data-m></span></div>`;
+  (async () => { const rows = await B.Data.ledger(null, null); const e = B.Reports.accountBalances(rows)["1101"] || 0;
+    card.querySelector("[data-exp]").textContent = `حسب الدفاتر يجب أن يكون في الصندوق ${B.money(e)} دينار. The books say ${B.money(e)}.`; })();
+  card.querySelector("[data-ok]").onclick = async () => {
+    const m = card.querySelector("[data-m]"), v = card.querySelector("[data-v]").value; if (v === "") { m.textContent = "اكتب المبلغ."; return; }
+    const { data, error } = await sb.rpc("acc_cash_count", { p_counted: B.num(v), p_note: card.querySelector("[data-n]").value.trim() || null });
+    if (error) { m.textContent = B.errText(error); return; }
+    const d = B.num(data.difference);
+    card.className = "card " + (d ? "waiting" : "done");
+    card.innerHTML = d ? `<div class="sum">⚠ ${d < 0 ? "عجز" : "زيادة"} في الصندوق: <span class="amt">${B.money(Math.abs(d))}</span> دينار</div><div class="note">المتوقع ${B.money(data.expected)} · الموجود ${B.money(v)}. قيد رقم ${data.entry_no} بانتظار موافقة المدير.</div>`
+      : `<div class="sum">✓ الصندوق مطابق للدفاتر: <span class="amt">${B.money(v)}</span> دينار</div>`;
+    loadToday();
+  };
+  return card;
+}
+
+/* ---------- bank reconciliation ---------- */
+function bankCard(){
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">🏦 مطابقة كشف البنك</div>
+    <div class="note">أرفق كشف البنك (PDF أو صورة، أو ملف CSV من موقع البنك). سأقرأ الحركات وأطابقها مع الدفاتر. Attach the statement as PDF, photo or CSV.</div>
+    <div class="actions"><button type="button" data-pick>📎 اختر الكشف</button><span class="note" data-f></span><button type="button" class="primary" data-read disabled>اقرأ الكشف</button><button type="button" data-skip>عرض المطابقة الحالية</button></div>
+    <input type="file" hidden data-file accept="application/pdf,image/*,.csv,text/csv,text/plain" multiple>
+    <div data-out></div>`;
+  let files = [], text = "", meta = {};
+  const out = card.querySelector("[data-out]");
+  card.querySelector("[data-pick]").onclick = () => card.querySelector("[data-file]").click();
+  card.querySelector("[data-file]").onchange = async e => {
+    files = []; text = "";
+    for (const f of [...e.target.files].slice(0, 6)) {
+      if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) text += (await f.text()).slice(0, 60000) + "\n";
+      else { try { const pf = await prepFile(f); if (!pf.data) throw new Error("الملف كبير جداً. File too large."); files.push(pf); } catch (err) { out.innerHTML = `<div class="note">${B.esc(err.message)}</div>`; } }
+    }
+    card.querySelector("[data-f]").textContent = [...e.target.files].map(f => f.name).join("، ");
+    card.querySelector("[data-read]").disabled = !(files.length || text);
+  };
+  card.querySelector("[data-skip]").onclick = () => showRec();
+  card.querySelector("[data-read]").onclick = async () => {
+    out.innerHTML = `<span class="typing">جارٍ قراءة الكشف… Reading the statement</span>`;
+    const { data, error } = await sb.functions.invoke("ai-story", { body: { mode: "bank", text, today: B.today(), files: files.map(f => ({ media_type: f.type, data: f.data })) } });
+    if (error || !data || data.error || !data.result) { out.innerHTML = `<div class="note">تعذرت قراءة الكشف. حاول بملف أوضح. Couldn't read the statement.</div>`; return; }
+    meta = data.result; const L = (meta.lines || []).filter(l => l.date && B.num(l.amount));
+    const sum = B.r3(L.reduce((a, l) => a + B.num(l.amount), 0));
+    const check = meta.opening_balance != null && meta.closing_balance != null ? B.r3(B.num(meta.opening_balance) + sum - B.num(meta.closing_balance)) : null;
+    out.innerHTML = `<div class="note">قرأت ${L.length} حركة${meta.bank ? " · " + B.esc(meta.bank) : ""}${meta.period_from ? ` · ${meta.period_from} إلى ${meta.period_to || ""}` : ""}.
+      ${check === null ? "" : check === 0 ? '<span class="pill good">الأرصدة متطابقة</span>' : `<span class="pill bad">فرق في القراءة ${B.money(check)}: راجع الحركات</span>`}</div>
+      ${meta.doubts ? `<div class="doubt">⚠ ${B.esc(meta.doubts)}</div>` : ""}
+      <div class="docwrap"><table class="doc-tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>المرجع</th><th>المبلغ</th><th>الرصيد</th></tr></thead><tbody>
+      ${L.map(l => `<tr><td>${B.esc(l.date)}</td><td>${B.esc(l.description)}</td><td>${B.esc(l.ref || "")}</td><td class="n">${B.money(l.amount)}</td><td class="n">${l.balance != null ? B.money(l.balance) : ""}</td></tr>`).join("")}</tbody></table></div>
+      <div class="actions"><button type="button" class="primary" data-imp>✓ استيراد ومطابقة</button><span class="note" data-m></span></div>`;
+    out.querySelector("[data-imp]").onclick = async () => {
+      const { data: r, error: e2 } = await sb.rpc("acc_bank_import", { p: { lines: L } });
+      if (e2) { out.querySelector("[data-m]").textContent = B.errText(e2); return; }
+      showRec(`استوردت ${r.new} حركة جديدة${r.skipped ? ` (تخطيت ${r.skipped} مستوردة سابقاً)` : ""}، وطابقت ${r.matched} تلقائياً.`);
+    };
+  };
+  async function showRec(head){
+    await sb.rpc("acc_bank_auto");
+    const [bank, rows] = await Promise.all([B.Data.bankLines(), B.Data.ledger(null, null)]);
+    const used = new Set(bank.map(b => b.matched_line).filter(Boolean));
+    const book = rows.filter(r => r.account === "1102" && r.type !== "opening");
+    const unB = bank.filter(b => !b.matched_line && !b.ignored), unL = book.filter(r => !used.has(r.id));
+    const last = bank[bank.length - 1];
+    const sug = b => B.num(b.amount) < 0 ? `دفعت ${B.money(-B.num(b.amount))} دينار من البنك: ${b.description} بتاريخ ${b.date}` : `استلمت ${B.money(b.amount)} دينار في البنك: ${b.description} بتاريخ ${b.date}`;
+    out.innerHTML = `${head ? `<div class="note">✓ ${B.esc(head)}</div>` : ""}
+      <div class="sum">على الكشف وليس في الدفاتر <span class="note">${unB.length}</span></div>
+      <div class="entries" style="max-height:none">${unB.map(b => `<div class="entry" data-b="${b.id}"><span>${B.esc(b.date)} · ${B.esc(b.description)}</span><span class="a">${B.money(b.amount)}</span>
+        <span class="m"><button type="button" data-rec>سجّل</button>${unL.some(l => (B.num(b.amount) > 0 ? B.num(l.debit) : B.num(l.credit)) === Math.abs(B.num(b.amount))) ? '<button type="button" data-man>طابق يدوياً</button>' : ""}<button type="button" data-ign>لا يحتاج قيد</button></span><span class="m" data-x></span></div>`).join("") || '<span class="note">لا شيء ✓</span>'}</div>
+      <div class="sum">في الدفاتر وليس على الكشف بعد <span class="note">${unL.length}</span></div>
+      <div class="entries" style="max-height:none">${unL.map(l => `<div class="entry"><span>${B.esc(l.date)} · ${B.esc(l.description || (B.TYPES[l.type] || {}).ar)}</span><span class="a">${B.money(B.num(l.debit) - B.num(l.credit))}</span><span class="m">قيد ${l.no}</span></div>`).join("") || '<span class="note">لا شيء ✓</span>'}</div>
+      <div class="fields"><label>حتى تاريخ<input type="date" data-as value="${last ? last.date : B.today()}"></label><label>رصيد الكشف في هذا التاريخ<input type="number" step="0.001" data-bal value="${meta.closing_balance != null ? meta.closing_balance : last && last.balance != null ? last.balance : ""}"></label></div>
+      <div class="actions"><button type="button" class="primary" data-save>احفظ المطابقة</button><span class="note" data-m></span></div>`;
+    out.querySelectorAll("[data-b]").forEach(el => {
+      const b = unB.find(x => x.id === el.dataset.b), x = el.querySelector("[data-x]");
+      el.querySelector("[data-rec]").onclick = () => { showView("write"); $("#story").value = sug(b); $("#story").focus(); x.textContent = "اكتب أو عدّل القصة ثم أرسلها. بعد التأكيد افتح المطابقة مرة أخرى."; };
+      const man = el.querySelector("[data-man]");
+      if (man) man.onclick = () => { const cands = unL.filter(l => (B.num(b.amount) > 0 ? B.num(l.debit) : B.num(l.credit)) === Math.abs(B.num(b.amount)));
+        x.innerHTML = `<select>${cands.map(l => `<option value="${l.id}">قيد ${l.no} · ${B.esc(l.date)} · ${B.esc(l.description || "")}</option>`).join("")}</select> <button type="button">طابق</button>`;
+        x.querySelector("button").onclick = async () => { const { error } = await sb.rpc("acc_bank_match", { p_bank: b.id, p_line: Number(x.querySelector("select").value) }); if (error) x.textContent = B.errText(error); else showRec(); }; };
+      el.querySelector("[data-ign]").onclick = () => { x.innerHTML = `<input placeholder="لماذا؟" style="max-width:200px"> <button type="button">تأكيد</button>`;
+        x.querySelector("button").onclick = async () => { const n = x.querySelector("input").value.trim(); if (!n) return; const { error } = await sb.rpc("acc_bank_ignore", { p_bank: b.id, p_note: n }); if (error) x.textContent = B.errText(error); else showRec(); }; };
+    });
+    out.querySelector("[data-save]").onclick = async () => {
+      const m = out.querySelector("[data-m]"), v = out.querySelector("[data-bal]").value; if (v === "") { m.textContent = "اكتب رصيد الكشف."; return; }
+      const { data, error } = await sb.rpc("acc_bank_reconcile", { p_as_of: out.querySelector("[data-as]").value, p_statement_balance: B.num(v) });
+      if (error) { m.textContent = B.errText(error); return; }
+      const d = B.num(data.difference);
+      m.innerHTML = d === 0 ? `<span class="pill good">✓ المطابقة صحيحة: الفرق صفر</span>` : `<span class="pill bad">فرق غير مفسّر: ${B.money(d)} دينار</span> راجع الحركات أعلاه.`;
+    };
+  }
+  return card;
+}
+
+/* ---------- payroll ---------- */
+function monthNow(){ return B.today().slice(0, 7); }
+async function payrollCard(month){
+  const card = document.createElement("div"); card.className = "card";
+  month = month || monthNow();
+  const [emps, runs, ents] = await Promise.all([B.Data.employees(), B.Data.payrollRuns(), B.Data.entries({ types: ["payroll"] })]);
+  const live = r => { const e = ents.find(x => x.id === r.entry_id); return e && (e.status === "pending" || e.status === "posted") ? e : null; };
+  const ready = runs.filter(live);
+  const act = emps.filter(e => e.active);
+  card.innerHTML = `<div class="sum">👥 رواتب الشهر</div>
+    <div class="fields"><label>الشهر<input type="month" data-mo value="${month}" max="${monthNow()}"></label></div>
+    <div data-body></div>
+    ${ready.length ? `<div class="note">كشوف سابقة: ${ready.slice(0, 6).map(r => `<button type="button" data-run="${r.id}">${B.esc(r.month)} · ${B.STATUS[live(r).status]}</button>`).join(" ")}</div>` : ""}`;
+  const body = card.querySelector("[data-body]");
+  function draw(){
+    const mo = card.querySelector("[data-mo]").value, done = ready.find(r => r.month === mo);
+    if (done) { body.innerHTML = `<div class="note">رواتب ${B.esc(mo)} مُجهّزة (${B.STATUS[live(done).status]}). الصافي ${B.money(done.totals.net)} دينار.</div>
+      <div class="actions"><button type="button" data-pr>🖨️ كشف الرواتب</button><button type="button" data-ps>🖨️ قسائم الرواتب</button></div>`;
+      body.querySelector("[data-pr]").onclick = () => showDoc(B.payrollHTML(done, S.company));
+      body.querySelector("[data-ps]").onclick = () => B.printHTML(done.lines.map(l => B.payslipHTML(done, l, S.company)).join('<div style="page-break-after:always"></div>'));
+      return; }
+    if (!act.length) { body.innerHTML = `<div class="note">لا يوجد موظفون. يضيفهم المدير من صفحته (الموظفون). No employees yet; the manager adds them.</div>`; return; }
+    body.innerHTML = `<div class="note">اكتب فقط ما تغيّر هذا الشهر. النظام يحسب الضمان والضريبة والصافي. Enter only this month's changes.</div>
+      <div class="docwrap"><table class="doc-tbl"><thead><tr><th>الموظف</th><th>الراتب + العلاوات</th><th>إضافي</th><th>إضافات</th><th>خصم غياب</th><th>خصم سلفة</th></tr></thead><tbody>
+      ${act.map(e => `<tr data-p="${e.party_id}"><td>${B.esc(e.party ? e.party.name : "")}</td><td class="n">${B.money(B.num(e.basic) + B.num(e.allowances))}</td>
+        ${["overtime", "additions", "absence", "advance"].map(k => `<td><input type="number" step="0.001" min="0" data-${k} style="width:90px"></td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      <div class="actions"><button type="button" class="primary" data-go>احسب وجهّز الرواتب</button><span class="note" data-m></span></div>`;
+    body.querySelector("[data-go]").onclick = async () => {
+      const m = body.querySelector("[data-m]"); m.textContent = "جارٍ الحساب…";
+      const lines = [...body.querySelectorAll("tr[data-p]")].map(tr => ({ party_id: tr.dataset.p,
+        overtime: B.num(tr.querySelector("[data-overtime]").value), additions: B.num(tr.querySelector("[data-additions]").value),
+        absence: B.num(tr.querySelector("[data-absence]").value), advance: B.num(tr.querySelector("[data-advance]").value) }));
+      const { data, error } = await sb.rpc("acc_payroll_prepare", { p_month: mo, p_lines: lines });
+      if (error) { m.textContent = B.errText(error); return; }
+      const fresh = await payrollCard(mo); card.replaceWith(fresh);
+      fresh.className = "card waiting";
+      fresh.insertAdjacentHTML("afterbegin", `<div class="sum">⏳ جُهّزت رواتب ${B.esc(mo)}: الإجمالي ${B.money(data.totals.gross)} · الصافي <span class="amt">${B.money(data.totals.net)}</span> دينار. قيد رقم ${data.entry_no} بانتظار موافقة المدير.</div>`);
+      loadToday();
+    };
+  }
+  card.querySelector("[data-mo]").onchange = draw; draw();
+  card.querySelectorAll("[data-run]").forEach(b => b.onclick = () => { const r = ready.find(x => String(x.id) === b.dataset.run); showDoc(B.payrollHTML(r, S.company)); });
+  return card;
+}
+
+/* ---------- stock count ---------- */
+async function stockCard(){
+  const card = document.createElement("div"); card.className = "card";
+  const [counts, rows] = await Promise.all([B.Data.invCounts(), B.Data.ledger(null, null)]);
+  const last = counts[0], book = B.Reports.accountBalances(rows)["1401"] || 0;
+  const items = last ? last.items : [{ name: "", kind: "raw", unit: "طن" }, { name: "", kind: "finished", unit: "كرتونة" }];
+  const row = i => `<tr><td><input data-name value="${B.esc(i.name || "")}" style="min-width:130px"></td>
+    <td><select data-kind>${opt("raw", "مادة خام", i.kind)}${opt("finished", "منتج جاهز", i.kind)}</select></td>
+    <td><input data-unit value="${B.esc(i.unit || "")}" style="width:70px"></td><td><input type="number" step="0.001" min="0" data-qty style="width:90px"></td>
+    <td><input type="number" step="0.001" min="0" data-cost value="${i.unit_cost != null ? B.num(i.unit_cost) : ""}" style="width:90px"></td><td class="n" data-val></td></tr>`;
+  card.innerHTML = `<div class="sum">📦 جرد المخزون</div>
+    <div class="note">قيمة المخزون حسب الدفاتر الآن ${B.money(book)} دينار${last ? ` · آخر جرد ${last.date}: ${B.money(last.total)}` : ""}. اكتب الكميات الموجودة فعلاً.</div>
+    <div class="fields"><label>تاريخ الجرد<input type="date" data-d value="${B.today()}" max="${B.today()}"></label><label class="wide">ملاحظة<input data-n></label></div>
+    <div class="docwrap"><table class="doc-tbl"><thead><tr><th>الصنف</th><th>النوع</th><th>الوحدة</th><th>الكمية</th><th>تكلفة الوحدة</th><th>القيمة</th></tr></thead><tbody data-rows>${items.map(row).join("")}</tbody>
+      <tfoot><tr class="doc-total"><td colspan="5">المجموع</td><td class="n" data-tot></td></tr></tfoot></table></div>
+    <div class="actions"><button type="button" data-add>+ صنف</button><button type="button" class="primary" data-ok>✓ سجّل الجرد</button><span class="note" data-m></span></div>`;
+  const calc = () => { let t = 0; card.querySelectorAll("[data-rows] tr").forEach(tr => { const v = B.r3(B.num(tr.querySelector("[data-qty]").value) * B.num(tr.querySelector("[data-cost]").value)); t += v; tr.querySelector("[data-val]").textContent = v ? B.money(v) : ""; });
+    card.querySelector("[data-tot]").textContent = B.money(t); };
+  card.addEventListener("input", calc); calc();
+  card.querySelector("[data-add]").onclick = () => { card.querySelector("[data-rows]").insertAdjacentHTML("beforeend", row({ kind: "raw" })); };
+  card.querySelector("[data-ok]").onclick = async () => {
+    const m = card.querySelector("[data-m]");
+    const its = [...card.querySelectorAll("[data-rows] tr")].map(tr => ({ name: tr.querySelector("[data-name]").value.trim(), kind: tr.querySelector("[data-kind]").value,
+      unit: tr.querySelector("[data-unit]").value.trim(), qty: tr.querySelector("[data-qty]").value, unit_cost: tr.querySelector("[data-cost]").value })).filter(i => i.name && i.qty !== "");
+    if (!its.length) { m.textContent = "اكتب كمية صنف واحد على الأقل."; return; }
+    const { data, error } = await sb.rpc("acc_inventory_count", { p_date: card.querySelector("[data-d]").value, p_items: its, p_note: card.querySelector("[data-n]").value.trim() || null });
+    if (error) { m.textContent = B.errText(error); return; }
+    const d = B.num(data.difference), c = (await B.Data.invCounts())[0];
+    card.className = "card " + (d ? "waiting" : "done");
+    card.innerHTML = `<div class="sum">${d ? "⏳" : "✓"} الجرد: <span class="amt">${B.money(data.total)}</span> دينار · الدفاتر ${B.money(data.book)}</div>
+      <div class="note">${d ? `الفرق ${B.money(d)} دينار. قيد رقم ${data.entry_no} بانتظار موافقة المدير.` : "مطابق للدفاتر."}</div>
+      <div class="actions"><button type="button" data-p>🖨️ محضر الجرد</button></div>`;
+    card.querySelector("[data-p]").onclick = () => showDoc(B.stockCountHTML(c, S.company));
+    loadToday();
+  };
+  return card;
+}
+
+/* ---------- JoFotara (national e-invoicing) ---------- */
+async function invokeJo(body){
+  const { data, error } = await sb.functions.invoke("jofotara", { body });
+  if (!error) return data;
+  try { return await error.context.json(); } catch (e) { return { error: "server" }; }
+}
+const EINV = { prepared: ["جاهزة للإرسال", "warn"], SUBMITTED: ["أُرسلت ✓", "good"], ALREADY_SUBMITTED: ["أُرسلت سابقاً", "good"], NOT_SUBMITTED: ["رُفضت", "bad"], error: ["خطأ", "bad"] };
+function einvBox(e){
+  const w = document.createElement("div"); w.className = "doubt"; w.style.background = "transparent";
+  const party = S.parties.find(p => p.id === e.party_id);
+  (async () => {
+    const ei = ((await B.Data.einvoices()) || []).find(x => x.entry_id === e.id), st = ei && EINV[ei.status];
+    const live = (S.settings.einvoice || {}).mode === "live";
+    w.innerHTML = `<b>الفوترة الوطنية (JoFotara)</b> ${st ? `<span class="pill ${st[1]}">${st[0]}</span>` : '<span class="pill">لم تُرسل</span>'}
+      ${ei && ei.message ? `<div class="note">${B.esc(ei.message)}</div>` : ""}
+      ${ei && /SUBMITTED/.test(ei.status) ? `<div class="actions"><button type="button" data-pi>🖨️ الفاتورة مع رمز QR</button></div>` : `
+      <div class="fields"><label>الرقم الضريبي للمشتري (إن وجد)<input data-tx inputmode="numeric" value="${B.esc(party && party.tax_no || "")}"></label></div>
+      <div class="actions"><button type="button" data-pv>تجهيز ومراجعة</button>${live ? '<button type="button" class="primary" data-sb>إرسال إلى JoFotara</button>' : '<span class="note">الإرسال المباشر غير مفعّل بعد (المدير يفعّله من الإعدادات).</span>'}<span class="note" data-m></span></div>
+      <div data-x></div>`}`;
+    const pi = w.querySelector("[data-pi]"); if (pi) pi.onclick = () => B.printHTML(B.invoiceHTML(e, S.company, ei));
+    const go = async action => {
+      const m = w.querySelector("[data-m]"), tx = w.querySelector("[data-tx]").value.replace(/\D/g, "");
+      m.textContent = "جارٍ…";
+      if (party && tx !== (party.tax_no || "")) { const { error } = await sb.rpc("acc_party_set_tax", { p_id: party.id, p_tax_no: tx }); if (error) { m.textContent = B.errText(error); return; } party.tax_no = tx; }
+      const r = await invokeJo({ entry_id: e.id, action, buyer_tax_no: tx });
+      if (r.error) { m.textContent = r.message || (r.problems || []).join(" · ") || r.error; return; }
+      if (action === "preview") {
+        m.textContent = r.problems && r.problems.length ? "" : "✓ جاهزة";
+        w.querySelector("[data-x]").innerHTML = `${(r.problems || []).map(p => `<div class="pill bad">${B.esc(p)}</div>`).join(" ")}
+          <details><summary>عرض ملف XML</summary><pre style="white-space:pre-wrap;direction:ltr;font-size:11px;max-height:260px;overflow:auto">${B.esc(r.xml || "")}</pre></details>`;
+        return;
+      }
+      const fresh = einvBox(e); w.replaceWith(fresh);
+    };
+    const pv = w.querySelector("[data-pv]"); if (pv) pv.onclick = () => go("preview");
+    const sbt = w.querySelector("[data-sb]"); if (sbt) sbt.onclick = () => go("submit");
+  })();
+  return w;
+}
+
+/* ---------- purchases: orders and goods received ---------- */
+async function loadPOs(){ [S.pos, S.grns] = await Promise.all([B.Data.pos(), B.Data.grns()]); }
+const poLabel = p => `أمر ${p.no} · ${p.supplier} · ${B.money(p.total)}${B.num(p.received_value) ? ` · مستلم ${B.money(p.received_value)}` : ""}${B.num(p.invoiced_value) ? ` · مفوتر ${B.money(p.invoiced_value)}` : ""}`;
+function itemRows(items, withPrice){
+  return items.map(i => `<tr><td><input data-in value="${B.esc(i.name || "")}" style="min-width:130px"></td><td><input data-iu value="${B.esc(i.unit || "")}" style="width:70px"></td>
+    <td><input type="number" step="0.001" min="0" data-iq value="${i.qty != null ? B.num(i.qty) : ""}" style="width:80px"></td>${withPrice ? `<td><input type="number" step="0.001" min="0" data-ip value="${i.unit_price != null ? B.num(i.unit_price) : ""}" style="width:90px"></td><td class="n" data-iv></td>` : ""}</tr>`).join("");
+}
+function poCard(t){
+  const card = document.createElement("div"); card.className = "card";
+  const items = (t.items && t.items.length ? t.items : [{}]);
+  card.innerHTML = `<div class="sum">📝 أمر شراء جديد</div>${t.doubts ? `<div class="doubt">⚠ ${B.esc(t.doubts)}</div>` : ""}
+    <div class="fields"><label>المورد<input data-s list="dl-sup" value="${B.esc(t.party_name || "")}"></label><label>التاريخ<input type="date" data-d value="${t.date || B.today()}"></label><label class="wide">ملاحظة<input data-n value="${B.esc(t.description || "")}"></label></div>
+    <datalist id="dl-sup">${S.parties.filter(p => p.kind === "supplier").map(p => `<option value="${B.esc(p.name)}">`).join("")}</datalist>
+    <div class="docwrap"><table class="doc-tbl"><thead><tr><th>الصنف</th><th>الوحدة</th><th>الكمية</th><th>سعر الوحدة</th><th>المجموع</th></tr></thead><tbody data-rows>${itemRows(items, true)}</tbody>
+      <tfoot><tr class="doc-total"><td colspan="4">المجموع قبل الضريبة</td><td class="n" data-tot></td></tr></tfoot></table></div>
+    <div class="actions"><button type="button" data-add>+ صنف</button><button type="button" class="primary" data-ok>✓ سجّل أمر الشراء</button><button type="button" class="ghost" data-x>إلغاء</button><span class="note" data-m></span></div>`;
+  const calc = () => { let tot = 0; card.querySelectorAll("[data-rows] tr").forEach(tr => { const v = B.r3(B.num(tr.querySelector("[data-iq]").value) * B.num(tr.querySelector("[data-ip]").value)); tot += v; tr.querySelector("[data-iv]").textContent = v ? B.money(v) : ""; }); card.querySelector("[data-tot]").textContent = B.money(tot); };
+  card.addEventListener("input", calc); calc();
+  card.querySelector("[data-add]").onclick = () => card.querySelector("[data-rows]").insertAdjacentHTML("beforeend", itemRows([{}], true));
+  card.querySelector("[data-x]").onclick = () => { card.innerHTML = `<span class="note">أُلغي ولم يُسجّل.</span>`; };
+  card.querySelector("[data-ok]").onclick = async () => {
+    const m = card.querySelector("[data-m]");
+    const its = [...card.querySelectorAll("[data-rows] tr")].map(tr => ({ name: tr.querySelector("[data-in]").value.trim(), unit: tr.querySelector("[data-iu]").value.trim(), qty: tr.querySelector("[data-iq]").value, unit_price: tr.querySelector("[data-ip]").value })).filter(i => i.name && i.qty);
+    if (!card.querySelector("[data-s]").value.trim()) { m.textContent = "اكتب اسم المورد."; return; }
+    if (!its.length) { m.textContent = "أضف صنفاً واحداً على الأقل مع الكمية."; return; }
+    const { data, error } = await sb.rpc("acc_po_create", { p: { supplier_name: card.querySelector("[data-s]").value.trim(), date: card.querySelector("[data-d]").value, items: its, note: card.querySelector("[data-n]").value.trim() } });
+    if (error) { m.textContent = B.errText(error); return; }
+    await Promise.all([loadPOs(), loadParties()]);
+    const po = S.pos.find(x => x.id === data.id);
+    card.className = "card " + (data.status === "pending" ? "waiting" : "done");
+    card.innerHTML = `<div class="sum">${data.status === "pending" ? "⏳" : "✓"} أمر شراء رقم ${data.no} · <span class="amt">${B.money(data.total)}</span> دينار</div>
+      <div class="note">${data.status === "pending" ? "أكبر من حد الموافقة: ينتظر موافقة المدير قبل إرساله للمورد." : "جاهز للإرسال إلى المورد. عند وصول البضاعة اكتب «وصل…» أو اضغط «استلام بضاعة»."}</div>
+      <div class="actions"><button type="button" data-p>🖨️ طباعة أمر الشراء</button></div>`;
+    card.querySelector("[data-p]").onclick = () => B.printHTML(B.poHTML(po, S.company));
+  };
+  return card;
+}
+async function poListCard(){
+  await loadPOs();
+  const list = S.pos.filter(p => ["pending", "open", "received"].includes(p.status));
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">📝 أوامر الشراء المفتوحة <span class="note">${list.length}</span></div>
+    <div class="entries" style="max-height:none">${list.map(p => { const st = B.PO_STATUS[p.status]; const gap = B.r3(B.num(p.received_value) - B.num(p.invoiced_value) - B.num(p.invoice_pending));
+      return `<div class="entry" data-id="${p.id}"><span>#${p.no} · ${B.esc(p.supplier)} · ${p.date}</span><span class="a">${B.money(p.total)}</span>
+      <span class="m"><span class="pill ${st[1]}">${st[0]}</span> مستلم ${B.money(p.received_value)} · مفوتر ${B.money(p.invoiced_value)}${gap > 0.0005 ? ` <span class="pill warn">بانتظار فاتورة ${B.money(gap)}</span>` : ""}
+      ${p.status !== "pending" && p.status !== "received" ? '<button type="button" data-r>استلام</button>' : ""}<button type="button" data-p>🖨️</button>${B.num(p.received_value) ? "" : '<button type="button" data-c>إلغاء</button>'}</span><span class="m" data-msg></span></div>`; }).join("") || '<span class="note">لا توجد أوامر شراء مفتوحة.</span>'}</div>`;
+  w.querySelectorAll(".entry[data-id]").forEach(el => { const p = S.pos.find(x => x.id === el.dataset.id);
+    const r = el.querySelector("[data-r]"); if (r) r.onclick = () => addSys(grnCard({ po_id: p.id }));
+    el.querySelector("[data-p]").onclick = () => B.printHTML(B.poHTML(p, S.company));
+    const c = el.querySelector("[data-c]"); if (c) c.onclick = () => { const msg = el.querySelector("[data-msg]");
+      msg.innerHTML = `<input placeholder="سبب الإلغاء" style="max-width:200px"> <button type="button">تأكيد</button>`;
+      msg.querySelector("button").onclick = async () => { const why = msg.querySelector("input").value.trim(); if (!why) return;
+        const { error } = await sb.rpc("acc_po_cancel", { p_id: p.id, p_reason: why }); if (error) msg.textContent = B.errText(error); else w.replaceWith(await poListCard()); }; };
+  });
+  return w;
+}
+function grnCard(t){
+  const card = document.createElement("div"); card.className = "card"; card.files = [];
+  const open = S.pos.filter(p => p.status === "open");
+  if (!open.length) { card.innerHTML = `<div class="note">لا يوجد أمر شراء مفتوح. سجّل أمر الشراء أولاً (مثال: «طلبنا من مصنع الورق 2 طن ورق بسعر 600»). No open purchase order.</div>`; return card; }
+  const pn = (t.party_name || "").trim();
+  const best = open.find(p => t.po_id && p.id === t.po_id) || open.find(p => t.po_no && p.no === Number(t.po_no)) || (pn && open.find(p => p.supplier.includes(pn) || pn.includes(p.supplier))) || (open.length === 1 ? open[0] : null);
+  card.innerHTML = `<div class="sum">📦 استلام بضاعة</div>
+    <div class="fields"><label class="wide">أمر الشراء<select data-po>${best ? "" : '<option value="">اختر…</option>'}${open.map(p => `<option value="${p.id}"${best && p.id === best.id ? " selected" : ""}>${B.esc(poLabel(p))}</option>`).join("")}</select></label>
+      <label>تاريخ الاستلام<input type="date" data-d value="${t.date || B.today()}" max="${B.today()}"></label><label class="wide">ملاحظة<input data-n></label></div>
+    <div data-items></div>
+    <div class="actions"><button type="button" data-att>📎 صورة سند التسليم</button><span class="note" data-f></span><button type="button" class="primary" data-ok>✓ سجّل الاستلام</button><span class="note" data-m></span></div>
+    <input type="file" hidden data-file accept="image/*,application/pdf">`;
+  const draw = () => { const p = S.pos.find(x => x.id === card.querySelector("[data-po]").value), box = card.querySelector("[data-items]");
+    if (!p) { box.innerHTML = ""; return; }
+    const got = name => S.grns.filter(g => g.po_id === p.id).reduce((a, g) => a + (g.items || []).filter(i => i.name === name).reduce((x, i) => x + B.num(i.qty), 0), 0);
+    box.innerHTML = `<div class="docwrap"><table class="doc-tbl"><thead><tr><th>الصنف</th><th>المطلوب</th><th>استُلم سابقاً</th><th>المستلم الآن</th></tr></thead><tbody>
+      ${p.items.map(i => { const said = (t.items || []).find(x => x.name && (x.name.includes(i.name) || i.name.includes(x.name)));
+        const left = B.r3(B.num(i.qty) - got(i.name));
+        return `<tr data-name="${B.esc(i.name)}"><td>${B.esc(i.name)}</td><td class="n">${B.money(i.qty, 3)} ${B.esc(i.unit || "")}</td><td class="n">${B.money(got(i.name), 3)}</td>
+          <td><input type="number" step="0.001" min="0" data-q value="${said && said.qty != null ? B.num(said.qty) : (!t.items || !t.items.length) && left > 0 ? left : ""}" style="width:90px"></td></tr>`; }).join("")}</tbody></table></div>`; };
+  card.querySelector("[data-po]").onchange = draw; draw();
+  card.querySelector("[data-att]").onclick = () => card.querySelector("[data-file]").click();
+  card.querySelector("[data-file]").onchange = async e => { for (const f of [...e.target.files]) { try { card.files.push(await prepFile(f)); } catch (err) {} } card.querySelector("[data-f]").textContent = card.files.map(f => f.name).join("، "); };
+  card.querySelector("[data-ok]").onclick = async () => {
+    const m = card.querySelector("[data-m]"), poId = card.querySelector("[data-po]").value; if (!poId) { m.textContent = "اختر أمر الشراء."; return; }
+    const items = [...card.querySelectorAll("tr[data-name]")].map(tr => ({ name: tr.dataset.name, qty: tr.querySelector("[data-q]").value })).filter(i => B.num(i.qty) > 0);
+    if (!items.length) { m.textContent = "اكتب الكمية المستلمة."; return; }
+    try {
+      const attachments = await upload(card.files);
+      const { data, error } = await sb.rpc("acc_grn_create", { p: { po_id: poId, date: card.querySelector("[data-d]").value, items, note: card.querySelector("[data-n]").value.trim(), attachments } });
+      if (error) { m.textContent = B.errText(error); return; }
+      await loadPOs(); const po = S.pos.find(x => x.id === poId), g = S.grns.find(x => x.no === data.no);
+      card.className = "card done";
+      card.innerHTML = `<div class="sum">✓ سند استلام رقم ${data.no} · قيمته <span class="amt">${B.money(data.value)}</span> دينار</div>
+        <div class="note">${data.po_status === "received" ? "استُلم كل أمر الشراء." : "بقي جزء من أمر الشراء لم يصل."} عندما تصل فاتورة المورد، سجّلها واختر أمر الشراء رقم ${po.no} لتتم المطابقة.</div>
+        <div class="actions"><button type="button" data-p>🖨️ طباعة سند الاستلام</button></div>`;
+      card.querySelector("[data-p]").onclick = () => B.printHTML(B.grnHTML(g, po, S.company));
+    } catch (err) { m.textContent = B.errText(err); }
+  };
+  return card;
+}
+
+/* ---------- fixed assets ---------- */
+function assetForm(entryNo, cost, desc){
+  const w = document.createElement("div"); w.className = "doubt"; w.style.background = "transparent";
+  const lives = S.settings.asset_lives || {};
+  w.innerHTML = `<b>أضفه إلى سجل الأصول الثابتة</b><div class="fields"><label>اسم الأصل<input data-an value="${B.esc(desc || "")}"></label>
+    <label>النوع<select data-ac>${Object.entries(B.ASSET_CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+    <label>العمر (أشهر)<input type="number" data-al min="1" value="${lives.machines || 120}"></label><label>الموقع<input data-ao></label></div>
+    <div class="actions"><button type="button" class="primary" data-go>✓ أضف للسجل</button><span class="note" data-m></span></div>`;
+  w.querySelector("[data-ac]").onchange = e => { w.querySelector("[data-al]").value = lives[e.target.value] || 60; };
+  w.querySelector("[data-go]").onclick = async () => {
+    const { data, error } = await sb.rpc("acc_asset_add", { p: { name: w.querySelector("[data-an]").value.trim(), category: w.querySelector("[data-ac]").value, cost, life_months: w.querySelector("[data-al]").value,
+      location: w.querySelector("[data-ao]").value.trim(), in_service: B.today(), entry_no: entryNo } });
+    if (error) { w.querySelector("[data-m]").textContent = B.errText(error); return; }
+    w.innerHTML = `<span class="pill good">✓ أصل رقم ${data.no} في السجل، يُستهلك على ${data.life_months} شهراً</span>`;
+  };
+  return w;
+}
+async function assetsCard(){
+  const [assets, deps] = await Promise.all([B.Data.assets(), B.Data.assetDep()]);
+  const list = B.assetBook(assets.filter(a => a.status === "active"), deps);
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">🏭 الأصول الثابتة <span class="note">${list.length} أصل · القيمة الدفترية ${B.money(list.reduce((a, x) => a + x.book, 0))}</span></div>
+    <div class="note">للجرد السنوي: اطبع السجل، تأكد من وجود كل أصل في مكانه، ثم اضغط «موجود» أو «مفقود».</div>
+    <div class="entries" style="max-height:none">${list.map(a => `<div class="entry" data-id="${a.id}"><span>#${a.no} · ${B.esc(a.name)} · ${B.esc(B.ASSET_CATS[a.category] || a.category)}${a.location ? " · " + B.esc(a.location) : ""}</span><span class="a">${B.money(a.book)}</span>
+      <span class="m">التكلفة ${B.money(a.cost)} · استهلاك شهري ${B.money(a.monthly)} · آخر جرد ${a.last_verified || "–"}${a.verify_note && a.verify_note.startsWith("NOT FOUND") ? ' <span class="pill bad">مفقود</span>' : ""}
+      <button type="button" data-y>✓ موجود</button><button type="button" data-n>✗ مفقود</button></span></div>`).join("") || '<span class="note">السجل فارغ.</span>'}</div>
+    <details><summary>إضافة أصل يدوياً (مثلاً أصول موجودة قبل بدء النظام)</summary><div class="fields"><label>الاسم<input data-an></label>
+      <label>النوع<select data-ac>${Object.entries(B.ASSET_CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
+      <label>التكلفة (أو القيمة الدفترية عند البدء)<input type="number" step="0.001" data-acost></label><label>العمر المتبقي (أشهر)<input type="number" data-al></label>
+      <label>تاريخ التشغيل<input type="date" data-ad value="${B.today()}"></label><label>الموقع<input data-ao></label></div>
+      <div class="actions"><button type="button" data-add>أضف</button><span class="note" data-m></span></div></details>
+    <div class="actions"><button type="button" data-print>🖨️ طباعة سجل الأصول</button></div>`;
+  w.querySelector("[data-print]").onclick = () => B.printHTML(B.assetsHTML(list, B.today(), S.company));
+  w.querySelectorAll(".entry[data-id]").forEach(el => {
+    const go = async found => { const { error } = await sb.rpc("acc_asset_verify", { p_id: el.dataset.id, p_found: found, p_note: null }); if (!error) w.replaceWith(await assetsCard()); };
+    el.querySelector("[data-y]").onclick = () => go(true); el.querySelector("[data-n]").onclick = () => go(false);
+  });
+  w.querySelector("[data-add]").onclick = async () => {
+    const q = s => w.querySelector("details " + s);
+    const { error } = await sb.rpc("acc_asset_add", { p: { name: q("[data-an]").value.trim(), category: q("[data-ac]").value, cost: q("[data-acost]").value, life_months: q("[data-al]").value || null, in_service: q("[data-ad]").value, location: q("[data-ao]").value.trim() } });
+    if (error) { q("[data-m]").textContent = B.errText(error); return; }
+    w.replaceWith(await assetsCard());
+  };
+  return w;
+}
+
+/* ---------- month end ---------- */
+async function monthData(){
+  const [entries, recs, counts, invc, runs, monthRuns, cheques, obls, done] = await Promise.all([B.Data.entriesForPages(500), B.Data.recs(), B.Data.counts(), B.Data.invCounts(), B.Data.payrollRuns(), B.Data.monthRuns(), B.Data.cheques(), B.Data.obligations(), B.Data.obligationDone()]);
+  const held = (await sb.from("acc_erp_staging").select("id").eq("status", "held")).data || [];
+  return { entries, recs, counts, invc, runs, monthRuns, cheques, held, dl: B.deadlines(obls, done, B.today(), S.since) };
+}
+async function monthEndCard(month){
+  const t = B.today(); month = month || (+t.slice(8) <= 10 ? B.addDays(B.monthStart(t), -1).slice(0, 7) : t.slice(0, 7));
+  const d = await monthData(), c = B.monthChecklist(month, d);
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">📅 إقفال الشهر <span class="note">${c.done} من ${c.items.length} جاهز</span></div>
+    <div class="fields"><label>الشهر<input type="month" data-mo value="${month}" max="${t.slice(0, 7)}"></label></div>
+    <div class="entries" style="max-height:none">${c.items.map(i => `<div class="entry"><span>${i.ok ? "✅" : "⬜"} ${B.esc(i.t)}</span><span class="m">${B.esc(i.s || "")}</span></div>`).join("")}</div>
+    ${c.run ? `<div class="note">نهاية الشهر شُغّلت: ${c.run.detail.depreciation ? `استهلاك ${B.money(c.run.detail.depreciation)} · ` : ""}${c.run.detail.prepaid ? `مصاريف مقدمة ${B.money(c.run.detail.prepaid)} · ` : ""}${c.run.detail.accruals ? `عكس مستحقة ${B.money(c.run.detail.accruals)}` : ""}</div>`
+      : `<div class="actions"><button type="button" class="primary" data-run>شغّل نهاية الشهر</button><span class="note">يحسب الاستهلاك، ويوزّع المصاريف المدفوعة مقدماً، ويعكس مستحقات الشهر السابق. مرة واحدة لكل شهر.</span><span class="note" data-m></span></div>`}
+    <div class="note">بعد اكتمال القائمة، يقفل المدير الشهر من صفحته.</div>`;
+  card.querySelector("[data-mo]").onchange = async e => card.replaceWith(await monthEndCard(e.target.value));
+  const r = card.querySelector("[data-run]"); if (r) r.onclick = async () => {
+    r.disabled = true; const { error } = await sb.rpc("acc_month_run", { p_month: month });
+    if (error) { r.disabled = false; card.querySelector("[data-m]").textContent = B.errText(error); return; }
+    card.replaceWith(await monthEndCard(month)); loadToday();
+  };
+  return card;
+}
+
+/* ---------- deadlines ---------- */
+async function deadlinesCard(){
+  const [obls, done] = await Promise.all([B.Data.obligations(), B.Data.obligationDone()]);
+  const list = B.deadlines(obls, done, B.today(), S.since);
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">⏰ المواعيد الحكومية والالتزامات</div>
+    <div class="entries" style="max-height:none">${list.map((x, i) => `<div class="entry" data-i="${i}"><span>${B.esc(x.o.title_ar)} · ${B.esc(x.label)}</span><span class="a">${x.due}</span>
+      <span class="m"><span class="pill ${B.DL[x.status][1]}">${B.DL[x.status][0]}${x.status === "late" ? ` منذ ${-x.days} يوم` : x.status === "soon" ? ` بعد ${x.days} يوم` : ""}</span>${x.status === "done" ? ` ${B.esc(x.note || "")}` : ` <input data-n placeholder="ملاحظة (رقم الإيصال…)" style="max-width:180px"> <button type="button" data-ok>✓ تم</button>`}</span></div>`).join("") || '<span class="note">لا شيء مستحق قريباً.</span>'}</div>
+    ${(() => { const L = B.loanStatus((S.loans || []).filter(l => l.status === "active"), S.loanEntries || [], B.today()).filter(l => l.days != null && l.days <= 30);
+      return L.length ? `<div class="sum">🏦 البنوك</div>` + L.map(l => `<div class="entry"><span>${B.esc(B.LOAN_KIND[l.kind])} · ${B.esc(l.bank)}</span><span class="a">${l.alert}</span><span class="m"><span class="pill ${l.days < 0 ? "bad" : "warn"}">${l.kind === "loan" ? `قسط ${B.money(l.next.total)}` : "انتهاء"} ${l.days < 0 ? "متأخر" : `بعد ${l.days} يوم`}</span></span></div>`).join("") : ""; })()}
+    <div class="note">المواعيد تقريبية، والمدير يعدّلها من صفحته. تأكد منها مع المدقق.</div>`;
+  w.querySelectorAll(".entry[data-i]").forEach(el => { const b = el.querySelector("[data-ok]"); if (!b) return; const x = list[+el.dataset.i];
+    b.onclick = async () => { const { error } = await sb.rpc("acc_obligation_done", { p_key: x.o.key, p_period: x.period, p_note: el.querySelector("[data-n]").value.trim() || null }); if (!error) { w.replaceWith(await deadlinesCard()); loadToday(); } }; });
+  return w;
+}
+
+/* ---------- statement matching and confirmations ---------- */
+async function confirmCard(t){
+  const ps = S.parties.filter(p => p.kind === "customer" || p.kind === "supplier");
+  const p0 = t && t.party_name ? matchParty(t.party_name) : null;
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">⚖️ مطابقة كشف عميل أو مورد</div>
+    <div class="note">أدخل الرصيد كما يظهر في كشف العميل أو المورد. سأقارنه بدفاترنا وأسجّل الفرق.</div>
+    <div class="fields"><label class="wide">الطرف<select data-p>${p0 ? "" : '<option value="">اختر…</option>'}${ps.map(p => `<option value="${p.id}"${p0 && p0.id === p.id ? " selected" : ""}>${B.esc(p.name)} (${p.kind === "customer" ? "عميل" : "مورد"})</option>`).join("")}</select></label>
+      <label>كما في تاريخ<input type="date" data-d value="${B.today()}"></label><label>الرصيد حسب كشفهم<input type="number" step="0.001" data-b></label><label class="wide">ملاحظة<input data-n></label></div>
+    <div class="actions"><button type="button" class="primary" data-ok>قارن وسجّل</button><button type="button" data-letters>🖨️ طلبات مصادقة الأرصدة (للمدقق)</button><span class="note" data-m></span></div><div data-out></div>`;
+  w.querySelector("[data-ok]").onclick = async () => {
+    const m = w.querySelector("[data-m]"), pid = w.querySelector("[data-p]").value, b = w.querySelector("[data-b]").value;
+    if (!pid || b === "") { m.textContent = "اختر الطرف واكتب رصيد كشفهم."; return; }
+    const { data, error } = await sb.rpc("acc_confirm_save", { p_party: pid, p_as_of: w.querySelector("[data-d]").value, p_their: B.num(b), p_note: w.querySelector("[data-n]").value.trim() || null, p_kind: "statement" });
+    if (error) { m.textContent = B.errText(error); return; }
+    const p = ps.find(x => x.id === pid), d = B.num(data.difference), rows = await B.Data.ledger(null, w.querySelector("[data-d]").value);
+    w.querySelector("[data-out]").innerHTML = `<div class="sum">${d === 0 ? '<span class="pill good">✓ متطابق</span>' : `<span class="pill bad">فرق ${B.money(d)} دينار</span>`} · دفاترنا ${B.money(data.ours)} · كشفهم ${B.money(b)}</div>
+      ${d === 0 ? "" : `<div class="note">ابحث عن فاتورة أو دفعة مسجّلة عند طرف وليست عند الآخر. هذه آخر حركاتنا:</div><div class="docwrap">${B.statementHTML(B.Reports.statement(rows, p.name, B.addDays(w.querySelector("[data-d]").value, -90), w.querySelector("[data-d]").value), p.name, B.addDays(w.querySelector("[data-d]").value, -90), w.querySelector("[data-d]").value, S.company)}</div>`}`;
+  };
+  w.querySelector("[data-letters]").onclick = async () => {
+    const asOf = w.querySelector("[data-d]").value, rows = await B.Data.ledger(null, asOf);
+    const bal = p => B.r3(rows.filter(r => r.party_id === p.id && (r.account === "1201" || r.account === "2101")).reduce((a, r) => a + (p.kind === "customer" ? B.num(r.debit) - B.num(r.credit) : B.num(r.credit) - B.num(r.debit)), 0));
+    const html = ps.map(p => ({ p, b: bal(p) })).filter(x => Math.abs(x.b) > 0.0005).map(x => B.confirmLetterHTML(x.p, x.b, asOf, S.company)).join('<div style="page-break-after:always"></div>');
+    B.printHTML(html || "<p>لا توجد أرصدة.</p>");
+  };
+  return w;
+}
+
+/* ---------- loans, letters of credit, guarantees ---------- */
+async function loadLoans(){ [S.loans, S.loanEntries] = await Promise.all([B.Data.loans(), B.Data.entries({ types: ["loan_received", "loan_payment"] })]); }
+async function loansCard(){
+  await loadLoans();
+  const st = B.loanStatus(S.loans.filter(l => l.status === "active"), S.loanEntries, B.today());
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">🏦 القروض والاعتمادات والكفالات</div>
+    <div class="entries" style="max-height:none">${st.map(l => `<div class="entry" data-id="${l.id}"><span>${B.esc(B.LOAN_KIND[l.kind])} · ${B.esc(l.bank)}${l.note ? " · " + B.esc(l.note) : ""}</span><span class="a">${B.money(l.kind === "loan" ? l.balance : l.amount)}</span>
+      <span class="m">${l.kind === "loan" ? `${l.received ? (l.next ? `القسط ${l.next.k} في ${l.next.due}: ${B.money(l.next.total)} (أصل ${B.money(l.next.principal)} + فائدة ${B.money(l.next.interest)}) <button type="button" data-pay>سجّل القسط</button>` : "سُدّد بالكامل") : `لم يُستلم بعد <button type="button" data-get>سجّل استلام القرض</button>`} <button type="button" data-sch>🖨️ الجدول</button>`
+        : `ينتهي ${l.expiry || "–"}${l.days != null && l.days <= 30 ? ` <span class="pill ${l.days < 0 ? "bad" : "warn"}">${l.days < 0 ? "منتهي" : `بعد ${l.days} يوم`}</span>` : ""}`}</span></div>`).join("") || '<span class="note">لا توجد قروض. يضيفها المدير من صفحته.</span>'}</div>`;
+  w.querySelectorAll(".entry[data-id]").forEach(el => { const l = st.find(x => x.id === el.dataset.id);
+    const pay = el.querySelector("[data-pay]"); if (pay) pay.onclick = () => addSys(draftCard({ type: "loan_payment", amount: l.next.total, principal: l.next.principal, method: "bank", loan_id: l.id, description: `قسط ${l.next.k} من قرض ${l.bank}`, confidence: "high" }, "", []));
+    const get = el.querySelector("[data-get]"); if (get) get.onclick = () => addSys(draftCard({ type: "loan_received", amount: l.amount, method: "bank", loan_id: l.id, description: `استلام قرض ${l.bank}`, confidence: "high" }, "", []));
+    const sc = el.querySelector("[data-sch]"); if (sc) sc.onclick = () => B.printHTML(B.loanHTML(l, S.company)); });
+  return w;
+}
+
+/* ---------- recurring monthly entries ---------- */
+const REC_TYPES = ["expense", "supplier_payment", "prepaid_expense", "loan_payment", "owner_out", "purchase", "sale", "collection", "other_income"];
+function dueRecurring(){ const mo = B.today().slice(0, 7), d = +B.today().slice(8); return (S.recurring || []).filter(r => r.active && (!r.last_month || r.last_month < mo) && r.day <= d); }
+async function recurringCard(){
+  S.recurring = await B.Data.recurring();
+  const due = dueRecurring(), all = S.recurring.filter(r => r.active);
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">🔁 القيود الشهرية الثابتة <span class="note">${due.length} مستحق هذا الشهر</span></div>
+    <div class="entries" style="max-height:none">${all.map(r => { const isDue = due.includes(r);
+      return `<div class="entry" data-id="${r.id}"><span>${B.esc(r.title)} · يوم ${r.day}</span><span class="a">${B.money(r.template.amount)}</span>
+        <span class="m">${isDue ? '<button type="button" data-go>سجّل الآن</button>' : `<span class="pill good">${r.last_month === B.today().slice(0, 7) ? "سُجّل هذا الشهر" : "لاحقاً"}</span>`}</span></div>`; }).join("") || '<span class="note">لا توجد قيود شهرية. بعد تسجيل مصروف ثابت (إيجار، إنترنت) اضغط «كرّرها كل شهر».</span>'}</div>`;
+  w.querySelectorAll("[data-go]").forEach(b => { const r = S.recurring.find(x => x.id === b.closest(".entry").dataset.id);
+    b.onclick = () => addSys(draftCard({ ...r.template, date: B.today(), confidence: "high", _recurring: r.id }, `قيد شهري: ${r.title}`, [])); });
+  return w;
+}
+
+/* ---------- daily report from the old ERP: read it, match receipts, record, check the day's totals ---------- */
+const needsReceipt = t => B.MONEY_OUT.includes(t.type) && t.method !== "credit" && B.num(t.amount) > B.num(S.settings.receipt_limit);
+async function readFiles(list, max){
+  const out = { files: [], text: "" };
+  for (const f of [...list].slice(0, max)) {
+    if (/\.(xlsx|xls)$/i.test(f.name)) { await B.needLib("xlsx"); const wb = XLSX.read(await f.arrayBuffer());
+      wb.SheetNames.forEach(n => out.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); out.files.push({ name: f.name, type: f.type || "application/vnd.ms-excel", blob: f, raw: true }); }
+    else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) { out.text += (await f.text()) + "\n"; out.files.push({ name: f.name, type: "text/csv", blob: f, raw: true }); }
+    else out.files.push(await prepFile(f));
+  }
+  out.text = out.text.slice(0, 60000); return out;
+}
+// pair each receipt with the report line it pays for: same amount, close date, similar name
+function matchReceipts(rows, receipts){
+  const used = new Set();
+  const score = (t, r) => { if (r.amount == null || Math.abs(B.num(r.amount) - B.num(t.amount)) > 0.01) return -1;
+    let sc = 10; if (r.date && t.date) { const d = Math.abs((new Date(r.date) - new Date(t.date)) / 864e5); sc -= Math.min(d, 9); }
+    const v = (r.vendor || "").trim(), pn = (t.party_name || t.description || "").trim(); if (v && pn && (v.includes(pn) || pn.includes(v))) sc += 5; return sc; };
+  rows.filter(r => r.needRc).forEach(r => { let best = null, bs = 0;
+    receipts.forEach((rc, k) => { if (used.has(k)) return; const sc = score(r.t, rc); if (sc > bs) { bs = sc; best = k; } });
+    if (best != null) { used.add(best); r.rc = best; } });
+  return receipts.map((rc, k) => used.has(k) ? null : k).filter(k => k != null);
+}
+function erpCard(){
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">📥 استيراد تقرير اليوم من النظام القديم</div>
+    <div class="note">1) أرفق تقرير حركات اليوم من النظام القديم (Excel أو PDF أو صورة). 2) أرفق صور إيصالات اليوم: كل إيصال في صورة. 3) راجع وسجّل. المصاريف والمدفوعات فوق ${B.money(S.settings.receipt_limit, 0)} دينار لا تُسجّل بدون إيصالها، بل تنتظر.</div>
+    <div class="actions"><button type="button" data-pick>📎 التقرير</button><span class="note" data-f></span><button type="button" data-pickr>📷 صور الإيصالات</button><span class="note" data-fr></span>
+      <button type="button" class="primary" data-read disabled>اقرأ</button></div>
+    <input type="file" hidden data-file accept="application/pdf,image/*,.xlsx,.xls,.csv,text/csv" multiple><input type="file" hidden data-rfile accept="image/*,application/pdf" multiple>
+    <div data-out></div>`;
+  let rep = { files: [], text: "" }, rfiles = [], receipts = [], rows = [], meta = {}, spare = [];
+  const out = card.querySelector("[data-out]"), q = s2 => card.querySelector(s2);
+  q("[data-pick]").onclick = () => q("[data-file]").click(); q("[data-pickr]").onclick = () => q("[data-rfile]").click();
+  q("[data-file]").onchange = async e => { try { rep = await readFiles(e.target.files, 6); } catch (err) { out.innerHTML = `<div class="note">${B.esc(err.message || "")}</div>`; }
+    q("[data-f]").textContent = [...e.target.files].map(f => f.name).join("، "); q("[data-read]").disabled = !(rep.files.length || rep.text); };
+  q("[data-rfile]").onchange = async e => { rfiles = []; for (const f of [...e.target.files].slice(0, 20)) { try { const pf = await prepFile(f); pf.hash = await B.fileHash(pf.blob); rfiles.push(pf); } catch (err) {} }
+    q("[data-fr]").textContent = rfiles.length ? `${rfiles.length} إيصال` : ""; };
+  const need = t => { const N = B.NEEDS[t.type] || {}, miss = [];
+    if (!N.methods) miss.push("نوع غير مدعوم"); if (!(B.num(t.amount) > 0) && !t.fx_amount) miss.push("المبلغ");
+    if (N.cat && !S.accounts.some(a => a.code === t.category && a.active !== false)) miss.push("النوع المحاسبي");
+    if ((N.req || t.method === "credit") && !(t.party_name || "").trim()) miss.push("الطرف");
+    if (t.method === "cheque" && !(t.cheque && t.cheque.no && t.cheque.due_date)) miss.push("رقم الشيك وتاريخه");
+    if (N.methods && N.methods.length && !N.methods.includes(t.method)) miss.push("طريقة الدفع");
+    if (N.loan || N.months) miss.push("تفاصيل إضافية");
+    return miss; };
+  q("[data-read]").onclick = async () => {
+    out.innerHTML = `<span class="typing">جارٍ قراءة التقرير والإيصالات… قد يستغرق دقيقة. Reading</span>`;
+    const [a, b] = await Promise.all([
+      sb.functions.invoke("ai-story", { body: { mode: "erp", text: rep.text, today: B.today(), files: rep.files.filter(f => f.data).map(f => ({ media_type: f.type, data: f.data })) } }),
+      rfiles.length ? sb.functions.invoke("ai-story", { body: { mode: "receipts", today: B.today(), files: rfiles.filter(f => f.data).map(f => ({ media_type: f.type, data: f.data })) } }) : Promise.resolve({ data: { result: { receipts: [] } } })]);
+    if (a.error || !a.data || !a.data.result) { out.innerHTML = `<div class="note">تعذرت قراءة التقرير. جرّب تصديره كـ Excel. Couldn't read the report.</div>`; return; }
+    meta = a.data.result; receipts = ((b.data && b.data.result && b.data.result.receipts) || []).filter(r => rfiles[r.file]);
+    rows = (meta.transactions || []).map((t, i) => ({ i, t, miss: need(t), needRc: needsReceipt(t), rc: null, st: null }));
+    spare = matchReceipts(rows, receipts);
+    draw();
+  };
+  const rcLabel = k => { const r = receipts[k]; return `🧾 ${B.esc(r.vendor || rfiles[r.file].name)} · ${B.money(r.amount)}${r.date ? " · " + r.date : ""}`; };
+  function draw(){
+    const cat = c => (S.accounts.find(a => a.code === c) || {}).name_ar || "", C = meta.closing || {};
+    out.innerHTML = `<div class="note">قرأت ${rows.length} حركة${meta.report_title ? " · " + B.esc(meta.report_title) : ""}${receipts.length ? ` و${receipts.length} إيصال` : ""}.</div>
+      ${meta.doubts ? `<div class="doubt">⚠ ${B.esc(meta.doubts)}</div>` : ""}${(meta.skipped || []).length ? `<div class="note">لم أحوّل: ${B.esc(meta.skipped.join(" · "))}</div>` : ""}
+      <div class="docwrap"><table class="doc-tbl"><thead><tr><th></th><th>المرجع</th><th>التاريخ</th><th>النوع</th><th>الطرف / البند</th><th>الدفع</th><th>المبلغ</th><th>الإيصال</th><th></th></tr></thead><tbody>
+      ${rows.map(r => { const t = r.t; return `<tr data-i="${r.i}"><td>${r.st ? "" : `<input type="checkbox" data-c ${!r.miss.length && t.confidence !== "low" ? "checked" : ""} ${r.miss.length ? "disabled" : ""} style="width:auto">`}</td>
+        <td>${B.esc(t.erp_ref || "")}</td><td>${B.esc(t.date || "")}</td><td>${B.esc((B.TYPES[t.type] || {}).ar || t.type)}</td><td>${B.esc(t.party_name || cat(t.category) || t.description || "")}${t.erp_account ? `<div class="note">${B.esc(t.erp_account)}</div>` : ""}</td>
+        <td>${B.esc(B.METHODS[t.method] || "")}</td><td class="n">${t.currency ? `${B.money(t.fx_amount)} ${B.esc(t.currency)}` : B.money(t.amount)}</td>
+        <td>${!r.needRc ? '<span class="note">لا يلزم</span>' : r.rc != null ? `<span class="pill good">${rcLabel(r.rc)}</span> <button type="button" data-un>✕</button>` : `<span class="pill warn">ينتظر إيصالاً</span>${spare.length ? ` <select data-rc style="width:auto"><option value="">اختر إيصالاً…</option>${spare.map(k => `<option value="${k}">${rcLabel(k).replace("🧾 ", "")}</option>`).join("")}</select>` : ""}`}</td>
+        <td>${r.st ? r.st : `${r.miss.length ? `<span class="pill warn">ينقص: ${B.esc(r.miss.join("، "))}</span> ` : ""}${t.confidence === "low" ? '<span class="pill bad">غير متأكد</span> ' : ""}${t.doubts ? `<span class="note">${B.esc(t.doubts)}</span> ` : ""}<button type="button" data-e>✏️</button>`}</td></tr>`; }).join("")}</tbody></table></div>
+      ${spare.length ? `<div class="doubt">⚠ إيصالات لم تطابق أي سطر في التقرير: ${spare.map(rcLabel).join(" ، ")}. تأكد أنها مسجّلة في النظام القديم.</div>` : ""}
+      <div class="actions"><button type="button" class="primary" data-go>✓ سجّل المحدد</button><span class="note" data-m></span></div>
+      <div class="sum" style="margin-top:6px">✔️ تحقق نهاية اليوم <span class="note">أرصدة النظام القديم في نهاية اليوم</span></div>
+      <div class="fields"><label>التاريخ<input type="date" data-cd value="${B.esc(C.date || meta.period_to || B.today())}" max="${B.today()}"></label>
+        <label>الصندوق<input type="number" step="0.001" data-cc value="${C.cash ?? ""}"></label><label>البنك<input type="number" step="0.001" data-cb value="${C.bank ?? ""}"></label>
+        <label>مستحق على العملاء<input type="number" step="0.001" data-cu value="${C.customers ?? ""}"></label><label>مستحق للموردين<input type="number" step="0.001" data-cs value="${C.suppliers ?? ""}"></label></div>
+      <div class="actions"><button type="button" data-chk>قارن مع دفاترنا</button><span data-cm></span></div>`;
+    out.querySelectorAll("tr[data-i]").forEach(tr => { const r = rows[+tr.dataset.i];
+      const e = tr.querySelector("[data-e]"); if (e) e.onclick = () => { r.st = `<span class="pill">فُتح للتعديل</span>`; draw(); const f = r.rc != null ? [rfiles[receipts[r.rc].file]] : [];
+        addSys(draftCard({ ...r.t, story: `من تقرير النظام القديم ${r.t.erp_ref || ""}` }, `من تقرير النظام القديم: ${r.t.erp_ref || ""}`, f)); };
+      const un = tr.querySelector("[data-un]"); if (un) un.onclick = () => { spare.push(r.rc); r.rc = null; draw(); };
+      const sel = tr.querySelector("[data-rc]"); if (sel) sel.onchange = () => { if (sel.value === "") return; r.rc = +sel.value; spare = spare.filter(k => k !== r.rc); draw(); }; });
+    out.querySelector("[data-go]").onclick = post;
+    out.querySelector("[data-chk]").onclick = check;
+  }
+  async function post(){
+    const m = out.querySelector("[data-m]"), sel = [...out.querySelectorAll("tr[data-i]")].filter(tr => tr.querySelector("[data-c]") && tr.querySelector("[data-c]").checked).map(tr => rows[+tr.dataset.i]);
+    if (!sel.length) { m.textContent = "اختر سطراً واحداً على الأقل."; return; }
+    m.textContent = "جارٍ التسجيل…";
+    let reportAtt = [];
+    try { reportAtt = await upload(rep.files.map(f => f.raw ? { name: f.name, type: f.type, blob: f.blob, raw: true } : f)); } catch (e) {}
+    let okN = 0, wait = 0, bad = 0, held = [];
+    for (const r of sel) {
+      const t = r.t;
+      if (r.needRc && r.rc == null) { held.push(t); r.st = `<span class="pill warn">⏸ ينتظر إيصالاً</span>`; continue; }
+      let att = reportAtt, hashes = [];
+      if (r.needRc) { const f = rfiles[receipts[r.rc].file]; try { att = await upload([f]); hashes = [f.hash]; } catch (e) { r.st = `<span class="pill bad">تعذر رفع الإيصال</span>`; bad++; continue; } }
+      const p = { type: t.type, date: t.date || B.today(), amount: B.num(t.amount), tax: B.num(t.tax), method: t.method || null, party_name: t.party_name || "", category: t.category || "",
+        description: t.description || "", items: t.items || [], cheque: t.cheque || null, custodian_name: t.custodian_name || null, rep_name: t.rep_name || null,
+        currency: t.currency || null, fx_amount: t.fx_amount || null, fx_rate: t.fx_rate || null, erp_ref: t.erp_ref || null,
+        story: `من تقرير النظام القديم ${t.erp_ref || ""}`, attachments: att, att_hashes: hashes, ai: t, confirm_duplicate: true };
+      const { data, error } = await sb.rpc("acc_post", { p });
+      if (error) { r.st = `<span class="pill bad">${B.esc(B.errText(error))}</span>`; bad++; }
+      else if (data.status === "pending") { r.st = `<span class="pill warn">⏳ قيد ${data.no} بانتظار المدير</span>`; wait++; }
+      else { r.st = `<span class="pill good">✓ قيد ${data.no}</span>`; okN++; }
+    }
+    if (held.length) await sb.rpc("acc_staging_add", { p: { lines: held, report: reportAtt } });
+    draw(); out.querySelector("[data-m]").textContent = `سُجّل ${okN}، بانتظار المدير ${wait}${held.length ? `، ينتظر إيصالاً ${held.length} (في «قيود تنتظر إيصالاً»)` : ""}${bad ? `، لم يُسجّل ${bad}` : ""}.`;
+    loadParties(); loadToday();
+  }
+  async function check(){
+    const g = s2 => out.querySelector(s2).value, th = {};
+    [["cash", "[data-cc]"], ["bank", "[data-cb]"], ["customers", "[data-cu]"], ["suppliers", "[data-cs]"]].forEach(([k, s2]) => { if (g(s2) !== "") th[k] = B.num(g(s2)); });
+    const cm = out.querySelector("[data-cm]"); if (!Object.keys(th).length) { cm.textContent = "اكتب رقماً واحداً على الأقل."; return; }
+    const { data, error } = await sb.rpc("acc_erp_check", { p_date: g("[data-cd]"), p_theirs: th });
+    if (error) { cm.textContent = B.errText(error); return; }
+    const L = { cash: "الصندوق", bank: "البنك", customers: "العملاء", suppliers: "الموردون" };
+    cm.innerHTML = data.ok ? '<span class="pill good">✓ كل الأرصدة متطابقة</span>' : Object.entries(data.diff).filter(([, v]) => Math.abs(v) > 0.0005)
+      .map(([k, v]) => `<span class="pill bad">${L[k]}: النظام القديم ${B.money(th[k])} · دفاترنا ${B.money(data.ours[k])} · الفرق ${B.money(v)}</span>`).join(" ");
+  }
+  return card;
+}
+// lines that came from the old ERP and wait for their receipt
+async function heldCard(){
+  const list = (await sb.from("acc_erp_staging").select("*").eq("status", "held").order("created_at")).data || [];
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">⏸ قيود تنتظر إيصالاً <span class="note">${list.length}</span></div>
+    <div class="note">مدفوعات من تقرير النظام القديم فوق حد الإيصال. أرفق إيصال كل منها ليُسجّل، أو استبعده مع السبب.</div>
+    <div class="entries" style="max-height:none">${list.map(h => { const t = h.line; return `<div class="entry" data-id="${h.id}"><span>${B.esc(t.erp_ref)} · ${B.esc((B.TYPES[t.type] || {}).ar || t.type)} · ${B.esc(t.party_name || t.description || "")} · ${B.esc(t.date || "")}</span><span class="a">${B.money(t.amount)}</span>
+      <span class="m"><button type="button" data-a>📎 أرفق الإيصال</button><button type="button" data-d>استبعاد</button><span data-x></span></span></div>`; }).join("") || '<span class="note">لا شيء ✓</span>'}</div>
+    <input type="file" hidden data-file accept="image/*,application/pdf">`;
+  let cur = null;
+  w.querySelectorAll(".entry[data-id]").forEach(el => { const h = list.find(x => x.id === el.dataset.id), x = el.querySelector("[data-x]");
+    el.querySelector("[data-a]").onclick = () => { cur = { h, el }; w.querySelector("[data-file]").click(); };
+    el.querySelector("[data-d]").onclick = () => { x.innerHTML = `<input placeholder="السبب" style="max-width:180px"> <button type="button">تأكيد</button>`;
+      x.querySelector("button").onclick = async () => { const why = x.querySelector("input").value.trim(); if (!why) return;
+        const { error } = await sb.rpc("acc_staging_close", { p_id: h.id, p_status: "discarded", p_reason: why }); if (error) x.textContent = B.errText(error); else w.replaceWith(await heldCard()); }; }; });
+  w.querySelector("[data-file]").onchange = async e => {
+    const f0 = e.target.files[0]; e.target.value = ""; if (!f0 || !cur) return; const { h, el } = cur, x = el.querySelector("[data-x]"), t = h.line;
+    try {
+      const f = await prepFile(f0); f.hash = await B.fileHash(f.blob); const att = await upload([f]);
+      const { error } = await sb.rpc("acc_post", { p: { type: t.type, date: t.date || B.today(), amount: B.num(t.amount), tax: B.num(t.tax), method: t.method || null, party_name: t.party_name || "", category: t.category || "",
+        description: t.description || "", cheque: t.cheque || null, erp_ref: t.erp_ref, story: `من تقرير النظام القديم ${t.erp_ref}`, attachments: att, att_hashes: [f.hash], ai: t, confirm_duplicate: true } });
+      if (error) { x.textContent = B.errText(error); return; }
+      await sb.rpc("acc_staging_close", { p_id: h.id, p_status: "posted", p_reason: null });
+      w.replaceWith(await heldCard()); loadToday();
+    } catch (err) { x.textContent = B.errText(err); }
+  };
+  return w;
+}
+
+/* ---------- trial: compare the story box with the old ERP, and how accurate the AI is ---------- */
+const accountOf = e => e.category || ({ sale: "4101", sales_return: "4102", collection: "1201", supplier_payment: "2101", other_income: "4201" })[e.type] || "";
+function compareCard(){
+  const card = document.createElement("div"); card.className = "card";
+  const t0 = B.today();
+  card.innerHTML = `<div class="sum">⚖️ مقارنة صندوق القصص مع النظام القديم</div>
+    <div class="note">أرفق تقرير النظام القديم لنفس الفترة. لن يُسجّل شيء: سأطابق كل سطر مع ما كتبته في صندوق القصص، وأقارن المبلغ والطرف والبند.</div>
+    <div class="fields"><label>من<input type="date" data-f value="${B.addDays(t0, -6)}"></label><label>إلى<input type="date" data-t value="${t0}" max="${t0}"></label></div>
+    <div class="actions"><button type="button" data-pick>📎 التقرير</button><span class="note" data-fn></span><button type="button" class="primary" data-read disabled>قارن</button></div>
+    <input type="file" hidden data-file accept="application/pdf,image/*,.xlsx,.xls,.csv,text/csv" multiple><div data-out></div>`;
+  let rep = { files: [], text: "" }, erp = [], ents = [], map = {};
+  const q = s2 => card.querySelector(s2), out = q("[data-out]");
+  q("[data-pick]").onclick = () => q("[data-file]").click();
+  q("[data-file]").onchange = async e => { rep = await readFiles(e.target.files, 6); q("[data-fn]").textContent = [...e.target.files].map(f => f.name).join("، "); q("[data-read]").disabled = !(rep.files.length || rep.text); };
+  q("[data-read]").onclick = async () => {
+    out.innerHTML = `<span class="typing">جارٍ القراءة والمقارنة…</span>`;
+    const from = q("[data-f]").value, to = q("[data-t]").value;
+    const [a, en, mp] = await Promise.all([sb.functions.invoke("ai-story", { body: { mode: "erp", text: rep.text, today: B.today(), files: rep.files.filter(f => f.data).map(f => ({ media_type: f.type, data: f.data })) } }),
+      B.Data.entries({ from }), sb.from("acc_erp_map").select("*")]);
+    if (a.error || !a.data || !a.data.result) { out.innerHTML = `<div class="note">تعذرت قراءة التقرير.</div>`; return; }
+    erp = (a.data.result.transactions || []).filter(t => !t.date || (t.date >= from && t.date <= to));
+    ents = en.filter(e => e.date <= to && !e.reverses && ["posted", "pending"].includes(e.status) && e.type !== "opening" && !(e.flags || []).includes("auto"));
+    map = {}; (mp.data || []).forEach(x => map[x.erp_account] = x.code);
+    run(from, to);
+  };
+  function run(from, to){
+    const used = new Set(), res = erp.map(t => {
+      let best = null, bs = -1;
+      ents.forEach(e => { if (used.has(e.id) || Math.abs(B.num(e.amount) - B.num(t.amount)) > 0.01) return;
+        let sc = 10 - Math.min(9, Math.abs((new Date(e.date) - new Date(t.date || e.date)) / 864e5) * 3); if (e.type === t.type) sc += 3;
+        const pn = (t.party_name || "").trim(), en2 = e.party ? e.party.name : ""; if (pn && en2 && (pn.includes(en2) || en2.includes(pn))) sc += 4;
+        if (sc > bs) { bs = sc; best = e; } });
+      if (best && bs >= 4) used.add(best.id); else best = null;
+      const want = (t.erp_account && map[t.erp_account]) || null, ours = best ? accountOf(best) : null;
+      const status = !best ? "missing" : !t.erp_account || !(B.NEEDS[best.type] || {}).cat ? "match" : !want ? "unmapped" : want === ours ? "match" : "diff";
+      return { t, e: best, want, ours, status };
+    });
+    const extra = ents.filter(e => !used.has(e.id) && e.date >= from);
+    const n = res.length, st = k => res.filter(r => r.status === k).length;
+    const stats = { lines: n, matched: n - st("missing"), same_account: st("match"), different_account: st("diff"), unmapped: st("unmapped"), missing_in_new: st("missing"), extra_in_new: extra.length,
+      score: n ? Math.round((st("match") / Math.max(1, n - st("unmapped"))) * 100) : null };
+    const acc = c => (S.accounts.find(a => a.code === c) || {}).name_ar || c || "–";
+    const unm = [...new Set(res.filter(r => r.status === "unmapped").map(r => r.t.erp_account))];
+    const P = { match: ["✓ مطابق", "good"], diff: ["⚠ بند مختلف", "warn"], missing: ["✗ غير موجود في صندوق القصص", "bad"], unmapped: ["؟ يحتاج ربط البند", ""] };
+    out.innerHTML = `<div class="kpis">${[["نسبة التطابق", stats.score == null ? "–" : stats.score + "%", "سطور بنفس المبلغ والبند"], ["مطابق", stats.same_account, `من ${n} سطر`], ["بند مختلف", stats.different_account, ""],
+      ["ناقص في صندوق القصص", stats.missing_in_new, ""], ["زائد في صندوق القصص", stats.extra_in_new, "غير موجود في القديم"]].map(([l, v, s2]) => `<div class="kpi"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s2}</span></div>`).join("")}</div>
+      ${unm.length ? `<div class="doubt">اربط أسماء بنود النظام القديم ببنودنا مرة واحدة: ${unm.map(u => `<div class="row" style="margin-top:4px"><b>${B.esc(u)}</b> ← <select data-map="${B.esc(u)}" style="width:auto"><option value="">اختر…</option>${S.accounts.filter(a => a.type === "expense" || a.kind === "fixed" || a.kind === "inventory").map(a => `<option value="${a.code}">${a.code} ${B.esc(a.name_ar)}</option>`).join("")}</select></div>`).join("")}</div>` : ""}
+      <div class="docwrap"><table class="doc-tbl"><thead><tr><th>النظام القديم</th><th>التاريخ</th><th>المبلغ</th><th>بند القديم</th><th>صندوق القصص</th><th>بندنا</th><th>النتيجة</th></tr></thead><tbody>
+      ${res.map(r => `<tr><td>${B.esc(r.t.erp_ref || "")} ${B.esc(r.t.party_name || r.t.description || "")}</td><td>${B.esc(r.t.date || "")}</td><td class="n">${B.money(r.t.amount)}</td><td>${B.esc(r.t.erp_account || "")}${r.want ? `<div class="note">= ${B.esc(acc(r.want))}</div>` : ""}</td>
+        <td>${r.e ? `قيد ${r.e.no} · ${B.esc(r.e.party ? r.e.party.name : r.e.description || "")}` : "–"}</td><td>${r.e ? B.esc(acc(r.ours)) : ""}</td><td><span class="pill ${P[r.status][1]}">${P[r.status][0]}</span></td></tr>`).join("")}
+      ${extra.map(e => `<tr><td>–</td><td>${e.date}</td><td class="n">${B.money(e.amount)}</td><td></td><td>قيد ${e.no} · ${B.esc(e.party ? e.party.name : e.description || "")}</td><td>${B.esc(acc(accountOf(e)))}</td><td><span class="pill bad">✗ غير موجود في القديم</span></td></tr>`).join("")}</tbody></table></div>
+      <div class="actions"><button type="button" data-save>حفظ النتيجة للمدير</button><span class="note" data-m></span></div>`;
+    out.querySelectorAll("[data-map]").forEach(sel => sel.onchange = async () => { if (!sel.value) return; const { error } = await sb.rpc("acc_erp_map_save", { p_erp: sel.dataset.map, p_code: sel.value });
+      if (!error) { map[sel.dataset.map] = sel.value; run(from, to); } });
+    out.querySelector("[data-save]").onclick = async () => { const { error } = await sb.rpc("acc_erp_compare_save", { p_from: from, p_to: to, p_stats: stats }); out.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓ حُفظت"; };
+  }
+  return card;
+}
+async function accuracyCard(){
+  const list = await B.Data.entries({ from: B.addDays(B.today(), -60) });
+  const w = document.createElement("div"); w.className = "card";
+  w.innerHTML = `<div class="sum">🎯 دقة صندوق القصص <span class="note">آخر 60 يوماً</span></div>` + B.accuracyHTML(B.Reports.accuracy(list, S.accounts));
+  return w;
+}
+
+/* ---------- documents and reports ---------- */
+async function entryByNo(no){ const r = await B.Data.entries({ no, limit: 1 }); return r[0]; }
+function docFor(e){ return e.doc === "invoice" ? B.invoiceHTML(e, S.company) : B.voucherHTML(e, S.company); }
+async function printEntry(no){
+  const e = await entryByNo(no); if (!e || !e.doc) return;
+  if (e.doc === "invoice") { const ei = (await B.Data.einvoices()).find(x => x.entry_id === e.id); return B.printHTML(B.invoiceHTML(e, S.company, ei)); }
+  B.printHTML(docFor(e));
+}
+function showDoc(html){
+  const w = document.createElement("div"); w.className = "docwrap"; w.innerHTML = html;
+  const a = document.createElement("div"); a.className = "actions"; const p = document.createElement("button"); p.type = "button"; p.textContent = "🖨️ طباعة · Print";
+  p.onclick = () => B.printHTML(html); a.appendChild(p); w.appendChild(a); addSys(w);
+}
+function matchParty(name, kind){
+  if (!name) return null; const n = name.trim(); const list = S.parties.filter(p => !kind || p.kind === kind);
+  return list.find(p => p.name === n) || list.find(p => p.name.includes(n) || n.includes(p.name)) || null;
+}
+async function showRequest(rq){
+  const wait = addSys(bubble(`<span class="typing">جارٍ التجهيز… Preparing</span>`));
+  try {
+    const to = rq.date_to || B.today(), from = rq.date_from || null;
+    if (rq.doc === "receipt_voucher" || rq.doc === "payment_voucher" || rq.doc === "invoice") {
+      const want = rq.doc === "invoice" ? "invoice" : rq.doc === "receipt_voucher" ? "receipt" : "payment";
+      let e = null;
+      if (rq.entry_no) e = await entryByNo(rq.entry_no);
+      else {
+        const p = matchParty(rq.party_name);
+        const list = (await B.Data.entries(Object.assign({ doc: want, status: "posted" }, p ? { party: p.id } : { limit: 300 }))).filter(x => x.doc === want && x.status === "posted" && (!p || x.party_id === p.id) && (!rq.date_from || x.date >= rq.date_from) && (!rq.date_to || x.date <= rq.date_to));
+        e = list[0];
+      }
+      wait.remove();
+      if (!e || !e.doc || e.doc === "journal") return addSys(bubble("لم أجد مستنداً مطابقاً. اذكر رقم القيد أو اسم الطرف. I couldn't find a matching document; give the entry number or the name."));
+      if (e.doc === "invoice") { const ei = (await B.Data.einvoices()).find(x => x.entry_id === e.id); showDoc(B.invoiceHTML(e, S.company, ei)); if (e.type === "sale" && e.status === "posted") addSys(einvBox(e)); return; }
+      return showDoc(docFor(e));
+    }
+    const rows = await B.Data.ledger(null, to);
+    wait.remove();
+    if (rq.doc === "statement") {
+      const p = matchParty(rq.party_name);
+      if (!p) return addSys(bubble("لمن الكشف؟ اكتب اسم العميل أو المورد. Whose statement? Write the customer or supplier name."));
+      return showDoc(B.statementHTML(B.Reports.statement(rows, p.name, from, to), p.name, from, to, S.company));
+    }
+    if (rq.doc === "daily_cash") return showDoc(B.cashDayHTML(B.Reports.cashDay(rows, to), to, S.company));
+    if (rq.doc === "balances") return showDoc(B.balancesHTML(B.Reports.partyBalances(rows, "customer"), B.Reports.partyBalances(rows, "supplier"), S.company));
+    if (rq.doc === "profit_loss") { const f = from || B.monthStart(to); return showDoc(B.plHTML(B.Reports.profitLoss(rows, f, to, S.accounts), f, to, S.company)); }
+    if (rq.doc === "expenses") { const f = from || B.monthStart(to); return showDoc(B.expensesHTML(rows, f, to, S.accounts, S.company)); }
+    if (rq.doc === "cheques") return addSys(await chequeListCard());
+    if (rq.doc === "bank") return addSys(bankCard());
+    if (rq.doc === "cash_count") return addSys(cashCountCard(null));
+    if (rq.doc === "payroll") return addSys(await payrollCard(rq.month || null));
+    if (rq.doc === "purchase_orders") return addSys(await poListCard());
+    if (rq.doc === "loans") return addSys(await loansCard());
+    if (rq.doc === "erp_import") return addSys(erpCard());
+    if (rq.doc === "erp_held") return addSys(await heldCard());
+    if (rq.doc === "erp_compare") return addSys(compareCard());
+    if (rq.doc === "accuracy") return addSys(await accuracyCard());
+    if (rq.doc === "export_xlsx") { addSys(bubble(`<span class="typing">جارٍ تجهيز الملف… Preparing</span>`)); const r = await B.exportBooks(S.company);
+      return addSys(bubble(`✓ نُزّل الملف <b>${B.esc(r.file)}</b>: ${r.sheets} ورقة، ${r.lines} سطر قيد. احفظه في مكان آمن (مثلاً Google Drive أو بريدك). Downloaded.`)); }
+    if (rq.doc === "recurring") return addSys(await recurringCard());
+    if (rq.doc === "cash_flow") { const f = from || B.monthStart(to); return showDoc(B.cashFlowHTML(B.Reports.cashFlow(rows, f, to), S.company)); }
+    if (rq.doc === "goods_received") { await loadPOs(); return addSys(grnCard({})); }
+    if (rq.doc === "aging") return showDoc(B.agingHTML(B.Reports.aging(rows, "customer", S.parties, to), "customer", to, S.company));
+    if (rq.doc === "supplier_plan") { const bal = B.Reports.accountBalances(rows), ch = await B.Data.cheques(), wk = B.addDays(B.today(), 7);
+      return showDoc(B.supplierPlanHTML(B.Reports.aging(rows, "supplier", S.parties, to), to, (bal["1101"] || 0) + (bal["1102"] || 0), ch.filter(c => c.direction === "out" && c.status === "issued" && c.due_date <= wk).reduce((a, c) => a + B.num(c.amount), 0), S.company)); }
+    if (rq.doc === "month_end") return addSys(await monthEndCard(rq.month || null));
+    if (rq.doc === "assets") return addSys(await assetsCard());
+    if (rq.doc === "deadlines") return addSys(await deadlinesCard());
+    if (rq.doc === "confirm" || rq.doc === "confirm_letters") return addSys(await confirmCard(rq));
+    if (rq.doc === "employee_tax_year") { const y = rq.year || (+to.slice(0, 4) - (+to.slice(5, 7) <= 3 ? 1 : 0)); const runs = (await B.Data.payrollRuns()).filter(r => r.month.startsWith(y + "-")).reverse();
+      const names = rq.party_name ? [rq.party_name] : [...new Set(runs.flatMap(r => (r.lines || []).map(l => l.name)))];
+      return showDoc(names.map(n => B.employeeYearHTML(n, y, runs, S.company)).join('<div style="page-break-after:always"></div>') || "<p>لا توجد رواتب لهذه السنة.</p>"); }
+    if (rq.doc === "auditor_pack") { const y = rq.year || (+to.slice(0, 4) - 1), end = `${y}-12-31`, R = rows.filter(r => r.date <= end);
+      const [assets, deps] = await Promise.all([B.Data.assets(), B.Data.assetDep()]);
+      return showDoc([B.balanceSheetHTML(B.Reports.balanceSheet(R, S.accounts, end), end, S.company), B.plHTML(B.Reports.profitLoss(R, `${y}-01-01`, end, S.accounts), `${y}-01-01`, end, S.company),
+        B.agingHTML(B.Reports.aging(R, "customer", S.parties, end), "customer", end, S.company), B.agingHTML(B.Reports.aging(R, "supplier", S.parties, end), "supplier", end, S.company),
+        B.assetsHTML(B.assetBook(assets.filter(a => a.status === "active" || (a.disposed_on && a.disposed_on > end)), deps.filter(d => d.month <= end.slice(0, 7))), end, S.company)].join('<div style="page-break-after:always"></div>')); }
+    if (rq.doc === "stock_count") return addSys(await stockCard());
+    if (rq.doc === "balance_sheet") return showDoc(B.balanceSheetHTML(B.Reports.balanceSheet(rows, S.accounts, to), to, S.company));
+    if (rq.doc === "tax_summary") { const f = from || B.monthStart(to); return showDoc(B.taxSummaryHTML(B.Reports.taxSummary(rows, f, to), S.company)); }
+    if (rq.doc === "entry_list") { const day = rq.date_from || rq.date_to || B.today(); const list = await B.Data.entries({ date: day }); return showDoc(B.entriesHTML(list, day, S.company)); }
+    addSys(bubble("لم أفهم الطلب. I didn't understand the request."));
+  } catch (err) { wait.remove(); addSys(bubble(B.errText(err), "err")); }
+}
+
+/* ---------- reports menu: every report in one place, no AI needed ---------- */
+const REPORTS = {
+  erp_import: { ar: "استيراد تقرير النظام القديم", d: "حوّل تقرير اليوم وإيصالاته إلى قيود" },
+  erp_held: { ar: "قيود تنتظر إيصالاً", d: "من تقرير النظام القديم" },
+  erp_compare: { ar: "مقارنة مع النظام القديم", d: "هل يطابق صندوق القصص؟" },
+  accuracy: { ar: "دقة صندوق القصص", d: "كم مرة أصاب الذكاء الاصطناعي" },
+  daily_cash: { ar: "كشف الصندوق", d: "حركة الصندوق ليوم", need: ["date"] },
+  entry_list: { ar: "قيود يوم", d: "كل ما سُجّل في يوم", need: ["date"] },
+  cash_count: { ar: "عدّ الصندوق", d: "قارن الموجود بالدفاتر" },
+  cheques: { ar: "الشيكات المفتوحة", d: "الواردة والصادرة والمستحقة" },
+  aging: { ar: "أعمار ذمم العملاء", d: "من تأخر، ولمن نتصل", need: ["date"] },
+  supplier_plan: { ar: "دفعات الموردين", d: "المستحق هذا الأسبوع" },
+  bank: { ar: "مطابقة البنك", d: "كشف البنك مقابل الدفاتر" },
+  deadlines: { ar: "المواعيد", d: "الضمان والضريبة والتراخيص والبنوك" },
+  recurring: { ar: "القيود الشهرية", d: "إيجار، إنترنت، أقساط" },
+  month_end: { ar: "إقفال الشهر", d: "القائمة وتشغيل نهاية الشهر", need: ["month"] },
+  payroll: { ar: "رواتب الشهر", d: "تجهيز الرواتب وطباعة القسائم", need: ["month"] },
+  stock_count: { ar: "جرد المخزون", d: "الكميات وقيمة المخزون" },
+  expenses: { ar: "المصاريف حسب النوع", d: "لفترة", need: ["period"] },
+  profit_loss: { ar: "الأرباح والخسائر", d: "لفترة", need: ["period"] },
+  tax_summary: { ar: "ملخص ضريبة المبيعات", d: "للإقرار", need: ["period"] },
+  cash_flow: { ar: "التدفقات النقدية", d: "من أين جاء النقد وأين ذهب", need: ["period"] },
+  balance_sheet: { ar: "الميزانية العمومية", d: "كما في تاريخ", need: ["date"] },
+  balances: { ar: "أرصدة العملاء والموردين", d: "من له ومن عليه" },
+  statement: { ar: "كشف حساب", d: "لعميل أو مورد", need: ["party", "period"] },
+  invoice: { ar: "إعادة طباعة فاتورة", d: "برقم القيد أو آخر فاتورة للعميل", need: ["customer_opt", "entry"] },
+  receipt_voucher: { ar: "سند قبض", d: "برقم القيد أو آخر سند للطرف", need: ["party_opt", "entry"] },
+  payment_voucher: { ar: "سند صرف", d: "برقم القيد أو آخر سند للطرف", need: ["party_opt", "entry"] },
+  purchase_orders: { ar: "أوامر الشراء", d: "المفتوحة وحالة المطابقة" },
+  goods_received: { ar: "استلام بضاعة", d: "على أمر شراء" },
+  confirm: { ar: "مطابقة كشف ومصادقات", d: "كشف مورد أو عميل، وطلبات المصادقة" },
+  loans: { ar: "القروض والكفالات", d: "الأرصدة والأقساط" },
+  assets: { ar: "الأصول الثابتة", d: "السجل والجرد السنوي" },
+  employee_tax_year: { ar: "كشف رواتب سنوي", d: "لكل موظف (للضريبة)", need: ["year", "employee_opt"] },
+  auditor_pack: { ar: "ملف المدقق", d: "قوائم نهاية السنة", need: ["year"] },
+  export_xlsx: { ar: "نسخة Excel كاملة", d: "كل الدفاتر في ملف واحد (نسخة احتياطية)" },
+};
+const REP_TIME = [["فترة التجربة", ["erp_import", "erp_held", "erp_compare", "accuracy"]], ["يومي", ["daily_cash", "entry_list", "cash_count", "cheques"]], ["أسبوعي", ["aging", "supplier_plan", "bank", "deadlines"]],
+  ["شهري", ["month_end", "payroll", "stock_count", "recurring", "expenses", "profit_loss", "tax_summary", "cash_flow"]],
+  ["سنوي", ["balance_sheet", "auditor_pack", "confirm", "employee_tax_year", "assets"]], ["عند الحاجة", ["statement", "invoice", "receipt_voucher", "payment_voucher", "balances", "purchase_orders", "goods_received", "loans", "export_xlsx"]]];
+const REP_TOPIC = [["العملاء", ["statement", "balances", "aging", "invoice", "receipt_voucher"]], ["الموردون والمشتريات", ["supplier_plan", "purchase_orders", "goods_received", "confirm", "payment_voucher"]],
+  ["الصندوق والبنك", ["daily_cash", "cash_count", "cheques", "bank", "loans", "cash_flow"]], ["الموظفون", ["payroll", "employee_tax_year"]],
+  ["الأصول والمخزون", ["assets", "stock_count"]], ["الضرائب والمواعيد", ["tax_summary", "deadlines"]],
+  ["النتائج", ["profit_loss", "expenses", "balance_sheet", "auditor_pack"]], ["الإقفال", ["month_end", "recurring", "entry_list", "export_xlsx", "erp_import"]]];
+let repTab = "time";
+function drawReports(){
+  const f = ($("#repSearch").value || "").trim(), groups = repTab === "time" ? REP_TIME : REP_TOPIC;
+  $("#repList").innerHTML = groups.map(([g, ks]) => { const items = ks.filter(k => !f || REPORTS[k].ar.includes(f) || REPORTS[k].d.includes(f));
+    return items.length ? `<div class="rgroup"><h3>${g}</h3><div class="ritems">${items.map(k => `<button type="button" data-r="${k}"><b>${REPORTS[k].ar}</b><small>${REPORTS[k].d}</small></button>`).join("")}</div></div>` : ""; }).join("") || '<span class="note">لا يوجد تقرير بهذا الاسم.</span>';
+  $("#repList").querySelectorAll("[data-r]").forEach(b => b.onclick = () => pickReport(b.dataset.r));
+}
+function periodOf(v){ const t = B.today(), y = +t.slice(0, 4);
+  if (v === "m") return [B.monthStart(t), t];
+  if (v === "pm") { const e = B.addDays(B.monthStart(t), -1); return [B.monthStart(e), e]; }
+  if (v === "y") return [`${y}-01-01`, t];
+  if (v === "py") return [`${y - 1}-01-01`, `${y - 1}-12-31`];
+  return null; }
+function pickReport(k){
+  const R = REPORTS[k], need = R.need || [], box = $("#repPick");
+  if (!need.length) return runReport(k, {});
+  const y = +B.today().slice(0, 4), names = kind => S.parties.filter(p => !kind || p.kind === kind);
+  const partySel = (kind, optional) => `<label class="wide">${kind === "employee" ? "الموظف" : kind === "customer" ? "العميل" : "العميل أو المورد"}${optional ? " (اختياري)" : ""}<select data-p>${optional ? '<option value="">الكل / الأحدث</option>' : '<option value="">اختر…</option>'}
+    ${names(kind === "any" ? null : kind).filter(p => kind !== "any" || p.kind !== "employee").map(p => `<option>${B.esc(p.name)}</option>`).join("")}</select></label>`;
+  box.innerHTML = `<div class="sum">${R.ar}</div><div class="fields">
+    ${need.includes("party") ? partySel("any") : ""}${need.includes("party_opt") ? partySel("any", true) : ""}${need.includes("customer_opt") ? partySel("customer", true) : ""}${need.includes("employee_opt") ? partySel("employee", true) : ""}
+    ${need.includes("date") ? `<label>التاريخ<input type="date" data-d value="${B.today()}" max="${B.today()}"></label>` : ""}
+    ${need.includes("month") ? `<label>الشهر<input type="month" data-mo value="${B.today().slice(0, 7)}" max="${B.today().slice(0, 7)}"></label>` : ""}
+    ${need.includes("year") ? `<label>السنة<select data-y>${[y, y - 1, y - 2].map(v => `<option${v === (k === "auditor_pack" ? y - 1 : y) ? " selected" : ""}>${v}</option>`).join("")}</select></label>` : ""}
+    ${need.includes("entry") ? `<label>رقم القيد (اختياري)<input type="number" min="1" data-e></label>` : ""}
+    ${need.includes("period") ? `<label>الفترة<select data-per><option value="m">هذا الشهر</option><option value="pm">الشهر الماضي</option><option value="y">هذه السنة</option><option value="py">السنة الماضية</option><option value="c">فترة أخرى…</option></select></label>
+      <label data-cust hidden>من<input type="date" data-f></label><label data-cust hidden>إلى<input type="date" data-t value="${B.today()}"></label>` : ""}</div>
+    <div class="actions"><button type="button" class="primary" id="repGo">اعرض التقرير</button><button type="button" class="ghost" data-back>رجوع</button><span class="note" data-m></span></div>`;
+  box.hidden = false;
+  const per = box.querySelector("[data-per]"); if (per) per.onchange = () => box.querySelectorAll("[data-cust]").forEach(el => el.hidden = per.value !== "c");
+  box.querySelector("[data-back]").onclick = () => { box.hidden = true; };
+  box.querySelector("#repGo").onclick = () => {
+    const rq = {}, g = sel => box.querySelector(sel);
+    if (g("[data-p]")) { rq.party_name = g("[data-p]").value || null; if (need.includes("party") && !rq.party_name) { g("[data-m]").textContent = "اختر الطرف."; return; } }
+    if (g("[data-d]")) { rq.date_to = g("[data-d]").value; if (k === "entry_list") rq.date_from = rq.date_to; }
+    if (g("[data-mo]")) rq.month = g("[data-mo]").value;
+    if (g("[data-y]")) rq.year = +g("[data-y]").value;
+    if (g("[data-e]") && g("[data-e]").value) rq.entry_no = +g("[data-e]").value;
+    if (per) { const r = per.value === "c" ? [g("[data-f]").value || null, g("[data-t]").value || B.today()] : periodOf(per.value); rq.date_from = r[0]; rq.date_to = r[1]; }
+    runReport(k, rq);
+  };
+  box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function runReport(k, rq){
+  const R = REPORTS[k], extra = [rq.party_name, rq.month, rq.year, rq.date_from && rq.date_to && rq.date_from !== rq.date_to ? `${rq.date_from} إلى ${rq.date_to}` : rq.date_to && rq.date_to !== B.today() ? rq.date_to : null].filter(Boolean).join(" · ");
+  $("#repPick").hidden = true; $("#repHome").hidden = true; $("#repRes").hidden = false;
+  $("#repTitle").textContent = R.ar + (extra ? " · " + extra : "");
+  $("#repOut").innerHTML = ""; outEl = $("#repOut"); window.scrollTo(0, 0);
+  showRequest({ doc: k, ...rq });
+}
+function reportsHome(){ $("#repRes").hidden = true; $("#repHome").hidden = false; $("#repPick").hidden = true; $("#repSearch").value = ""; drawReports(); }
+$("#repBack").onclick = reportsHome;
+// the two tabs: write a story, or reports
+function showView(v){
+  const w = v === "write";
+  $("#main").hidden = !w; $("#reports").hidden = v !== "reports"; $("#dash").hidden = v !== "dash"; outEl = v === "reports" ? $("#repOut") : null;
+  if (v === "dash") { drawDash(); }
+  document.querySelectorAll("#tabs [data-view]").forEach(b => { const on = b.dataset.view === v; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+  if (w) { scrollDown(); $("#story").focus(); } else if (v === "reports") { reportsHome(); refreshAttn(); }
+}
+document.querySelectorAll("#tabs [data-view]").forEach(b => b.onclick = () => showView(b.dataset.view));
+// KPI tab
+let dashN = 12;
+async function drawDash(){
+  const body = $("#dashBody");
+  try {
+    const [rows, entries] = await Promise.all([B.Data.ledger(null, null), B.Data.entries({ from: B.addDays(B.today(), -70) }).then(async l => l.concat((await B.Data.entries({ status: "pending" })).filter(e => !l.some(x => x.id === e.id))))]);
+    await B.renderDashboard(body, B.dashData(rows, entries, S.parties, S.accounts, B.today(), dashN));
+  } catch (e) { body.innerHTML = `<div class="note">${B.esc(B.errText(e))}</div>`; }
+}
+document.querySelectorAll("#dashRange [data-n]").forEach(b => b.onclick = () => { dashN = +b.dataset.n; document.querySelectorAll("#dashRange [data-n]").forEach(x => x.classList.toggle("on", x === b)); drawDash(); });
+// what needs attention, shown at the top of the reports tab and as a badge
+async function refreshAttn(){
+  try {
+    const dl = B.deadlines(await B.Data.obligations(), await B.Data.obligationDone(), B.today(), S.since), late = dl.filter(x => x.status === "late").length, soon = dl.filter(x => x.status === "soon").length;
+    const rec = dueRecurring().length, ch = (await B.Data.cheques()).filter(c => c.direction === "in" && c.status === "held" && c.due_date <= B.today()).length;
+    const held = ((await sb.from("acc_erp_staging").select("id").eq("status", "held")).data || []).length;
+    const items = [held ? [`⏸ ${held} قيد ينتظر إيصالاً`, "erp_held"] : null, late || soon ? [`⏰ ${late ? late + " موعد متأخر" : ""}${late && soon ? " · " : ""}${soon ? soon + " موعد قريب" : ""}`, "deadlines"] : null, rec ? [`🔁 ${rec} قيد شهري مستحق`, "recurring"] : null, ch ? [`🧾 ${ch} شيك مستحق للإيداع`, "cheques"] : null].filter(Boolean);
+    const n = late + rec + ch + held; $("#repBadge").hidden = !n; $("#repBadge").textContent = n > 9 ? "9+" : n;
+    const a = $("#repAttn"); a.hidden = !items.length;
+    a.innerHTML = `<b>يحتاج انتباهك:</b>` + items.map(([t, k]) => `<button type="button" data-go="${k}">${t}</button>`).join("");
+    a.querySelectorAll("[data-go]").forEach(b => b.onclick = () => runReport(b.dataset.go, {}));
+  } catch (e) {}
+}
+$("#repSearch").oninput = drawReports;
+document.querySelectorAll(".rtabs [data-tab]").forEach(b => b.onclick = () => { repTab = b.dataset.tab; document.querySelectorAll(".rtabs [data-tab]").forEach(x => x.classList.toggle("on", x === b)); drawReports(); });
+
+
+/* ---------- side panel ---------- */
+async function loadParties(){ S.parties = await B.Data.parties(); }
+async function loadToday(){
+  const [list, rows] = await Promise.all([B.Data.entries({ date: B.today() }), B.Data.ledger(null, B.today())]);
+  const bal = B.Reports.accountBalances(rows);
+  const k = [["1101", "الصندوق"], ["1102", "البنك"], ["1103", "شيكات برسم التحصيل"], ["1201", "مستحق على العملاء"]];
+  $("#kp").innerHTML = k.map(([c, l]) => `<div><b>${B.money(bal[c] || 0)}</b><span>${l}</span></div>`).join("");
+  const ch = await B.Data.cheques(), wk = B.addDays(B.today(), 7);
+  const dueIn = ch.filter(c => c.direction === "in" && c.status === "held" && c.due_date <= wk), dueOut = ch.filter(c => c.direction === "out" && c.status === "issued" && c.due_date <= wk);
+  $("#chqDue").innerHTML = (dueIn.length || dueOut.length)
+    ? `${dueIn.length ? `<div>📥 ${dueIn.length} شيك وارد مستحق للإيداع خلال أسبوع · <b>${B.money(dueIn.reduce((a, c) => a + B.num(c.amount), 0))}</b></div>` : ""}${dueOut.length ? `<div>📤 ${dueOut.length} شيك صادر سيُصرف خلال أسبوع · <b>${B.money(dueOut.reduce((a, c) => a + B.num(c.amount), 0))}</b></div>` : ""}`
+    : `<span class="note">لا توجد شيكات مستحقة هذا الأسبوع.</span>`;
+  try { const dl = B.deadlines(await B.Data.obligations(), await B.Data.obligationDone(), B.today(), S.since), late = dl.filter(x => x.status === "late"), soon = dl.filter(x => x.status === "soon");
+    if (late.length || soon.length) $("#chqDue").insertAdjacentHTML("beforeend", `<div>⏰ ${late.length ? `<b style="color:var(--bad,#b42318)">${late.length} موعد متأخر</b> · ` : ""}${soon.length ? `${soon.length} موعد خلال 10 أيام` : ""}: ${[...late, ...soon].slice(0, 3).map(x => B.esc(x.o.title_ar)).join("، ")}</div>`); } catch (e) {}
+  $("#todayCount").textContent = list.length ? `${list.length} قيد` : "";
+  refreshAttn();
+  const el = $("#entries");
+  if (!list.length) { el.innerHTML = `<span class="note">لا توجد قيود اليوم بعد. No entries today yet.</span>`; return; }
+  el.innerHTML = "";
+  list.forEach(e => {
+    const d = document.createElement("div"); d.className = "entry";
+    const st = e.status === "posted" ? "good" : e.status === "pending" ? "warn" : "bad";
+    d.innerHTML = `<span>${B.esc(B.TYPES[e.type] ? B.TYPES[e.type].ar : e.type)}${e.party ? " · " + B.esc(e.party.name) : ""}</span><span class="a">${B.money(e.amount)}</span>
+      <span class="m">#${e.no} <span class="pill ${st}">${B.STATUS[e.status]}</span>${B.flagPills(e.flags)}${e.doc && e.doc !== "journal" ? `<button type="button">🖨️ ${B.DOCS[e.doc]} ${e.doc_no}</button>` : ""}</span>`;
+    const b = d.querySelector("button"); if (b) b.onclick = () => printEntry(e.no);
+    el.appendChild(d);
+  });
+}
+
+/* ---------- sign in ---------- */
+function showLogin(msg){ $("#login").hidden = false; $("#main").hidden = true; const m = $("#loginMsg"); m.hidden = !msg; m.textContent = msg || ""; }
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault(); $("#loginBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("#l_email").value.trim(), password: $("#l_pass").value });
+  $("#loginBtn").disabled = false; if (error) return showLogin("البريد أو كلمة المرور غير صحيحة. Wrong email or password."); start();
+});
+$("#signOut").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+async function start(){
+  const s = await B.session(); if (!s) return showLogin();
+  S.user = s.user; S.roles = await B.roles();
+  if (!S.roles.books) { await sb.auth.signOut(); return showLogin("هذا الحساب غير مسجّل كمحاسب. This account isn't on the accountants list."); }
+  $("#login").hidden = true; $("#main").hidden = false; $("#signOut").hidden = false; $("#mgrLink").hidden = !S.roles.manager;
+  $("#who").textContent = s.user.email;
+  const [acc, set] = await Promise.all([B.Data.accounts(), B.Data.settings(), loadParties()]);
+  S.accounts = acc; S.settings = set; S.company = set.company || {};
+  await loadPOs(); await loadLoans(); S.recurring = await B.Data.recurring();
+  try { const { data } = await sb.from("acc_entries").select("date").eq("type", "opening").limit(1); S.since = data && data[0] ? data[0].date : B.today(); } catch (e) {}
+  if (S.company.name) $("#coName").textContent = S.company.name;
+  if (S.settings.locked_until) $("#who").textContent += ` · الفترة مقفلة حتى ${S.settings.locked_until}`;
+  addSys(bubble(`أهلاً 👋 اكتب ما حدث بكلماتك وأرفق صورة الإيصال إن وجدت. سأجهّز القيد وتؤكده أنت.<br><span class="note">التقارير كلها في تبويب «📋 التقارير» بالأعلى. أمثلة: «دفعت 25 دينار بنزين كاش» · «بعت لسوبرماركت النور 40 كرتونة بـ 800 آجل» · «استلمت 500 من بقالة السلام شيك» · «أعطيت أحمد سلفة 100» · «دفع أحمد 15 بنزين من عهدته» · «اطبع كشف حساب مصنع الورق»</span>`));
+  await loadToday();
+  $("#tabs").hidden = false; refreshAttn();
+}
+if (!sb) { document.body.innerHTML = `<p style="padding:24px">الإعداد غير مكتمل: أضف مفاتيح Supabase في config.js. Setup not finished: add the Supabase keys to config.js.</p>`; return; }
+start();
+})();
+</script>
+</body>
+</html>
