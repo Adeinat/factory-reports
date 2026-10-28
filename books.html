@@ -297,11 +297,12 @@ $("#composer").addEventListener("submit", async e => {
     const { data, error } = await sb.functions.invoke("ai-story", { body: { text, today: B.today(),
       files: files.filter(f => f.data).map(f => ({ media_type: f.type, data: f.data })) } });
     wait.remove();
-    if (error || !data || data.error) throw new Error(data && data.error === "not_allowed" ? "not_allowed" : "ai");
+    let d = data || {}; if (error) { try { d = await error.context.json(); } catch (e2) { d = { error: "network" }; } }
+    if (error || !data || data.error) throw new Error(d.error === "not_allowed" ? "not_allowed" : "ai " + [d.error, d.status].filter(Boolean).join(" "));
     handle(data.result || {}, text, files);
   } catch (err) {
     wait.remove();
-    addSys(bubble(err.message === "not_allowed" ? B.errText("not_allowed") : "تعذر قراءة الرسالة الآن. حاول مرة أخرى بعد قليل. Couldn't read the message right now; try again shortly.", "err"));
+    addSys(bubble(err.message === "not_allowed" ? B.errText("not_allowed") : "تعذر قراءة الرسالة الآن. حاول مرة أخرى بعد قليل. Couldn't read the message right now; try again shortly." + (err.message.length > 3 ? ` <span class="note">(${B.esc(err.message.slice(3))})</span>` : ""), "err"));
   } finally { $("#sendBtn").disabled = false; }
 });
 

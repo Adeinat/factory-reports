@@ -71,6 +71,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
 .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
 .plist{display:grid;gap:6px} .plist .pr{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:6px}
 .plist.chq .pr{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,.9fr) auto}
+.plist.emp .pr{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto}
 .msgbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--bad) 15%,transparent)}
 .okbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--good) 15%,transparent)}
 .login{max-width:420px;width:100%;margin:40px auto;box-sizing:border-box;border-top:4px solid var(--accent)} .login form{display:grid;gap:12px}
@@ -82,7 +83,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
 .view{display:grid;gap:16px} .view[hidden]{display:none}
 .wrap>*,.view>*,.panel>*,.form>*{min-width:0}
 @media (max-width:600px){input,select,textarea{font-size:16px}.tabs button{min-width:calc(50% - 8px);font-size:14px;padding:9px 6px}.panel{padding:12px}h1{font-size:22px}
-  .plist .pr,.plist.chq .pr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.bars .b{grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto}}
+  .plist .pr,.plist.chq .pr,.plist.emp .pr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.bars .b{grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto}}
 .jump{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:58px;z-index:4;background:var(--bg);padding:4px 0}
 .jump button{font-size:12.5px;padding:4px 10px;border-radius:999px}
 .anchor{scroll-margin-top:110px;height:0}
