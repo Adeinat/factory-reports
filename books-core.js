@@ -946,7 +946,7 @@
   const isNumText = t => /^[\d\s_\-.,:()٫٬]+$/.test(t);
   const xlNum = v => { if (typeof v === "number") return v; const t = String(v ?? "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[,٬\s]/g, "").replace("٫", ".");
     if (!t || !/\d/.test(t) || !/^[-(]?[\d.]+[)-]?$/.test(t)) return null; const neg = /^\(.*\)$|-$|^-/.test(t); const n = parseFloat(t.replace(/[()\-]/g, "")); return isFinite(n) ? (neg ? -n : n) : null; };
-  function parseTrialBalance(rows) {
+  function parseTrialBalance(rows, merges) {
     const GROUP = [["close", /^(الرصيد|رصيد اخر المدة|الرصيد الختامي|رصيد نهاية الفترة|الرصيد النهائي)$/], ["open", /(بداية الفترة|اول المدة|رصيد افتتاحي|الرصيد الافتتاحي)/], ["move", /^(الحركة|الحركات|حركة الفترة)$/]];
     let hdr = -1, groups = [], nameCol = -1, codeCol = -1;
     for (let i = 0; i < Math.min(rows.length, 30) && hdr < 0; i++) {
@@ -957,7 +957,8 @@
     const subs = [];
     for (let i = hdr; i < Math.min(rows.length, hdr + 4); i++) (rows[i] || []).forEach((c, j) => { const t = normAr(c);
       if (/اسم الحساب|البيان/.test(t) && nameCol < 0) nameCol = j; if (/رقم الحساب|رمز الحساب|كود الحساب|^الرقم$/.test(t) && codeCol < 0) codeCol = j;
-      if (/^(منه|مدين|مدينة)$/.test(t)) subs.push({ side: "d", col: j }); else if (/^(له|دائن|دائنة)$/.test(t)) subs.push({ side: "c", col: j }); });
+      const span = (merges || []).find(m => m.s.r <= i && m.e.r >= i && m.s.c <= j && m.e.c >= j), lo = span ? span.s.c : j, hi = span ? span.e.c : j;
+      if (/^(منه|مدين|مدينة)$/.test(t)) subs.push({ side: "d", col: j, lo, hi }); else if (/^(له|دائن|دائنة)$/.test(t)) subs.push({ side: "c", col: j, lo, hi }); });
     if (codeCol < 0 || subs.length < 2) return null;
     // which balance group each debit / credit header belongs to
     const gcols = groups.map(g => g.col).sort((a, b) => a - b), heads = [...gcols, nameCol, codeCol].filter(c => c >= 0).sort((a, b) => a - b);
@@ -988,7 +989,9 @@
     if (accts.length < 3) return null;
     // every column holding numbers is assigned to the nearest debit / credit header
     const colsUsed = [...new Set(lines.flatMap(l => l.nums.map(n => n.col)))];
-    const owner = {}; colsUsed.forEach(c => { owner[c] = subs.slice().sort((a, b) => Math.abs(a.col - c) - Math.abs(b.col - c) || (b.col - a.col))[0]; });
+    // a number belongs to the header whose (merged) cell sits above it; otherwise to the nearest header
+    const owner = {}; colsUsed.forEach(c => { owner[c] = subs.find(s => c >= s.lo && c <= s.hi)
+      || subs.slice().sort((a, b) => Math.min(Math.abs(a.lo - c), Math.abs(a.hi - c)) - Math.min(Math.abs(b.lo - c), Math.abs(b.hi - c)))[0]; });
     const take = (l, g, side) => l.nums.filter(n => owner[n.col] && owner[n.col].g === g && owner[n.col].side === side).reduce((a, n) => a + n.v, 0);
     const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: Math.round(take(l, "close", "d") * 1000) / 1000, credit: Math.round(take(l, "close", "c") * 1000) / 1000, key: null }));
     // check against each group's total row
@@ -1034,7 +1037,7 @@
     const body = { mode: "setup", today: today(), text: "", files: [] };
     if (/\.(xlsx|xls)$/i.test(f.name)) { try { await needLib("xlsx"); } catch (e) {} }
     if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer());
-      for (const n of wb.SheetNames) { const tb = parseTrialBalance(XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" })); if (tb) return { file: f.name, ...(await classifyAccounts(tb)) }; }
+      for (const n of wb.SheetNames) { const tb = parseTrialBalance(XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }), wb.Sheets[n]["!merges"]); if (tb) return { file: f.name, ...(await classifyAccounts(tb)) }; }
       wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
     else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) body.text = await f.text();
     else if (f.size < 6e6) body.files = [{ media_type: f.type === "application/pdf" ? "application/pdf" : (f.type || "image/jpeg"), data: await fileB64(f) }];
