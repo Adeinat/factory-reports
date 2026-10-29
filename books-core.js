@@ -977,7 +977,10 @@
       const texts = cells.filter(x => x.j >= textStart - 2 && letters(x.t)), joined = texts.map(x => normAr(x.t)).join(" ");
       if (/(^|\s):? ?الحساب ?:?$/.test(joined) || texts.some(x => /^: ?الحساب$/.test(normAr(x.t)))) { group = normAr(texts.filter(x => !/الحساب/.test(normAr(x.t))).map(x => x.t).join(" ")); continue; }
       const nums = cells.filter(x => x.j < textStart - 1 && xlNum(x.v) != null).map(x => ({ col: x.j, v: xlNum(x.v) }));
-      if (/^(المجموع|مجموع|الاجمالي|الإجمالي|المجموع الكلي|اجمالي)/.test(joined)) { lines.push({ total: true, group, nums, grand: !group || /الكلي|العام/.test(joined) }); continue; }
+      if (/^(المجموع|مجموع|الاجمالي|الإجمالي|المجموع الكلي|اجمالي)/.test(joined)) {
+        // a total right after another total (no accounts between) is the grand total of the whole report
+        const prev = lines[lines.length - 1];
+        lines.push({ total: true, group, nums, row: i + 1, grand: !group || /الكلي|العام/.test(joined) || !!(prev && prev.total) }); continue; }
       const codeCells = cells.filter(x => x.j >= codeCol - 1 && x.j <= codeCol + 8 && /^\d+$/.test(x.t));
       if (!codeCells.length) continue;
       const own = codeCells[0].t, parent = codeCells.length > 1 ? codeCells[codeCells.length - 1].t : "";
@@ -992,7 +995,34 @@
     // a number belongs to the header whose (merged) cell sits above it; otherwise to the nearest header
     const owner = {}; colsUsed.forEach(c => { owner[c] = subs.find(s => c >= s.lo && c <= s.hi)
       || subs.slice().sort((a, b) => Math.min(Math.abs(a.lo - c), Math.abs(a.hi - c)) - Math.min(Math.abs(b.lo - c), Math.abs(b.hi - c)))[0]; });
-    const take = (l, g, side) => l.nums.filter(n => owner[n.col] && owner[n.col].g === g && owner[n.col].side === side).reduce((a, n) => a + n.v, 0);
+    let side = {}; colsUsed.forEach(c => { if (owner[c]) side[c] = owner[c].g === "close" ? owner[c].side : null; });
+    let take = (l, g, sd) => l.nums.filter(n => side[n.col] === sd).reduce((a, n) => a + n.v, 0);
+    // self-check: debits must equal credits, and each group must add up to its total row.
+    // If the headers point to the wrong columns, try the other ways of splitting the closing columns.
+    const accRows = lines.filter(l => !l.total), totRows = lines.filter(l => l.total && l.nums.length && !l.grand);
+    const score = sd => { const t = (l, x) => l.nums.filter(n => sd[n.col] === x).reduce((a, n) => a + n.v, 0);
+      const D = accRows.reduce((a, l) => a + t(l, "d"), 0), C = accRows.reduce((a, l) => a + t(l, "c"), 0);
+      let miss = 0; for (const tr of totRows) { const mine = accRows.filter(a => a.group === tr.group); if (!mine.length) continue;
+        if (Math.abs(mine.reduce((a, l) => a + t(l, "d") - t(l, "c"), 0) - (t(tr, "d") - t(tr, "c"))) > 0.01) miss++; }
+      const g = lines.find(l => l.total && l.grand && l.nums.length); if (g && (Math.abs(t(g, "d") - D) > 0.01 || Math.abs(t(g, "c") - C) > 0.01)) miss += 5;
+      return { off: Math.abs(D - C), miss, D, C }; };
+    let fixedNote = "", base = score(side);
+    if (base.off > 0.01) {
+      const closeCols = colsUsed.filter(c => owner[c] && (owner[c].g === "close" || c < Math.min(...subs.filter(x => x.g !== "close").map(x => x.lo).concat([9999])))).sort((a, b) => a - b);
+      const ASSET = /صندوق|بنوك|بنك|ذمم مدين|عملاء|موجودات|اراضي|سيارات|بضاعة|شيكات برسم/;
+      let best = null;
+      if (closeCols.length >= 2 && closeCols.length <= 8) for (let mask = 1; mask < (1 << closeCols.length) - 1; mask++) {
+        const sd = { ...side }; closeCols.forEach((c, k) => sd[c] = (mask >> k) & 1 ? "c" : "d");
+        const sc = score(sd);
+        // orientation: asset groups should end up mostly on the debit side
+        const assetDebit = accRows.filter(l => ASSET.test(normAr(l.group))).reduce((a, l) => a + l.nums.filter(n => sd[n.col] === "d").reduce((x, n) => x + n.v, 0) - l.nums.filter(n => sd[n.col] === "c").reduce((x, n) => x + n.v, 0), 0);
+        const key = [sc.off > 0.01 ? 1 : 0, sc.miss, assetDebit >= 0 ? 0 : 1, sc.off];
+        const better = !best || (() => { for (let i = 0; i < key.length; i++) if (key[i] !== best.key[i]) return key[i] < best.key[i]; return false; })();
+        if (better) best = { sd, key, sc };
+      }
+      if (best && best.sc.off <= 0.01) { side = best.sd; fixedNote = "رتّبت أعمدة المدين والدائن تلقائياً حتى توازن الميزان"; }
+      else if (closeCols.length < 2) fixedNote = "⚠ كل الأرصدة في عمود واحد: لا أستطيع معرفة المدين من الدائن";
+    }
     const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: Math.round(take(l, "close", "d") * 1000) / 1000, credit: Math.round(take(l, "close", "c") * 1000) / 1000, key: null }));
     // check against each group's total row
     let checked = 0, bad = [];
@@ -1001,7 +1031,11 @@
       const sd = mine.reduce((a, l) => a + take(l, "close", "d"), 0), sc = mine.reduce((a, l) => a + take(l, "close", "c"), 0), td = take(t, "close", "d"), tc = take(t, "close", "c");
       checked++; if (Math.abs(sd - td) > 0.01 || Math.abs(sc - tc) > 0.01) bad.push(`${t.group}: الحسابات ${money(sd - sc)} والمجموع ${money(td - tc)}`);
     }
-    return { kind: "trial_balance", as_of: asOf, accounts, parsed: true, groupCheck: { checked, bad } };
+    const G = lines.find(l => l.total && l.grand && l.nums.length);
+    const sumD = accounts.reduce((a, x) => a + x.debit, 0), sumC = accounts.reduce((a, x) => a + x.credit, 0);
+    const grand = G ? { row: G.row, d: Math.round(take(G, "close", "d") * 1000) / 1000, c: Math.round(take(G, "close", "c") * 1000) / 1000 } : null;
+    if (grand) grand.ok = Math.abs(grand.d - sumD) < 0.01 && Math.abs(grand.c - sumC) < 0.01;
+    return { kind: "trial_balance", as_of: asOf, accounts, parsed: true, groupCheck: { checked, bad, grand }, fixedNote, totals: grand ? { debit: grand.d, credit: grand.c } : null };
   }
   // which opening-balance heading an account belongs to, from its group name first, then its own name
   const KEY_RULES = [["acc_dep", /مجمع.*(استهلاك|اهلاك|اهتلاك)|مخصص.*(استهلاك|اهلاك|اهتلاك)/], ["cheques_in", /شيكات.*(برسم|تحصيل|واردة|قبض)/], ["cheques_out", /شيكات.*(مؤجلة|صادرة|دفع)/],
@@ -1027,7 +1061,8 @@
     const byCode = {}; got.forEach(a => { const o = Array.isArray(a) ? { code: a[0], key: a[4] } : a; if (o && o.code != null && o.key && o.key !== "ignore") byCode[String(o.code)] = o.key; });
     tb.accounts.forEach(a => a.key = byCode[a.code] || guessKey(a.name, a.group));
     const gc = tb.groupCheck || { checked: 0, bad: [] };
-    tb.doubts = `قرأت الأرقام مباشرة من ملف Excel (${tb.accounts.length} حساب)` + (gc.checked ? (gc.bad.length ? `. ⚠ مجاميع ${gc.bad.length} من ${gc.checked} مجموعة لا تطابق: ${gc.bad.slice(0, 4).join(" · ")}` : `، وطابقت مجموع كل مجموعة (${gc.checked} مجموعة) ✓`) : "")
+    tb.doubts = `قرأت الأرقام مباشرة من ملف Excel (${tb.accounts.length} حساب)` + (tb.fixedNote ? `. ${tb.fixedNote}` : "") + (gc.checked ? (gc.bad.length ? `. ⚠ مجاميع ${gc.bad.length} من ${gc.checked} مجموعة لا تطابق: ${gc.bad.slice(0, 4).join(" · ")}` : `، وطابقت مجموع كل مجموعة (${gc.checked} مجموعة) ✓`) : "")
+      + (gc.grand ? (gc.grand.ok ? `، وطابق المجموع الكلي (صف ${gc.grand.row}): مدين ${money(gc.grand.d)} ودائن ${money(gc.grand.c)} ✓` : `. ⚠ المجموع الكلي في صف ${gc.grand.row} (مدين ${money(gc.grand.d)}، دائن ${money(gc.grand.c)}) لا يطابق مجموع الحسابات`) : "")
       + (got.length ? ". الذكاء الاصطناعي اختار مكان كل حساب: راجع «يذهب إلى»." : ". اخترت مكان كل حساب من اسم مجموعته واسمه: راجع «يذهب إلى».");
     return tb;
   }
