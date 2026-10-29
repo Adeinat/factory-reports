@@ -1004,13 +1004,17 @@
     // the closing group sits either before the other groups or after them
     const closeCols = colsUsed.filter(c => c < textStart && (closeLo < otherLo ? c < otherLo : c > otherHi)).sort((a, b) => a - b);
     const header = {}; closeCols.forEach(c => header[c] = side[c] || (owner[c] && owner[c].g === "close" ? owner[c].side : "d"));
-    let take = (l, g, sd) => l.nums.filter(n => side[n.col] === sd).reduce((a, n) => a + n.v, 0);
+    // under a credit (له) header a figure is a credit whatever its sign (some systems print credits as negatives);
+    // under a debit (منه) header a negative figure is a credit too
+    const part = (l, sdm, x) => l.nums.reduce((a, n) => { const s0 = sdm[n.col]; if (s0 === "c") return a + (x === "c" ? Math.abs(n.v) : 0);
+      if (s0 === "d") return a + (x === "d" ? Math.max(n.v, 0) : Math.max(-n.v, 0)); return a; }, 0);
+    let take = (l, g, sd) => part(l, side, sd);
     // self-check against the report's own totals: each group must add up to its total row, the grand total
     // must equal all accounts, and debits must equal credits. Try every way of putting the closing columns
     // on the debit or credit side; keep the one that agrees with the most totals, closest to the headers.
     const accRows = lines.filter(l => !l.total), totRows = lines.filter(l => l.total && l.nums.length && !l.grand), G0 = lines.find(l => l.total && l.grand && l.nums.length);
-    const signed = (l, sd) => l.nums.reduce((a, n) => a + (sd[n.col] === "d" ? n.v : sd[n.col] === "c" ? -n.v : 0), 0);
-    const evalSides = sd => { let ok = 0, n = 0; const t = (l, x) => l.nums.filter(k => sd[k.col] === x).reduce((a, k) => a + k.v, 0);
+    const signed = (l, sd) => part(l, sd, "d") - part(l, sd, "c");
+    const evalSides = sd => { let ok = 0, n = 0; const t = (l, x) => part(l, sd, x);
       for (const tr of totRows) { const mine = accRows.filter(a => a.group === tr.group); if (!mine.length) continue; n++;
         if (Math.abs(mine.reduce((a, l) => a + signed(l, sd), 0) - signed(tr, sd)) <= 0.01) ok++; }
       const D = accRows.reduce((a, l) => a + t(l, "d"), 0), C = accRows.reduce((a, l) => a + t(l, "c"), 0);
@@ -1056,7 +1060,7 @@
           let bt = null;
           for (let mask = 0; mask < (1 << closeCols.length); mask++) {
             const sd = { ...side }; closeCols.forEach((c, k) => sd[c] = (mask >> k) & 1 ? "c" : "d");
-            const t = (l, x) => l.nums.filter(k => sd[k.col] === x).reduce((a, k) => a + k.v, 0);
+            const t = (l, x) => part(l, sd, x);
             let ok = totRows.filter(tr => nets[tr.group] != null && Math.abs(nets[tr.group] - (t(tr, "d") - t(tr, "c"))) <= 0.01).length;
             if (G0 && Math.abs(t(G0, "d") - allD) <= 0.01 && Math.abs(t(G0, "c") - allC) <= 0.01) ok += 5;
             const same = closeCols.filter(c => sd[c] === header[c]).length;

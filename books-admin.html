@@ -463,7 +463,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="books-core.js?v=20261029f"></script>
+<script src="books-core.js?v=20261030a"></script>
 <script>
 (function(){
 const B = window.Books, sb = B.sb, $ = s => document.querySelector(s);
@@ -1104,12 +1104,17 @@ function drawWizard(){
   const ck = (label, a, b, need) => { if (need === false) return; const d = B.r3(a - b); checks.push([label, Math.abs(d) < 0.01, `${money(a)} مقابل ${money(b)}${Math.abs(d) >= 0.01 ? ` · الفرق ${money(d)}` : ""}`]); };
   if (W.tb.length) checks.push(["ميزان المراجعة متوازن", Math.abs(tbD - tbC) < 0.01, `مدين ${money(tbD)} · دائن ${money(tbC)}`]);
   const has = k => W.tb.some(a => a.key === k);
-  const fromTB = (label, list, rep, tbTotal, who) => {
-    if (list.length) { const d = B.r3(sumL(rep, "balance") - tbTotal), same = !rep.length || Math.abs(d) < 0.01;
-      checks.push([`${label}: من الميزان (${list.length} ${who})`, same ? true : "warn", `المجموع ${money(tbTotal)}` + (rep.length ? (same ? " · يطابق الكشف المرفوع ✓" : ` · الكشف المرفوع ${money(sumL(rep, "balance"))} (الفرق ${money(d)}): سأستخدم أرصدة الميزان، والكشف للسقوف ومدد السداد فقط`) : "")]); }
+  const fromTB = (label, list, rep, tbTotal, who, oddWord) => {
+    if (list.length) {
+      // balances on the unusual side (a customer in credit, a supplier we paid in advance): reports often leave them out
+      const odd = list.filter(p => p.balance < 0), oddSum = B.r3(odd.reduce((a, p) => a + p.balance, 0)), repSum = sumL(rep, "balance");
+      const d = B.r3(repSum - tbTotal), same = !rep.length || Math.abs(d) < 0.01, explained = !same && Math.abs(B.r3(repSum + oddSum) - tbTotal) < 0.01;
+      const oddTxt = odd.length ? ` · ${odd.length} ${oddWord}: ${odd.slice(0, 6).map(p => `${p.name} (${money(-p.balance)})`).join("، ")}${odd.length > 6 ? "…" : ""}` : "";
+      checks.push([`${label}: من الميزان (${list.length} ${who})`, same || explained ? true : "warn", `المجموع ${money(tbTotal)}${oddTxt}` + (rep.length ? (same ? " · يطابق الكشف المرفوع ✓"
+        : explained ? ` · الكشف المرفوع ${money(repSum)}: الفرق ${money(d)} هو بالضبط هذه الأرصدة المعاكسة، فالكشف يطابق ✓` : ` · الكشف المرفوع ${money(repSum)} (الفرق ${money(d)}): سأستخدم أرصدة الميزان، والكشف للسقوف ومدد السداد فقط`) : "")]); }
     else if (rep.length) ck(`قائمة ${label} = حسابها في الميزان`, sumL(rep, "balance"), tbTotal, W.tb.length > 0); };
-  fromTB("العملاء", W.custTB, W.cust, S2.customers || 0, "عميل");
-  fromTB("الموردون", W.suppTB, W.supp, -(S2.suppliers || 0), "مورد");
+  fromTB("العملاء", W.custTB, W.cust, S2.customers || 0, "عميل", "عميل برصيد دائن (دفعات مقدمة)");
+  fromTB("الموردون", W.suppTB, W.supp, -(S2.suppliers || 0), "مورد", "مورد برصيد مدين (دفعنا له مقدماً)");
   const cin = W.chq.filter(c => c.direction === "in"), cout = W.chq.filter(c => c.direction === "out");
   if (cin.length) ck("الشيكات الواردة = حسابها في الميزان", sumL(cin, "amount"), S2.cheques_in || 0, W.tb.length > 0);
   if (cout.length) ck("الشيكات الصادرة = حسابها في الميزان", sumL(cout, "amount"), -(S2.cheques_out || 0), W.tb.length > 0);
