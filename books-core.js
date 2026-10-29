@@ -995,41 +995,45 @@
     // a number belongs to the header whose (merged) cell sits above it; otherwise to the nearest header
     const owner = {}; colsUsed.forEach(c => { owner[c] = subs.find(s => c >= s.lo && c <= s.hi)
       || subs.slice().sort((a, b) => Math.min(Math.abs(a.lo - c), Math.abs(a.hi - c)) - Math.min(Math.abs(b.lo - c), Math.abs(b.hi - c)))[0]; });
+    // first guess from the headers
     let side = {}; colsUsed.forEach(c => { if (owner[c]) side[c] = owner[c].g === "close" ? owner[c].side : null; });
+    // the closing area: every column before the next balance group's first header (gaps between headers included)
+    const otherLo = Math.min(...subs.filter(x => x.g !== "close").map(x => x.lo).concat([9999]));
+    const closeLo = Math.min(...subs.filter(x => x.g === "close").map(x => x.lo));
+    const otherHi = Math.max(...subs.filter(x => x.g !== "close").map(x => x.hi).concat([-1]));
+    // the closing group sits either before the other groups or after them
+    const closeCols = colsUsed.filter(c => c < textStart - 1 && (closeLo < otherLo ? c < otherLo : c > otherHi)).sort((a, b) => a - b);
+    const header = {}; closeCols.forEach(c => header[c] = side[c] || (owner[c] && owner[c].g === "close" ? owner[c].side : "d"));
     let take = (l, g, sd) => l.nums.filter(n => side[n.col] === sd).reduce((a, n) => a + n.v, 0);
-    // self-check: debits must equal credits, and each group must add up to its total row.
-    // If the headers point to the wrong columns, try the other ways of splitting the closing columns.
-    const accRows = lines.filter(l => !l.total), totRows = lines.filter(l => l.total && l.nums.length && !l.grand);
-    const score = sd => { const t = (l, x) => l.nums.filter(n => sd[n.col] === x).reduce((a, n) => a + n.v, 0);
+    // self-check against the report's own totals: each group must add up to its total row, the grand total
+    // must equal all accounts, and debits must equal credits. Try every way of putting the closing columns
+    // on the debit or credit side; keep the one that agrees with the most totals, closest to the headers.
+    const accRows = lines.filter(l => !l.total), totRows = lines.filter(l => l.total && l.nums.length && !l.grand), G0 = lines.find(l => l.total && l.grand && l.nums.length);
+    const signed = (l, sd) => l.nums.reduce((a, n) => a + (sd[n.col] === "d" ? n.v : sd[n.col] === "c" ? -n.v : 0), 0);
+    const evalSides = sd => { let ok = 0, n = 0; const t = (l, x) => l.nums.filter(k => sd[k.col] === x).reduce((a, k) => a + k.v, 0);
+      for (const tr of totRows) { const mine = accRows.filter(a => a.group === tr.group); if (!mine.length) continue; n++;
+        if (Math.abs(mine.reduce((a, l) => a + signed(l, sd), 0) - signed(tr, sd)) <= 0.01) ok++; }
       const D = accRows.reduce((a, l) => a + t(l, "d"), 0), C = accRows.reduce((a, l) => a + t(l, "c"), 0);
-      let miss = 0; for (const tr of totRows) { const mine = accRows.filter(a => a.group === tr.group); if (!mine.length) continue;
-        if (Math.abs(mine.reduce((a, l) => a + t(l, "d") - t(l, "c"), 0) - (t(tr, "d") - t(tr, "c"))) > 0.01) miss++; }
-      const g = lines.find(l => l.total && l.grand && l.nums.length); if (g && (Math.abs(t(g, "d") - D) > 0.01 || Math.abs(t(g, "c") - C) > 0.01)) miss += 5;
-      return { off: Math.abs(D - C), miss, D, C }; };
-    let fixedNote = "", base = score(side);
-    if (base.off > 0.01) {
-      const closeCols = colsUsed.filter(c => owner[c] && (owner[c].g === "close" || c < Math.min(...subs.filter(x => x.g !== "close").map(x => x.lo).concat([9999])))).sort((a, b) => a - b);
-      const ASSET = /صندوق|بنوك|بنك|ذمم مدين|عملاء|موجودات|اراضي|سيارات|بضاعة|شيكات برسم/;
-      let best = null;
-      if (closeCols.length >= 2 && closeCols.length <= 8) for (let mask = 1; mask < (1 << closeCols.length) - 1; mask++) {
+      const bal = Math.abs(D - C) <= 0.01 ? 1 : 0, gr = G0 && Math.abs(t(G0, "d") - D) <= 0.01 && Math.abs(t(G0, "c") - C) <= 0.01 ? 1 : 0;
+      return { ok, n, bal, gr, score: ok + 5 * gr + 3 * bal, same: closeCols.filter(c => sd[c] === header[c]).length }; };
+    let fixedNote = "", chosen = evalSides(side);
+    if (closeCols.length >= 1 && closeCols.length <= 10) {
+      let best = { sd: side, e: chosen };
+      for (let mask = 0; mask < (1 << closeCols.length); mask++) {
         const sd = { ...side }; closeCols.forEach((c, k) => sd[c] = (mask >> k) & 1 ? "c" : "d");
-        const sc = score(sd);
-        // orientation: asset groups should end up mostly on the debit side
-        const assetDebit = accRows.filter(l => ASSET.test(normAr(l.group))).reduce((a, l) => a + l.nums.filter(n => sd[n.col] === "d").reduce((x, n) => x + n.v, 0) - l.nums.filter(n => sd[n.col] === "c").reduce((x, n) => x + n.v, 0), 0);
-        const key = [sc.off > 0.01 ? 1 : 0, sc.miss, assetDebit >= 0 ? 0 : 1, sc.off];
-        const better = !best || (() => { for (let i = 0; i < key.length; i++) if (key[i] !== best.key[i]) return key[i] < best.key[i]; return false; })();
-        if (better) best = { sd, key, sc };
+        const e = evalSides(sd);
+        if (e.score > best.e.score || (e.score === best.e.score && e.same > best.e.same)) best = { sd, e };
       }
-      if (best && best.sc.off <= 0.01) { side = best.sd; fixedNote = "رتّبت أعمدة المدين والدائن تلقائياً حتى توازن الميزان"; }
-      else if (closeCols.length < 2) fixedNote = "⚠ كل الأرصدة في عمود واحد: لا أستطيع معرفة المدين من الدائن";
+      if (best.e.score > chosen.score) { side = best.sd; chosen = best.e; fixedNote = "رتّبت أعمدة المدين والدائن حسب مجاميع التقرير نفسه"; }
     }
+    if (!chosen.bal) fixedNote = (fixedNote ? fixedNote + ". " : "") + "⚠ لم أجد ترتيباً يجعل الميزان متوازناً: راجع الأرقام أو أدخلها يدوياً";
     const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: Math.round(take(l, "close", "d") * 1000) / 1000, credit: Math.round(take(l, "close", "c") * 1000) / 1000, key: null }));
     // check against each group's total row
     let checked = 0, bad = [];
     for (const t of lines.filter(l => l.total && l.nums.length)) {
       const mine = accts.filter(a => a.group === t.group); if (!mine.length || t.grand) continue;
       const sd = mine.reduce((a, l) => a + take(l, "close", "d"), 0), sc = mine.reduce((a, l) => a + take(l, "close", "c"), 0), td = take(t, "close", "d"), tc = take(t, "close", "c");
-      checked++; if (Math.abs(sd - td) > 0.01 || Math.abs(sc - tc) > 0.01) bad.push(`${t.group}: الحسابات ${money(sd - sc)} والمجموع ${money(td - tc)}`);
+      checked++; if (Math.abs((sd - sc) - (td - tc)) > 0.01) bad.push(`${t.group}: الحسابات ${money(sd - sc)} والمجموع ${money(td - tc)}`);
     }
     const G = lines.find(l => l.total && l.grand && l.nums.length);
     const sumD = accounts.reduce((a, x) => a + x.debit, 0), sumC = accounts.reduce((a, x) => a + x.credit, 0);
