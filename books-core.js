@@ -976,7 +976,7 @@
       if (!cells.length) continue;
       const texts = cells.filter(x => x.j >= textStart - 2 && letters(x.t)), joined = texts.map(x => normAr(x.t)).join(" ");
       if (/(^|\s):? ?الحساب ?:?$/.test(joined) || texts.some(x => /^: ?الحساب$/.test(normAr(x.t)))) { group = normAr(texts.filter(x => !/الحساب/.test(normAr(x.t))).map(x => x.t).join(" ")); continue; }
-      const nums = cells.filter(x => x.j < textStart - 1 && xlNum(x.v) != null).map(x => ({ col: x.j, v: xlNum(x.v) }));
+      const nums = cells.filter(x => x.j < textStart && xlNum(x.v) != null).map(x => ({ col: x.j, v: xlNum(x.v) }));
       if (/^(المجموع|مجموع|الاجمالي|الإجمالي|المجموع الكلي|اجمالي)/.test(joined)) {
         // a total right after another total (no accounts between) is the grand total of the whole report
         const prev = lines[lines.length - 1];
@@ -1002,7 +1002,7 @@
     const closeLo = Math.min(...subs.filter(x => x.g === "close").map(x => x.lo));
     const otherHi = Math.max(...subs.filter(x => x.g !== "close").map(x => x.hi).concat([-1]));
     // the closing group sits either before the other groups or after them
-    const closeCols = colsUsed.filter(c => c < textStart - 1 && (closeLo < otherLo ? c < otherLo : c > otherHi)).sort((a, b) => a - b);
+    const closeCols = colsUsed.filter(c => c < textStart && (closeLo < otherLo ? c < otherLo : c > otherHi)).sort((a, b) => a - b);
     const header = {}; closeCols.forEach(c => header[c] = side[c] || (owner[c] && owner[c].g === "close" ? owner[c].side : "d"));
     let take = (l, g, sd) => l.nums.filter(n => side[n.col] === sd).reduce((a, n) => a + n.v, 0);
     // self-check against the report's own totals: each group must add up to its total row, the grand total
@@ -1027,18 +1027,59 @@
       if (best.e.score > chosen.score) { side = best.sd; chosen = best.e; fixedNote = "رتّبت أعمدة المدين والدائن حسب مجاميع التقرير نفسه"; }
     }
     if (!chosen.bal) fixedNote = (fixedNote ? fixedNote + ". " : "") + "⚠ لم أجد ترتيباً يجعل الميزان متوازناً: راجع الأرقام أو أدخلها يدوياً";
-    const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: Math.round(take(l, "close", "d") * 1000) / 1000, credit: Math.round(take(l, "close", "c") * 1000) / 1000, key: null }));
+    const r3x = v => Math.round(v * 1000) / 1000;
+    const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: r3x(take(l, "close", "d")), credit: r3x(take(l, "close", "c")), key: null }));
+    // Some reports print each account's closing balance in ONE column whatever its side. Then the side comes
+    // from the same row: opening + movement = closing. Find which of those columns add and which subtract,
+    // keep it only if it reproduces the closing figure for most accounts.
+    let sideNote = "";
+    if (Math.abs(accounts.reduce((a, x) => a + x.debit - x.credit, 0)) > 0.01) {
+      const otherCols = colsUsed.filter(c => c < textStart && !closeCols.includes(c)).sort((a, b) => a - b);
+      const mag = accts.map(l => l.nums.filter(n => closeCols.includes(n.col)).reduce((a, n) => a + Math.abs(n.v), 0));
+      if (otherCols.length && otherCols.length <= 12) {
+        let best = null;
+        for (let mask = 0; mask < (1 << otherCols.length); mask++) {
+          const sg = {}; otherCols.forEach((c, k) => sg[c] = (mask >> k) & 1 ? -1 : 1);
+          let hit = 0; accts.forEach((l, i) => { if (mag[i] < 0.0005) return; const net = l.nums.reduce((a, n) => a + (sg[n.col] || 0) * n.v, 0); if (Math.abs(Math.abs(net) - mag[i]) <= 0.01) hit++; });
+          const agree = otherCols.filter(c => owner[c] && (owner[c].side === "d") === (sg[c] === 1)).length;
+          if (!best || hit > best.hit || (hit === best.hit && agree > best.agree)) best = { sg, hit, agree };
+        }
+        const withBal = mag.filter(m => m >= 0.0005).length;
+        if (best && withBal && best.hit >= withBal * 0.8) {
+          let n = 0;
+          accts.forEach((l, i) => { if (mag[i] < 0.0005) return; const net = l.nums.reduce((a, k) => a + (best.sg[k.col] || 0) * k.v, 0);
+            if (Math.abs(Math.abs(net) - mag[i]) <= 0.01) { accounts[i].debit = net > 0 ? r3x(mag[i]) : 0; accounts[i].credit = net < 0 ? r3x(mag[i]) : 0; n++; } });
+          sideNote = `حددت مدين/دائن كل حساب من رصيد بداية الفترة + الحركة (${n} من ${withBal} حساب)`;
+          // now read the total rows the way that agrees with the accounts
+          const nets = {}; accounts.forEach(a => nets[a.group] = (nets[a.group] || 0) + a.debit - a.credit);
+          const allD = accounts.reduce((a, x) => a + x.debit, 0), allC = accounts.reduce((a, x) => a + x.credit, 0);
+          let bt = null;
+          for (let mask = 0; mask < (1 << closeCols.length); mask++) {
+            const sd = { ...side }; closeCols.forEach((c, k) => sd[c] = (mask >> k) & 1 ? "c" : "d");
+            const t = (l, x) => l.nums.filter(k => sd[k.col] === x).reduce((a, k) => a + k.v, 0);
+            let ok = totRows.filter(tr => nets[tr.group] != null && Math.abs(nets[tr.group] - (t(tr, "d") - t(tr, "c"))) <= 0.01).length;
+            if (G0 && Math.abs(t(G0, "d") - allD) <= 0.01 && Math.abs(t(G0, "c") - allC) <= 0.01) ok += 5;
+            const same = closeCols.filter(c => sd[c] === header[c]).length;
+            if (!bt || ok > bt.ok || (ok === bt.ok && same > bt.same)) bt = { sd, ok, same };
+          }
+          if (bt) side = bt.sd;
+          fixedNote = fixedNote.replace(/\.? ?⚠ لم أجد ترتيباً[^]*$/, "");
+        }
+      }
+    }
     // check against each group's total row
     let checked = 0, bad = [];
     for (const t of lines.filter(l => l.total && l.nums.length)) {
-      const mine = accts.filter(a => a.group === t.group); if (!mine.length || t.grand) continue;
-      const sd = mine.reduce((a, l) => a + take(l, "close", "d"), 0), sc = mine.reduce((a, l) => a + take(l, "close", "c"), 0), td = take(t, "close", "d"), tc = take(t, "close", "c");
-      checked++; if (Math.abs((sd - sc) - (td - tc)) > 0.01) bad.push(`${t.group}: الحسابات ${money(sd - sc)} والمجموع ${money(td - tc)}`);
+      const mine = accounts.filter(a => a.group === t.group); if (!mine.length || t.grand) continue;
+      const net = mine.reduce((a, x) => a + x.debit - x.credit, 0), td = take(t, "close", "d"), tc = take(t, "close", "c");
+      checked++; if (Math.abs(net - (td - tc)) > 0.01) bad.push(`${t.group}: الحسابات ${money(net)} والمجموع ${money(td - tc)}`);
     }
     const G = lines.find(l => l.total && l.grand && l.nums.length);
     const sumD = accounts.reduce((a, x) => a + x.debit, 0), sumC = accounts.reduce((a, x) => a + x.credit, 0);
     const grand = G ? { row: G.row, d: Math.round(take(G, "close", "d") * 1000) / 1000, c: Math.round(take(G, "close", "c") * 1000) / 1000 } : null;
     if (grand) grand.ok = Math.abs(grand.d - sumD) < 0.01 && Math.abs(grand.c - sumC) < 0.01;
+    if (sideNote) fixedNote = (fixedNote ? fixedNote + ". " : "") + sideNote;
+    if (Math.abs(sumD - sumC) > 0.01 && !/لم أجد ترتيباً/.test(fixedNote)) fixedNote = (fixedNote ? fixedNote + ". " : "") + "⚠ الميزان غير متوازن بعد القراءة: راجع الأرقام أو أدخلها يدوياً";
     return { kind: "trial_balance", as_of: asOf, accounts, parsed: true, groupCheck: { checked, bad, grand }, fixedNote, totals: grand ? { debit: grand.d, credit: grand.c } : null };
   }
   // which opening-balance heading an account belongs to, from its group name first, then its own name
