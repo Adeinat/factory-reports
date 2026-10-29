@@ -1082,7 +1082,10 @@ $("#wz_snap").onclick = () => {
 };
 function wzLoad(res){
   W.res = res;
-  W.tb = res.filter(r => r.kind === "trial_balance").flatMap(r => (r.accounts || []).map(a => ({ ...a, bal: B.r3(num(a.debit) - num(a.credit)) })));
+  const tbs = res.filter(r => r.kind === "trial_balance" && (r.accounts || []).length > 2).sort((a, b) => b.accounts.length - a.accounts.length);
+  res.filter(r => r.kind === "trial_balance" && (r.accounts || []).length <= 2).forEach(r => { r.kind = "other"; r.doubts = "كشف حساب واحد وليس ميزان مراجعة: لم يُستخدم. " + (r.doubts || ""); });
+  tbs.slice(1).forEach(r => { r.doubts = `ميزان مراجعة ثانٍ: لم يُستخدم، استخدمت «${tbs[0].file}». ` + (r.doubts || ""); r.kind = "other"; });
+  W.tb = (tbs[0] ? tbs[0].accounts : []).map(a => ({ ...a, bal: B.r3(num(a.debit) - num(a.credit)) }));
   W.cust = res.filter(r => r.kind === "customers").flatMap(r => r.parties || []); W.supp = res.filter(r => r.kind === "suppliers").flatMap(r => r.parties || []);
   W.chq = res.flatMap(r => r.cheques || []); W.assets = res.flatMap(r => r.assets || []); W.emps = res.flatMap(r => r.employees || []); W.loans = res.flatMap(r => r.loans || []);
   W.asOf = (res.find(r => r.as_of) || {}).as_of || null;
@@ -1096,19 +1099,19 @@ function drawWizard(){
   const ck = (label, a, b, need) => { if (need === false) return; const d = B.r3(a - b); checks.push([label, Math.abs(d) < 0.01, `${money(a)} مقابل ${money(b)}${Math.abs(d) >= 0.01 ? ` · الفرق ${money(d)}` : ""}`]); };
   if (W.tb.length) checks.push(["ميزان المراجعة متوازن", Math.abs(tbD - tbC) < 0.01, `مدين ${money(tbD)} · دائن ${money(tbC)}`]);
   const has = k => W.tb.some(a => a.key === k);
-  if (W.cust.length || has("customers")) ck("قائمة العملاء = حساب العملاء في الميزان", sumL(W.cust, "balance"), S2.customers || 0, W.tb.length > 0);
-  if (W.supp.length || has("suppliers")) ck("قائمة الموردين = حساب الموردين في الميزان", sumL(W.supp, "balance"), -(S2.suppliers || 0), W.tb.length > 0);
+  if (W.cust.length) ck("قائمة العملاء = حساب العملاء في الميزان", sumL(W.cust, "balance"), S2.customers || 0, W.tb.length > 0);
+  if (W.supp.length) ck("قائمة الموردين = حساب الموردين في الميزان", sumL(W.supp, "balance"), -(S2.suppliers || 0), W.tb.length > 0);
   const cin = W.chq.filter(c => c.direction === "in"), cout = W.chq.filter(c => c.direction === "out");
-  if (cin.length || has("cheques_in")) ck("الشيكات الواردة = حسابها في الميزان", sumL(cin, "amount"), S2.cheques_in || 0, W.tb.length > 0);
-  if (cout.length || has("cheques_out")) ck("الشيكات الصادرة = حسابها في الميزان", sumL(cout, "amount"), -(S2.cheques_out || 0), W.tb.length > 0);
+  if (cin.length) ck("الشيكات الواردة = حسابها في الميزان", sumL(cin, "amount"), S2.cheques_in || 0, W.tb.length > 0);
+  if (cout.length) ck("الشيكات الصادرة = حسابها في الميزان", sumL(cout, "amount"), -(S2.cheques_out || 0), W.tb.length > 0);
   if (W.assets.length) ck("سجل الأصول (صافي) = الأصول في الميزان", B.r3(sumL(W.assets, "cost") - sumL(W.assets, "accumulated")), B.r3((S2.fixed_assets || 0) + (S2.acc_dep || 0)), W.tb.length > 0);
-  if (W.emps.some(e => num(e.advance)) || has("advances")) ck("سلف الموظفين = حسابها في الميزان", sumL(W.emps, "advance"), S2.advances || 0, W.tb.length > 0);
+  if (W.emps.some(e => num(e.advance))) ck("سلف الموظفين = حسابها في الميزان", sumL(W.emps, "advance"), S2.advances || 0, W.tb.length > 0);
   if (W.loans.length) ck("كشوف القروض = القروض في الميزان", sumL(W.loans, "balance"), -(S2.loans || 0), W.tb.length > 0);
   const dates = [...new Set(W.res.map(r => r.as_of).filter(Boolean))];
   if (dates.length > 1) checks.push(["كل التقارير بنفس التاريخ", false, dates.join(" · ")]);
   const ign = W.tb.filter(x => x.key === "ignore" && Math.abs(x.bal) > 0.005);
   if (ign.length) checks.push(["كل حساب له مكان", false, `متجاهلة: ${ign.map(x => x.name).join("، ")} (${money(ign.reduce((s, x) => s + x.bal, 0))}). لن تدخل الأرصدة الافتتاحية وسيذهب فرقها إلى رأس المال`]);
-  const missing = [["customers", W.cust, "كشف أرصدة العملاء"], ["suppliers", W.supp, "كشف أرصدة الموردين"], ["cheques_in", cin, "كشف الشيكات الواردة"], ["cheques_out", cout, "كشف الشيكات الصادرة"]]
+  const missing = [["customers", W.cust, "كشف أرصدة العملاء"], ["suppliers", W.supp, "كشف أرصدة الموردين"], ["cheques_in", cin, "كشف الشيكات الواردة"], ["cheques_out", cout, "كشف الشيكات الصادرة"], ["advances", W.emps.filter(e => num(e.advance)), "سلف الموظفين"]]
     .filter(([k, l]) => Math.abs(S2[k] || 0) > 0.005 && !l.length).map(x => x[2]);
   out.innerHTML = `<div class="tablewrap"><table class="t"><thead><tr><th>الملف</th><th>نوع التقرير</th><th>ما قرأته</th></tr></thead><tbody>${W.res.map(r => `<tr><td>${esc(r.file)}</td><td>${r.error ? '<span class="pill bad">تعذرت القراءة</span>' : esc(WZ_KIND[r.kind] || r.kind)}</td>
       <td class="note">${r.error ? "" : [r.accounts && r.accounts.length ? `${r.accounts.length} حساب` : "", r.parties && r.parties.length ? `${r.parties.length} اسم` : "", r.cheques && r.cheques.length ? `${r.cheques.length} شيك` : "", r.assets && r.assets.length ? `${r.assets.length} أصل` : "",
@@ -1116,7 +1119,7 @@ function drawWizard(){
     ${W.tb.length ? `<h3>حسابات ميزان المراجعة <span class="note">تأكد أن كل حساب في مكانه الصحيح</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>الرصيد</th><th>يذهب إلى</th></tr></thead><tbody>
       ${W.tb.map((a, i) => `<tr><td>${esc(a.code || "")} ${esc(a.name)}</td><td class="n">${money(a.bal)}</td><td><select data-wk="${i}" style="width:auto">${Object.entries(WZ_KEYS).map(([k, l]) => `<option value="${k}"${k === a.key ? " selected" : ""}>${l}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>` : ""}
     <h3>التحقق <span class="note">Cross-checks</span></h3>
-    <div class="alerts">${checks.map(([l, ok, d]) => `<div class="al ${ok ? "" : "bad"}"><span>${ok ? "✅" : "❌"} ${esc(l)}</span><span class="note">${esc(d)}</span></div>`).join("") || '<div class="note">ارفع ميزان المراجعة لإجراء التحقق.</div>'}
+    <div class="alerts">${checks.map(([l, ok, d]) => `<div class="al ${ok ? "" : "bad"}" style="display:grid;gap:2px"><span>${ok ? "✅" : "❌"} ${esc(l)}</span><span class="note">${esc(d)}</span></div>`).join("") || '<div class="note">ارفع ميزان المراجعة لإجراء التحقق.</div>'}
       ${missing.length ? `<div class="al warn"><span>⚠ ينقص: ${esc(missing.join("، "))}. بدونها يدخل الرصيد كسطر واحد إجمالي.</span></div>` : ""}</div>
     <div class="row"><button type="button" class="primary" id="wz_fill">املأ النموذج من هذه التقارير</button><span class="note" id="wz_msg"></span></div>`;
   out.querySelectorAll("[data-wk]").forEach(sel => sel.onchange = () => { W.tb[+sel.dataset.wk].key = sel.value; drawWizard(); });
