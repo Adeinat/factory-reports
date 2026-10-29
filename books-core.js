@@ -941,11 +941,83 @@
   /* ---------- Daily monitoring: snapshots of the old system's reports (analysis only, never posted) ---------- */
   const MON_KIND = { trial_balance: "ميزان المراجعة", customers: "أرصدة العملاء", suppliers: "أرصدة الموردين", cheques: "الشيكات", assets: "سجل الأصول", employees: "الموظفون", loans: "القروض", chart: "شجرة الحسابات", other: "غير معروف" };
   const fileB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+  /* ---------- trial balance straight from an Excel export (no AI for the numbers) ---------- */
+  const normAr = s => String(s ?? "").replace(/ـ/g, "").replace(/[إأآ]/g, "ا").replace(/\s+/g, " ").trim();
+  const isNumText = t => /^[\d\s_\-.,:()٫٬]+$/.test(t);
+  const xlNum = v => { if (typeof v === "number") return v; const t = String(v ?? "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[,٬\s]/g, "").replace("٫", ".");
+    if (!t) return null; const neg = /^\(.*\)$/.test(t); const n = parseFloat(t.replace(/[()]/g, "")); return isFinite(n) ? (neg ? -n : n) : null; };
+  function parseTrialBalance(rows) {
+    // header cells: the balance groups and the debit / credit columns under each
+    const GROUP = [["close", /^(الرصيد|رصيد آخر المدة|الرصيد الختامي|رصيد نهاية الفترة|الرصيد النهائي)$/], ["open", /(بداية الفترة|اول المدة|رصيد افتتاحي|الرصيد الافتتاحي)/], ["move", /^(الحركة|الحركات|حركة الفترة)$/]];
+    let hdr = -1, groups = [], nameCol = -1, codeCol = -1;
+    for (let i = 0; i < Math.min(rows.length, 25) && hdr < 0; i++) {
+      const r = rows[i] || [], found = [];
+      r.forEach((c, j) => { const t = normAr(c); for (const [k, re] of GROUP) if (re.test(t)) found.push({ k, col: j }); });
+      if (found.some(g => g.k === "close")) { hdr = i; groups = found; }
+    }
+    if (hdr < 0) return null;
+    for (let i = hdr; i < Math.min(rows.length, hdr + 4); i++) (rows[i] || []).forEach((c, j) => { const t = normAr(c);
+      if (/اسم الحساب|البيان/.test(t) && nameCol < 0) nameCol = j; if (/رقم الحساب|الرقم|رمز الحساب|كود/.test(t) && codeCol < 0) codeCol = j; });
+    // debit / credit sub-headers in the rows just under the group row
+    const subs = [];
+    for (let i = hdr; i < Math.min(rows.length, hdr + 4); i++) (rows[i] || []).forEach((c, j) => { const t = normAr(c);
+      if (/^(منه|مدين|مدينة)$/.test(t)) subs.push({ side: "d", col: j }); else if (/^(له|دائن|دائنة)$/.test(t)) subs.push({ side: "c", col: j }); });
+    const starts = [...groups.map(g => g.col), nameCol, codeCol].filter(c => c >= 0).sort((a, b) => a - b);
+    const close = groups.find(g => g.k === "close"), end = starts.find(c => c > close.col) ?? 9999, begin = close.col;
+    // a group's range runs from its own column to the next header column (works whichever way the sheet is laid out)
+    let inG = subs.filter(s => s.col >= begin && s.col < end);
+    if (inG.length < 2) { const prev = [...starts].reverse().find(c => c < close.col) ?? -1; inG = subs.filter(s => s.col > prev && s.col <= close.col); }
+    const dc = (inG.find(s => s.side === "d") || {}).col, cc = (inG.find(s => s.side === "c") || {}).col;
+    if (dc == null || cc == null || codeCol < 0) return null;
+    const near = (r, col) => { for (const d of [0, 1, -1, 2, -2, 3]) { const v = r[col + d]; if (v !== "" && v != null && xlNum(v) != null) return xlNum(v); } return null; };
+    const accounts = []; let asOf = null;
+    // the report date is the last date in the title rows ("من 01/01/2026 الى 29/10/2026")
+    for (let i = 0; i < Math.min(rows.length, hdr + 1); i++) for (const c of rows[i] || []) for (const m of String(c ?? "").matchAll(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})|(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/g))
+      asOf = m[1] ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : `${m[6]}-${m[5].padStart(2, "0")}-${m[4].padStart(2, "0")}`;
+    for (let i = hdr + 1; i < rows.length; i++) {
+      const r = rows[i] || [];
+      const codes = []; for (let j = codeCol - 2; j <= codeCol + 8; j++) { const t = String(r[j] ?? "").trim(); if (/^\d{3,}(-\d+)?$/.test(t)) codes.push(t); }
+      if (!codes.length) continue;
+      const code = codes.sort((a, b) => b.length - a.length)[0];
+      const hasLetters = t => /[؀-ۿa-zA-Z]/.test(t) && !isNumText(t) && !/: ?الحساب$|^الحساب ?:/.test(t);
+      let name = "";
+      if (nameCol >= 0) for (let j = nameCol - 2; j < nameCol + 8 && !name; j++) { const t = String(r[j] ?? "").trim(); if (t && hasLetters(t)) name = t.replace(/ـ/g, ""); }
+      if (!name) for (let j = 0; j < r.length && !name; j++) { const t = String(r[j] ?? "").trim(); if (t && hasLetters(t)) name = t.replace(/ـ/g, ""); }
+      if (!name || /المجموع|الإجمالي|الاجمالي|مجموع/.test(name)) continue;
+      const d = near(r, dc) || 0, c = near(r, cc) || 0;
+      accounts.push({ code, name, debit: Math.round(d * 1000) / 1000, credit: Math.round(c * 1000) / 1000, key: null });
+    }
+    return accounts.length >= 3 ? { kind: "trial_balance", as_of: asOf, accounts, parsed: true } : null;
+  }
+  // which opening-balance heading each account belongs to, by its name (used when the AI is not available)
+  const KEY_RULES = [["acc_dep", /مجمع.*(استهلاك|اهلاك)|مخصص.*(استهلاك|اهلاك)/], ["cheques_in", /شيكات.*(برسم|تحصيل|واردة|قبض)/], ["cheques_out", /شيكات.*(مؤجلة|صادرة|دفع)/],
+    ["tax_in", /ضريبة.*(مدفوعة|مشتريات|مدخلات)/], ["tax_out", /ضريبة.*(مبيعات|مستحقة|مخرجات)/], ["tax_withheld", /ضريبة.*دخل/], ["ss_payable", /ضمان/], ["salaries_payable", /رواتب.*مستحقة|أجور.*مستحقة/],
+    ["accrued", /مصاريف.*مستحقة|مستحقات/], ["prepaid", /مدفوعة.*مقدم|مقدما/], ["margins", /تأمينات|هوامش|كفالات/], ["advances", /سلف/], ["custody", /عهد/], ["loans", /قرض|قروض|تسهيلات/],
+    ["partner", /جاري.*(الشريك|الشركاء|المالك)|مسحوبات|حساب جاري/], ["equity", /رأس.*مال|راس.*مال|أرباح.*محتجزة|ارباح.*محتجزة|احتياطي|أرباح.*مدورة|ارباح.*مدورة/], ["cash", /صندوق|نقد/], ["bank", /بنك|مصرف/],
+    ["customers", /عملاء|ذمم.*مدينة|مدينون/], ["suppliers", /موردين|موردون|ذمم.*دائنة|دائنون/], ["inventory", /مخزون|بضاعة|مواد خام|مستودع/],
+    ["fixed_assets", /أراضي|اراضي|مباني|سيارات|آلات|الات|معدات|أثاث|اثاث|أجهزة|اجهزة|برامج|ماكينة|مكائن|عدد وأدوات|تأسيس/],
+    ["profit_loss", /مبيعات|إيرادات|ايرادات|مصاريف|مصروف|رواتب|أجور|كهرباء|مياه|إيجار|ايجار|صيانة|محروقات|تكلفة|كلفة|مشتريات|خصم/]];
+  const guessKey = name => { const n = String(name || "").replace(/[إأآ]/g, "ا").replace(/ـ/g, ""); return (KEY_RULES.find(([, re]) => re.test(name) || re.test(n)) || ["ignore"])[0]; };
+  // the AI only places each account under a heading; the numbers stay exactly as read from the file
+  async function classifyAccounts(tb) {
+    const text = "Trial balance already read from Excel. Do NOT change any number. Return every account with its key.\ncode | name | closing debit | closing credit\n" + tb.accounts.map(a => `${a.code} | ${a.name} | ${a.debit} | ${a.credit}`).join("\n");
+    try {
+      const { data, error } = await sb.functions.invoke("ai-story", { body: { mode: "setup", today: today(), text, files: [] } });
+      const got = !error && data && data.result && Array.isArray(data.result.accounts) ? data.result.accounts : [];
+      const byCode = {}; got.forEach(a => { const o = Array.isArray(a) ? { code: a[0], key: a[4] } : a; if (o && o.code != null) byCode[String(o.code)] = o.key; });
+      tb.accounts.forEach(a => a.key = byCode[a.code] || guessKey(a.name));
+      tb.doubts = `قرأت الأرقام مباشرة من ملف Excel (${tb.accounts.length} حساب)، والذكاء الاصطناعي اختار مكان كل حساب. راجع عمود «يذهب إلى».` + (got.length ? "" : " تعذر الوصول للذكاء الاصطناعي، فاخترت الأماكن من أسماء الحسابات.");
+    } catch (e) { tb.accounts.forEach(a => a.key = guessKey(a.name)); tb.doubts = "قرأت الأرقام مباشرة من ملف Excel، واخترت الأماكن من أسماء الحسابات."; }
+    return tb;
+  }
+
   // read one file from the old system with the AI (setup reader)
   async function readReport(f) {
     const body = { mode: "setup", today: today(), text: "", files: [] };
     if (/\.(xlsx|xls)$/i.test(f.name)) { try { await needLib("xlsx"); } catch (e) {} }
-    if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer()); wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
+    if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer());
+      for (const n of wb.SheetNames) { const tb = parseTrialBalance(XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" })); if (tb) return { file: f.name, ...(await classifyAccounts(tb)) }; }
+      wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
     else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) body.text = await f.text();
     else if (f.size < 6e6) body.files = [{ media_type: f.type === "application/pdf" ? "application/pdf" : (f.type || "image/jpeg"), data: await fileB64(f) }];
     else return { file: f.name, error: true, why: "الملف كبير جداً" };
@@ -1064,7 +1136,7 @@
     const D = snapDays(snaps), days = Object.keys(D).sort(), pick = kind => { const ds = days.filter(d => d <= day && D[d][kind]); return ds.length ? D[ds[ds.length - 1]][kind] : null; };
     return ["trial_balance", "customers", "suppliers", "cheques", "assets", "employees", "loans"].map(pick).filter(Boolean).map(s => ({ file: s.file_name || MON_KIND[s.kind], ...s.data, kind: s.kind, as_of: day }));
   }
-  const Monitor = { KIND: MON_KIND, readReport, saveSnapshots, analyze, snapDays, snapshotsForOpening };
+  const Monitor = { KIND: MON_KIND, readReport, parseTrialBalance, guessKey, saveSnapshots, analyze, snapDays, snapshotsForOpening };
 
   window.Books = { sb, ok, today, addDays, monthStart, num, r3, money, esc, TYPES, METHODS, DOCS, STATUS, NEEDS, MONEY_OUT, FLAGS, flagPills, fileHash, CHQ, CHQ_ACTIONS, forecast, chequesHTML,
     amountWords, Data, Reports, voucherHTML, accuracyHTML, exportBooks, dashData, renderDashboard, DASH_CSS, needLib, cashFlowHTML, loanHTML, loanSchedule, loanStatus, LOAN_KIND, supplierPlanHTML, monthChecklist, deadlines, DL, assetBook, ASSET_CATS, PO_STATUS, poHTML, grnHTML, agingHTML, assetsHTML, confirmLetterHTML, employeeYearHTML, invoiceHTML, balanceSheetHTML, taxSummaryHTML, payrollHTML, payslipHTML, stockCountHTML, statementHTML, cashDayHTML, balancesHTML, plHTML, expensesHTML, entriesHTML,
