@@ -1093,15 +1093,23 @@ function wzLoad(res){
   drawWizard();
 }
 function wzSums(){ const s = {}; W.tb.forEach(a => s[a.key] = B.r3((s[a.key] || 0) + a.bal)); return s; }
+// customers and suppliers straight from the trial balance, when it lists each one as its own account
+function tbParties(key, sign){ const l = W.tb.filter(a => a.key === key && Math.abs(a.bal) > 0.0005).map(a => ({ name: String(a.name).trim(), balance: B.r3(sign * a.bal), code: a.code }));
+  return W.tb.filter(a => a.key === key).length >= 3 ? l : []; }
 function drawWizard(){
   const out = $("#wz_out"), S2 = wzSums(), sumL = (l, k) => B.r3(l.reduce((a, x) => a + num(x[k]), 0));
+  W.custTB = tbParties("customers", 1); W.suppTB = tbParties("suppliers", -1);
   const tbD = B.r3(W.tb.reduce((a, x) => a + Math.max(0, x.bal), 0)), tbC = B.r3(W.tb.reduce((a, x) => a + Math.max(0, -x.bal), 0));
   const checks = [];
   const ck = (label, a, b, need) => { if (need === false) return; const d = B.r3(a - b); checks.push([label, Math.abs(d) < 0.01, `${money(a)} مقابل ${money(b)}${Math.abs(d) >= 0.01 ? ` · الفرق ${money(d)}` : ""}`]); };
   if (W.tb.length) checks.push(["ميزان المراجعة متوازن", Math.abs(tbD - tbC) < 0.01, `مدين ${money(tbD)} · دائن ${money(tbC)}`]);
   const has = k => W.tb.some(a => a.key === k);
-  if (W.cust.length) ck("قائمة العملاء = حساب العملاء في الميزان", sumL(W.cust, "balance"), S2.customers || 0, W.tb.length > 0);
-  if (W.supp.length) ck("قائمة الموردين = حساب الموردين في الميزان", sumL(W.supp, "balance"), -(S2.suppliers || 0), W.tb.length > 0);
+  const fromTB = (label, list, rep, tbTotal, who) => {
+    if (list.length) { const d = B.r3(sumL(rep, "balance") - tbTotal), same = !rep.length || Math.abs(d) < 0.01;
+      checks.push([`${label}: من الميزان (${list.length} ${who})`, same ? true : "warn", `المجموع ${money(tbTotal)}` + (rep.length ? (same ? " · يطابق الكشف المرفوع ✓" : ` · الكشف المرفوع ${money(sumL(rep, "balance"))} (الفرق ${money(d)}): سأستخدم أرصدة الميزان، والكشف للسقوف ومدد السداد فقط`) : "")]); }
+    else if (rep.length) ck(`قائمة ${label} = حسابها في الميزان`, sumL(rep, "balance"), tbTotal, W.tb.length > 0); };
+  fromTB("العملاء", W.custTB, W.cust, S2.customers || 0, "عميل");
+  fromTB("الموردون", W.suppTB, W.supp, -(S2.suppliers || 0), "مورد");
   const cin = W.chq.filter(c => c.direction === "in"), cout = W.chq.filter(c => c.direction === "out");
   if (cin.length) ck("الشيكات الواردة = حسابها في الميزان", sumL(cin, "amount"), S2.cheques_in || 0, W.tb.length > 0);
   if (cout.length) ck("الشيكات الصادرة = حسابها في الميزان", sumL(cout, "amount"), -(S2.cheques_out || 0), W.tb.length > 0);
@@ -1112,7 +1120,7 @@ function drawWizard(){
   if (dates.length > 1) checks.push(["كل التقارير بنفس التاريخ", false, dates.join(" · ")]);
   const ign = W.tb.filter(x => x.key === "ignore" && Math.abs(x.bal) > 0.005);
   if (ign.length) checks.push(["كل حساب له مكان", false, `متجاهلة: ${ign.map(x => x.name).join("، ")} (${money(ign.reduce((s, x) => s + x.bal, 0))}). لن تدخل الأرصدة الافتتاحية وسيذهب فرقها إلى رأس المال`]);
-  const missing = [["customers", W.cust, "كشف أرصدة العملاء"], ["suppliers", W.supp, "كشف أرصدة الموردين"], ["cheques_in", cin, "كشف الشيكات الواردة"], ["cheques_out", cout, "كشف الشيكات الصادرة"], ["advances", W.emps.filter(e => num(e.advance)), "سلف الموظفين"]]
+  const missing = [["customers", W.custTB.length ? W.custTB : W.cust, "كشف أرصدة العملاء"], ["suppliers", W.suppTB.length ? W.suppTB : W.supp, "كشف أرصدة الموردين"], ["cheques_in", cin, "كشف الشيكات الواردة"], ["cheques_out", cout, "كشف الشيكات الصادرة"], ["advances", W.emps.filter(e => num(e.advance)), "سلف الموظفين"]]
     .filter(([k, l]) => Math.abs(S2[k] || 0) > 0.005 && !l.length).map(x => x[2]);
   out.innerHTML = `<div class="tablewrap"><table class="t"><thead><tr><th>الملف</th><th>نوع التقرير</th><th>ما قرأته</th></tr></thead><tbody>${W.res.map(r => `<tr><td>${esc(r.file)}</td><td>${r.error ? '<span class="pill bad">تعذرت القراءة</span>' : esc(WZ_KIND[r.kind] || r.kind)}</td>
       <td class="note">${r.error ? "" : [r.accounts && r.accounts.length ? `${r.accounts.length} حساب` : "", r.parties && r.parties.length ? `${r.parties.length} اسم` : "", r.cheques && r.cheques.length ? `${r.cheques.length} شيك` : "", r.assets && r.assets.length ? `${r.assets.length} أصل` : "",
@@ -1120,7 +1128,7 @@ function drawWizard(){
     ${W.tb.length ? `<h3>حسابات ميزان المراجعة <span class="note">تأكد أن كل حساب في مكانه الصحيح</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>الرصيد</th><th>يذهب إلى</th></tr></thead><tbody>
       ${W.tb.map((a, i) => `<tr><td>${esc(a.code || "")} ${esc(a.name)}</td><td class="n">${money(a.bal)}</td><td><select data-wk="${i}" style="width:auto">${Object.entries(WZ_KEYS).map(([k, l]) => `<option value="${k}"${k === a.key ? " selected" : ""}>${l}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>` : ""}
     <h3>التحقق <span class="note">Cross-checks</span></h3>
-    <div class="alerts">${checks.map(([l, ok, d]) => `<div class="al ${ok ? "" : "bad"}" style="display:grid;gap:2px"><span>${ok ? "✅" : "❌"} ${esc(l)}</span><span class="note">${esc(d)}</span></div>`).join("") || '<div class="note">ارفع ميزان المراجعة لإجراء التحقق.</div>'}
+    <div class="alerts">${checks.map(([l, ok, d]) => `<div class="al ${ok === true ? "" : ok === "warn" ? "warn" : "bad"}" style="display:grid;gap:2px"><span>${ok === true ? "✅" : ok === "warn" ? "⚠" : "❌"} ${esc(l)}</span><span class="note">${esc(d)}</span></div>`).join("") || '<div class="note">ارفع ميزان المراجعة لإجراء التحقق.</div>'}
       ${missing.length ? `<div class="al warn"><span>⚠ ينقص: ${esc(missing.join("، "))}. بدونها يدخل الرصيد كسطر واحد إجمالي.</span></div>` : ""}</div>
     <div class="row"><button type="button" class="primary" id="wz_fill">املأ النموذج من هذه التقارير</button><span class="note" id="wz_msg"></span></div>`;
   out.querySelectorAll("[data-wk]").forEach(sel => sel.onchange = () => { W.tb[+sel.dataset.wk].key = sel.value; drawWizard(); });
@@ -1136,6 +1144,8 @@ function fillFromWizard(){
     if (OTHER_KEYS.some(k => $("#o_" + k).value)) $("#o_tax_in").closest("details").open = true;
   }
   const fill = (host, mk, list, setRow) => { host.querySelectorAll(".pr").forEach(x => x.remove()); list.forEach(r => { mk(host); const rows = host.querySelectorAll(".pr"); setRow(rows[rows.length - 1], r); }); if (!list.length) mk(host); };
+  const terms = (rep, l) => l.map(p => { const r = rep.find(x => String(x.name).trim() === p.name); return r ? { ...p, terms_days: r.terms_days, credit_limit: r.credit_limit } : p; });
+  if (W.custTB.length) { W.cust = terms(W.cust, W.custTB); } if (W.suppTB.length) { W.supp = terms(W.supp, W.suppTB); }
   const cust = W.cust.length ? W.cust : Math.abs(S2.customers || 0) > 0.005 ? [{ name: "أرصدة العملاء (إجمالي من الميزان)", balance: S2.customers }] : [];
   const supp = W.supp.length ? W.supp : Math.abs(S2.suppliers || 0) > 0.005 ? [{ name: "أرصدة الموردين (إجمالي من الميزان)", balance: -S2.suppliers }] : [];
   fill($("#o_cust"), prow, cust, (d, r) => { d.querySelector("[data-n]").value = r.name; d.querySelector("[data-b]").value = B.r3(num(r.balance)); });
