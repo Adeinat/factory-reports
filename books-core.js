@@ -945,69 +945,87 @@
   const normAr = s => String(s ?? "").replace(/ـ/g, "").replace(/[إأآ]/g, "ا").replace(/\s+/g, " ").trim();
   const isNumText = t => /^[\d\s_\-.,:()٫٬]+$/.test(t);
   const xlNum = v => { if (typeof v === "number") return v; const t = String(v ?? "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[,٬\s]/g, "").replace("٫", ".");
-    if (!t) return null; const neg = /^\(.*\)$/.test(t); const n = parseFloat(t.replace(/[()]/g, "")); return isFinite(n) ? (neg ? -n : n) : null; };
+    if (!t || !/\d/.test(t) || !/^[-(]?[\d.]+[)-]?$/.test(t)) return null; const neg = /^\(.*\)$|-$|^-/.test(t); const n = parseFloat(t.replace(/[()\-]/g, "")); return isFinite(n) ? (neg ? -n : n) : null; };
   function parseTrialBalance(rows) {
-    // header cells: the balance groups and the debit / credit columns under each
-    const GROUP = [["close", /^(الرصيد|رصيد آخر المدة|الرصيد الختامي|رصيد نهاية الفترة|الرصيد النهائي)$/], ["open", /(بداية الفترة|اول المدة|رصيد افتتاحي|الرصيد الافتتاحي)/], ["move", /^(الحركة|الحركات|حركة الفترة)$/]];
+    const GROUP = [["close", /^(الرصيد|رصيد اخر المدة|الرصيد الختامي|رصيد نهاية الفترة|الرصيد النهائي)$/], ["open", /(بداية الفترة|اول المدة|رصيد افتتاحي|الرصيد الافتتاحي)/], ["move", /^(الحركة|الحركات|حركة الفترة)$/]];
     let hdr = -1, groups = [], nameCol = -1, codeCol = -1;
-    for (let i = 0; i < Math.min(rows.length, 25) && hdr < 0; i++) {
-      const r = rows[i] || [], found = [];
-      r.forEach((c, j) => { const t = normAr(c); for (const [k, re] of GROUP) if (re.test(t)) found.push({ k, col: j }); });
+    for (let i = 0; i < Math.min(rows.length, 30) && hdr < 0; i++) {
+      const found = []; (rows[i] || []).forEach((c, j) => { const t = normAr(c); for (const [k, re] of GROUP) if (re.test(t)) found.push({ k, col: j }); });
       if (found.some(g => g.k === "close")) { hdr = i; groups = found; }
     }
     if (hdr < 0) return null;
-    for (let i = hdr; i < Math.min(rows.length, hdr + 4); i++) (rows[i] || []).forEach((c, j) => { const t = normAr(c);
-      if (/اسم الحساب|البيان/.test(t) && nameCol < 0) nameCol = j; if (/رقم الحساب|الرقم|رمز الحساب|كود/.test(t) && codeCol < 0) codeCol = j; });
-    // debit / credit sub-headers in the rows just under the group row
     const subs = [];
     for (let i = hdr; i < Math.min(rows.length, hdr + 4); i++) (rows[i] || []).forEach((c, j) => { const t = normAr(c);
+      if (/اسم الحساب|البيان/.test(t) && nameCol < 0) nameCol = j; if (/رقم الحساب|رمز الحساب|كود الحساب|^الرقم$/.test(t) && codeCol < 0) codeCol = j;
       if (/^(منه|مدين|مدينة)$/.test(t)) subs.push({ side: "d", col: j }); else if (/^(له|دائن|دائنة)$/.test(t)) subs.push({ side: "c", col: j }); });
-    const starts = [...groups.map(g => g.col), nameCol, codeCol].filter(c => c >= 0).sort((a, b) => a - b);
-    const close = groups.find(g => g.k === "close"), end = starts.find(c => c > close.col) ?? 9999, begin = close.col;
-    // a group's range runs from its own column to the next header column (works whichever way the sheet is laid out)
-    let inG = subs.filter(s => s.col >= begin && s.col < end);
-    if (inG.length < 2) { const prev = [...starts].reverse().find(c => c < close.col) ?? -1; inG = subs.filter(s => s.col > prev && s.col <= close.col); }
-    const dc = (inG.find(s => s.side === "d") || {}).col, cc = (inG.find(s => s.side === "c") || {}).col;
-    if (dc == null || cc == null || codeCol < 0) return null;
-    const near = (r, col) => { for (const d of [0, 1, -1, 2, -2, 3]) { const v = r[col + d]; if (v !== "" && v != null && xlNum(v) != null) return xlNum(v); } return null; };
-    const accounts = []; let asOf = null;
-    // the report date is the last date in the title rows ("من 01/01/2026 الى 29/10/2026")
-    for (let i = 0; i < Math.min(rows.length, hdr + 1); i++) for (const c of rows[i] || []) for (const m of String(c ?? "").matchAll(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})|(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/g))
-      asOf = m[1] ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : `${m[6]}-${m[5].padStart(2, "0")}-${m[4].padStart(2, "0")}`;
+    if (codeCol < 0 || subs.length < 2) return null;
+    // which balance group each debit / credit header belongs to
+    const gcols = groups.map(g => g.col).sort((a, b) => a - b), heads = [...gcols, nameCol, codeCol].filter(c => c >= 0).sort((a, b) => a - b);
+    subs.forEach(s => { const inside = groups.filter(g => g.col <= s.col && !heads.some(h => h > g.col && h <= s.col)); s.g = (inside.sort((a, b) => b.col - a.col)[0] || groups[0]).k; });
+    const textStart = Math.min(...[nameCol, codeCol].filter(c => c >= 0));
+    // the report date: the latest date in the title rows (the "to" date)
+    let asOf = null;
+    for (let i = 0; i < hdr; i++) for (const c of rows[i] || []) for (const m of String(c ?? "").matchAll(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})|(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/g)) {
+      const d = m[1] ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : `${m[6]}-${m[5].padStart(2, "0")}-${m[4].padStart(2, "0")}`; if (!asOf || d > asOf) asOf = d; }
+    // walk the rows: group headers, accounts and group totals
+    const lines = []; let group = "";
+    const letters = t => /[؀-ۿa-zA-Z]/.test(t) && !isNumText(t);
     for (let i = hdr + 1; i < rows.length; i++) {
-      const r = rows[i] || [];
-      const codes = []; for (let j = codeCol - 2; j <= codeCol + 8; j++) { const t = String(r[j] ?? "").trim(); if (/^\d{3,}(-\d+)?$/.test(t)) codes.push(t); }
-      if (!codes.length) continue;
-      const code = codes.sort((a, b) => b.length - a.length)[0];
-      const hasLetters = t => /[؀-ۿa-zA-Z]/.test(t) && !isNumText(t) && !/: ?الحساب$|^الحساب ?:/.test(t);
-      let name = "";
-      if (nameCol >= 0) for (let j = nameCol - 2; j < nameCol + 8 && !name; j++) { const t = String(r[j] ?? "").trim(); if (t && hasLetters(t)) name = t.replace(/ـ/g, ""); }
-      if (!name) for (let j = 0; j < r.length && !name; j++) { const t = String(r[j] ?? "").trim(); if (t && hasLetters(t)) name = t.replace(/ـ/g, ""); }
-      if (!name || /المجموع|الإجمالي|الاجمالي|مجموع/.test(name)) continue;
-      const d = near(r, dc) || 0, c = near(r, cc) || 0;
-      accounts.push({ code, name, debit: Math.round(d * 1000) / 1000, credit: Math.round(c * 1000) / 1000, key: null });
+      const r = rows[i] || [], cells = r.map((c, j) => ({ j, t: String(c ?? "").trim(), v: c })).filter(x => x.t !== "");
+      if (!cells.length) continue;
+      const texts = cells.filter(x => x.j >= textStart - 2 && letters(x.t)), joined = texts.map(x => normAr(x.t)).join(" ");
+      if (/(^|\s):? ?الحساب ?:?$/.test(joined) || texts.some(x => /^: ?الحساب$/.test(normAr(x.t)))) { group = normAr(texts.filter(x => !/الحساب/.test(normAr(x.t))).map(x => x.t).join(" ")); continue; }
+      const nums = cells.filter(x => x.j < textStart - 1 && xlNum(x.v) != null).map(x => ({ col: x.j, v: xlNum(x.v) }));
+      if (/^(المجموع|مجموع|الاجمالي|الإجمالي|المجموع الكلي|اجمالي)/.test(joined)) { lines.push({ total: true, group, nums, grand: !group || /الكلي|العام/.test(joined) }); continue; }
+      const codeCells = cells.filter(x => x.j >= codeCol - 1 && x.j <= codeCol + 8 && /^\d+$/.test(x.t));
+      if (!codeCells.length) continue;
+      const own = codeCells[0].t, parent = codeCells.length > 1 ? codeCells[codeCells.length - 1].t : "";
+      const code = parent && !own.startsWith(parent) ? `${parent}-${own}` : own;
+      const name = (texts.find(x => !/الحساب/.test(normAr(x.t))) || {}).t || "";
+      lines.push({ code, name: name.replace(/ـ/g, "") || `${group || "حساب"} ${code}`, group, nums });
     }
-    return accounts.length >= 3 ? { kind: "trial_balance", as_of: asOf, accounts, parsed: true } : null;
+    const accts = lines.filter(l => !l.total);
+    if (accts.length < 3) return null;
+    // every column holding numbers is assigned to the nearest debit / credit header
+    const colsUsed = [...new Set(lines.flatMap(l => l.nums.map(n => n.col)))];
+    const owner = {}; colsUsed.forEach(c => { owner[c] = subs.slice().sort((a, b) => Math.abs(a.col - c) - Math.abs(b.col - c) || (b.col - a.col))[0]; });
+    const take = (l, g, side) => l.nums.filter(n => owner[n.col] && owner[n.col].g === g && owner[n.col].side === side).reduce((a, n) => a + n.v, 0);
+    const accounts = accts.map(l => ({ code: l.code, name: l.name, group: l.group, debit: Math.round(take(l, "close", "d") * 1000) / 1000, credit: Math.round(take(l, "close", "c") * 1000) / 1000, key: null }));
+    // check against each group's total row
+    let checked = 0, bad = [];
+    for (const t of lines.filter(l => l.total && l.nums.length)) {
+      const mine = accts.filter(a => a.group === t.group); if (!mine.length || t.grand) continue;
+      const sd = mine.reduce((a, l) => a + take(l, "close", "d"), 0), sc = mine.reduce((a, l) => a + take(l, "close", "c"), 0), td = take(t, "close", "d"), tc = take(t, "close", "c");
+      checked++; if (Math.abs(sd - td) > 0.01 || Math.abs(sc - tc) > 0.01) bad.push(`${t.group}: الحسابات ${money(sd - sc)} والمجموع ${money(td - tc)}`);
+    }
+    return { kind: "trial_balance", as_of: asOf, accounts, parsed: true, groupCheck: { checked, bad } };
   }
-  // which opening-balance heading each account belongs to, by its name (used when the AI is not available)
-  const KEY_RULES = [["acc_dep", /مجمع.*(استهلاك|اهلاك)|مخصص.*(استهلاك|اهلاك)/], ["cheques_in", /شيكات.*(برسم|تحصيل|واردة|قبض)/], ["cheques_out", /شيكات.*(مؤجلة|صادرة|دفع)/],
-    ["tax_in", /ضريبة.*(مدفوعة|مشتريات|مدخلات)/], ["tax_out", /ضريبة.*(مبيعات|مستحقة|مخرجات)/], ["tax_withheld", /ضريبة.*دخل/], ["ss_payable", /ضمان/], ["salaries_payable", /رواتب.*مستحقة|أجور.*مستحقة/],
-    ["accrued", /مصاريف.*مستحقة|مستحقات/], ["prepaid", /مدفوعة.*مقدم|مقدما/], ["margins", /تأمينات|هوامش|كفالات/], ["advances", /سلف/], ["custody", /عهد/], ["loans", /قرض|قروض|تسهيلات/],
-    ["partner", /جاري.*(الشريك|الشركاء|المالك)|مسحوبات|حساب جاري/], ["equity", /رأس.*مال|راس.*مال|أرباح.*محتجزة|ارباح.*محتجزة|احتياطي|أرباح.*مدورة|ارباح.*مدورة/], ["cash", /صندوق|نقد/], ["bank", /بنك|مصرف/],
-    ["customers", /عملاء|ذمم.*مدينة|مدينون/], ["suppliers", /موردين|موردون|ذمم.*دائنة|دائنون/], ["inventory", /مخزون|بضاعة|مواد خام|مستودع/],
-    ["fixed_assets", /أراضي|اراضي|مباني|سيارات|آلات|الات|معدات|أثاث|اثاث|أجهزة|اجهزة|برامج|ماكينة|مكائن|عدد وأدوات|تأسيس/],
-    ["profit_loss", /مبيعات|إيرادات|ايرادات|مصاريف|مصروف|رواتب|أجور|كهرباء|مياه|إيجار|ايجار|صيانة|محروقات|تكلفة|كلفة|مشتريات|خصم/]];
-  const guessKey = name => { const n = String(name || "").replace(/[إأآ]/g, "ا").replace(/ـ/g, ""); return (KEY_RULES.find(([, re]) => re.test(name) || re.test(n)) || ["ignore"])[0]; };
+  // which opening-balance heading an account belongs to, from its group name first, then its own name
+  const KEY_RULES = [["acc_dep", /مجمع.*(استهلاك|اهلاك|اهتلاك)|مخصص.*(استهلاك|اهلاك|اهتلاك)/], ["cheques_in", /شيكات.*(برسم|تحصيل|واردة|قبض)/], ["cheques_out", /شيكات.*(مؤجلة|صادرة|دفع)/],
+    ["tax_in", /ضريبة.*(مدفوعة|مشتريات|مدخلات)/], ["tax_out", /ضريبة.*(مبيعات|مستحقة|مخرجات)/], ["tax_withheld", /ضريبة.*دخل/], ["ss_payable", /ضمان/], ["salaries_payable", /رواتب.*مستحقة|اجور.*مستحقة/],
+    ["accrued", /مصاريف.*مستحقة|مصروف.*مستحق|مستحقات/], ["prepaid", /مدفوعة.*مقدم|مقدما/], ["margins", /تامينات|هوامش|كفالات/], ["advances", /سلف/], ["custody", /عهد/], ["loans", /قرض|قروض|تسهيلات|بنوك دائنة/],
+    ["partner", /جاري.*(الشريك|الشركاء|المالك)|مسحوبات|حساب جاري/], ["equity", /راس.*مال|حقوق الملكية|ارباح.*محتجزة|احتياطي|ارباح.*مدورة|ارباح.*السنة|خسارة.*السنة/], ["cash", /صندوق|نقد/], ["bank", /بنك|بنوك|مصرف/],
+    ["customers", /عملاء|ذمم.*مدين|مدينون/], ["suppliers", /موردين|مموردين|موردون|ذمم.*دائن|دائنون/], ["inventory", /مخزون|بضاعة|مواد خام|مستودع|طلبيات|اعتمادات/],
+    ["fixed_assets", /اراضي|مباني|سيارات|الات|معدات|اثاث|اجهزة|برامج|ماكينة|مكائن|عدد وادوات|تاسيس|موجودات.*ثابت/],
+    ["profit_loss", /مبيعات|ايرادات|مصاريف|مصروف|رواتب|اجور|كهرباء|مياه|ايجار|صيانة|محروقات|تكلفة|كلفة|مشتريات|خصم/]];
+  const keyOf = t => { const n = String(t || "").replace(/[إأآ]/g, "ا").replace(/ـ/g, ""); return (KEY_RULES.find(([, re]) => re.test(n)) || [null])[0]; };
+  const GROUP_FIRST = ["customers", "suppliers", "bank", "cash", "cheques_in", "cheques_out", "fixed_assets", "acc_dep", "equity", "profit_loss", "loans", "inventory"];
+  const guessKey = (name, group) => { const g = keyOf(group), n = keyOf(name);
+    if (g && GROUP_FIRST.includes(g) && !(g === "equity" && n === "partner") && !(g === "loans" && n === "bank")) return g; return n || g || "ignore"; };
   // the AI only places each account under a heading; the numbers stay exactly as read from the file
   async function classifyAccounts(tb) {
-    const text = "Trial balance already read from Excel. Do NOT change any number. Return every account with its key.\ncode | name | closing debit | closing credit\n" + tb.accounts.map(a => `${a.code} | ${a.name} | ${a.debit} | ${a.credit}`).join("\n");
+    const text = "Trial balance already read from Excel. Do NOT change any number. Return every account with its key, using its group to decide (e.g. every account in a customers group is customers).\ncode | name | group | closing debit | closing credit\n"
+      + tb.accounts.map(a => `${a.code} | ${a.name} | ${a.group || ""} | ${a.debit} | ${a.credit}`).join("\n");
+    let got = [];
     try {
       const { data, error } = await sb.functions.invoke("ai-story", { body: { mode: "setup", today: today(), text, files: [] } });
-      const got = !error && data && data.result && Array.isArray(data.result.accounts) ? data.result.accounts : [];
-      const byCode = {}; got.forEach(a => { const o = Array.isArray(a) ? { code: a[0], key: a[4] } : a; if (o && o.code != null) byCode[String(o.code)] = o.key; });
-      tb.accounts.forEach(a => a.key = byCode[a.code] || guessKey(a.name));
-      tb.doubts = `قرأت الأرقام مباشرة من ملف Excel (${tb.accounts.length} حساب)، والذكاء الاصطناعي اختار مكان كل حساب. راجع عمود «يذهب إلى».` + (got.length ? "" : " تعذر الوصول للذكاء الاصطناعي، فاخترت الأماكن من أسماء الحسابات.");
-    } catch (e) { tb.accounts.forEach(a => a.key = guessKey(a.name)); tb.doubts = "قرأت الأرقام مباشرة من ملف Excel، واخترت الأماكن من أسماء الحسابات."; }
+      got = !error && data && data.result && Array.isArray(data.result.accounts) ? data.result.accounts : [];
+    } catch (e) {}
+    const byCode = {}; got.forEach(a => { const o = Array.isArray(a) ? { code: a[0], key: a[4] } : a; if (o && o.code != null && o.key && o.key !== "ignore") byCode[String(o.code)] = o.key; });
+    tb.accounts.forEach(a => a.key = byCode[a.code] || guessKey(a.name, a.group));
+    const gc = tb.groupCheck || { checked: 0, bad: [] };
+    tb.doubts = `قرأت الأرقام مباشرة من ملف Excel (${tb.accounts.length} حساب)` + (gc.checked ? (gc.bad.length ? `. ⚠ مجاميع ${gc.bad.length} من ${gc.checked} مجموعة لا تطابق: ${gc.bad.slice(0, 4).join(" · ")}` : `، وطابقت مجموع كل مجموعة (${gc.checked} مجموعة) ✓`) : "")
+      + (got.length ? ". الذكاء الاصطناعي اختار مكان كل حساب: راجع «يذهب إلى»." : ". اخترت مكان كل حساب من اسم مجموعته واسمه: راجع «يذهب إلى».");
     return tb;
   }
 
