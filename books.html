@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>دفتر المحاسب · Books</title>
+<title>عون · Awn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -128,7 +128,7 @@ label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min
 <body>
 <div class="app">
   <header>
-    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>دفتر المحاسب<small>Accounting story box</small></h1></div>
+    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>عون<small>Awn · معك في كل قيد</small></h1></div>
     <div class="bar"><span id="who"></span><a href="books-admin.html" id="mgrLink" hidden>لوحة المدير · Manager view</a><button type="button" class="ghost" id="signOut" hidden>خروج · Sign out</button></div>
   </header>
 
@@ -1038,6 +1038,27 @@ function matchReceipts(rows, receipts){
     if (best != null) { used.add(best); r.rc = best; } });
   return receipts.map((rc, k) => used.has(k) ? null : k).filter(k => k != null);
 }
+function monitorCard(){
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="sum">📊 تقارير الرقابة اليومية من النظام القديم</div>
+    <div class="note">آخر الدوام: صدّر من النظام القديم بتاريخ اليوم <b>ميزان المراجعة، أرصدة العملاء، أرصدة الموردين، والشيكات</b> (PDF أو Excel) وارفعها هنا. أقرأها وأحفظها كما هي للتحليل فقط، ولا أغيّر شيئاً في دفاتر عون. مرة في الشهر أضف سجل الأصول والموظفين والقروض.</div>
+    <div class="actions"><button type="button" data-pick>📎 اختر التقارير</button><span class="note" data-f></span><button type="button" class="primary" data-go disabled>ارفع واقرأ</button></div>
+    <input type="file" hidden data-file accept="application/pdf,image/*,.xlsx,.xls,.csv,text/csv" multiple>
+    <div data-out></div>`;
+  const q = s2 => card.querySelector(s2), out = q("[data-out]"); let files = [];
+  q("[data-pick]").onclick = () => q("[data-file]").click();
+  q("[data-file]").onchange = e => { files = [...e.target.files].slice(0, 10); q("[data-f]").textContent = files.map(f => f.name).join("، "); q("[data-go]").disabled = !files.length; };
+  q("[data-go]").onclick = async () => {
+    q("[data-go]").disabled = true;
+    const res = await B.Monitor.saveSnapshots(files, (i, n, name) => { out.innerHTML = `<span class="typing">جارٍ قراءة ${i + 1} من ${n}: ${B.esc(name)}…</span>`; });
+    const okN = res.filter(r => !r.error).length;
+    out.innerHTML = `<div class="docwrap"><table class="doc-tbl"><thead><tr><th>الملف</th><th>نوع التقرير</th><th>بتاريخ</th><th></th></tr></thead><tbody>${res.map(r => `<tr><td>${B.esc(r.file)}</td>
+        <td>${r.error ? "" : B.esc(B.Monitor.KIND[r.kind] || r.kind)}</td><td>${r.error ? "" : B.esc(r.as_of || "")}</td><td>${r.error ? `<span class="pill bad">لم يُقرأ${r.why ? ": " + B.esc(r.why) : ""}</span>` : "✓"}${r.doubts ? `<div class="note">⚠ ${B.esc(r.doubts)}</div>` : ""}</td></tr>`).join("")}</tbody></table></div>
+      <div class="note">${okN ? `✓ حُفظ ${okN} تقرير. يراها المدير في صفحته مع التنبيهات.` : "لم يُحفظ شيء. جرّب تصدير التقرير كـ PDF أو Excel."} ${res.some(r => !r.error && r.as_of !== B.today()) ? "⚠ تاريخ بعض التقارير ليس اليوم: تأكد أنه المقصود." : ""}</div>`;
+    files = []; q("[data-f]").textContent = "";
+  };
+  return card;
+}
 function erpCard(){
   const card = document.createElement("div"); card.className = "card";
   card.innerHTML = `<div class="sum">📥 استيراد تقرير اليوم من النظام القديم</div>
@@ -1281,6 +1302,7 @@ async function showRequest(rq){
     if (rq.doc === "payroll") return addSys(await payrollCard(rq.month || null));
     if (rq.doc === "purchase_orders") return addSys(await poListCard());
     if (rq.doc === "loans") return addSys(await loansCard());
+    if (rq.doc === "monitor_upload") return addSys(monitorCard());
     if (rq.doc === "erp_import") return addSys(erpCard());
     if (rq.doc === "erp_held") return addSys(await heldCard());
     if (rq.doc === "erp_compare") return addSys(compareCard());
@@ -1315,6 +1337,7 @@ async function showRequest(rq){
 
 /* ---------- reports menu: every report in one place, no AI needed ---------- */
 const REPORTS = {
+  monitor_upload: { ar: "تقارير الرقابة اليومية", d: "ارفع ميزان المراجعة وأرصدة العملاء والموردين والشيكات من النظام القديم" },
   erp_import: { ar: "استيراد تقرير النظام القديم", d: "حوّل تقرير اليوم وإيصالاته إلى قيود" },
   erp_held: { ar: "قيود تنتظر إيصالاً", d: "من تقرير النظام القديم" },
   erp_compare: { ar: "مقارنة مع النظام القديم", d: "هل يطابق صندوق القصص؟" },
@@ -1350,7 +1373,7 @@ const REPORTS = {
   auditor_pack: { ar: "ملف المدقق", d: "قوائم نهاية السنة", need: ["year"] },
   export_xlsx: { ar: "نسخة Excel كاملة", d: "كل الدفاتر في ملف واحد (نسخة احتياطية)" },
 };
-const REP_TIME = [["فترة التجربة", ["erp_import", "erp_held", "erp_compare", "accuracy"]], ["يومي", ["daily_cash", "entry_list", "cash_count", "cheques"]], ["أسبوعي", ["aging", "supplier_plan", "bank", "deadlines"]],
+const REP_TIME = [["فترة التجربة", ["erp_import", "erp_held", "erp_compare", "accuracy"]], ["يومي", ["monitor_upload", "daily_cash", "entry_list", "cash_count", "cheques"]], ["أسبوعي", ["aging", "supplier_plan", "bank", "deadlines"]],
   ["شهري", ["month_end", "payroll", "stock_count", "recurring", "expenses", "profit_loss", "tax_summary", "cash_flow"]],
   ["سنوي", ["balance_sheet", "auditor_pack", "confirm", "employee_tax_year", "assets"]], ["عند الحاجة", ["statement", "invoice", "receipt_voucher", "payment_voucher", "balances", "purchase_orders", "goods_received", "loans", "export_xlsx"]]];
 const REP_TOPIC = [["العملاء", ["statement", "balances", "aging", "invoice", "receipt_voucher"]], ["الموردون والمشتريات", ["supplier_plan", "purchase_orders", "goods_received", "confirm", "payment_voucher"]],
@@ -1494,7 +1517,7 @@ async function start(){
   try { const { data } = await sb.from("acc_entries").select("date").eq("type", "opening").limit(1); S.since = data && data[0] ? data[0].date : B.today(); } catch (e) {}
   if (S.company.name) $("#coName").textContent = S.company.name;
   if (S.settings.locked_until) $("#who").textContent += ` · الفترة مقفلة حتى ${S.settings.locked_until}`;
-  addSys(bubble(`أهلاً 👋 اكتب ما حدث بكلماتك وأرفق صورة الإيصال إن وجدت. سأجهّز القيد وتؤكده أنت.<br><span class="note">التقارير كلها في تبويب «📋 التقارير» بالأعلى. أمثلة: «دفعت 25 دينار بنزين كاش» · «بعت لسوبرماركت النور 40 كرتونة بـ 800 آجل» · «استلمت 500 من بقالة السلام شيك» · «أعطيت أحمد سلفة 100» · «دفع أحمد 15 بنزين من عهدته» · «اطبع كشف حساب مصنع الورق»</span>`));
+  addSys(bubble(`أهلاً 👋 أنا عون. احكيلي شو صار، وأرفق صورة الإيصال إن وجدت. بجهّز القيد وأنت بتأكده.<br><span class="note">التقارير كلها في تبويب «📋 التقارير» بالأعلى. أمثلة: «دفعت 25 دينار بنزين كاش» · «بعت لسوبرماركت النور 40 كرتونة بـ 800 آجل» · «استلمت 500 من بقالة السلام شيك» · «أعطيت أحمد سلفة 100» · «دفع أحمد 15 بنزين من عهدته» · «اطبع كشف حساب مصنع الورق»</span>`));
   await loadToday();
   $("#tabs").hidden = false; refreshAttn();
 }

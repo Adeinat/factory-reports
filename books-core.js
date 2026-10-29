@@ -226,6 +226,7 @@
     payrollRuns: async () => (await sb.from("acc_payroll_runs").select("*").order("id", { ascending: false }).limit(24)).data || [],
     invCounts: async () => (await sb.from("acc_inventory_counts").select("*").order("id", { ascending: false }).limit(12)).data || [],
     einvoices: async () => (await sb.from("acc_einvoices").select("entry_id,status,qr,message,icv,at")).data || [],
+    snapshots: async (from) => { let q = sb.from("acc_snapshots").select("*").order("id"); if (from) q = q.gte("as_of", from); return (await q).data || []; },
     loans: async () => (await sb.from("acc_loans").select("*").order("no")).data || [],
     recurring: async () => (await sb.from("acc_recurring").select("*").order("created_at")).data || [],
     pos: async () => (await sb.from("acc_po_summary").select("*").order("no", { ascending: false }).limit(300)).data || [],
@@ -937,7 +938,135 @@
     return "حدث خطأ، حاول مرة أخرى. Something went wrong; try again." + (m ? ` (${m.slice(0, 80)})` : "");
   }
 
+  /* ---------- Daily monitoring: snapshots of the old system's reports (analysis only, never posted) ---------- */
+  const MON_KIND = { trial_balance: "ميزان المراجعة", customers: "أرصدة العملاء", suppliers: "أرصدة الموردين", cheques: "الشيكات", assets: "سجل الأصول", employees: "الموظفون", loans: "القروض", chart: "شجرة الحسابات", other: "غير معروف" };
+  const fileB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+  // read one file from the old system with the AI (setup reader)
+  async function readReport(f) {
+    const body = { mode: "setup", today: today(), text: "", files: [] };
+    if (/\.(xlsx|xls)$/i.test(f.name)) { try { await needLib("xlsx"); } catch (e) {} }
+    if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer()); wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
+    else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) body.text = await f.text();
+    else if (f.size < 6e6) body.files = [{ media_type: f.type === "application/pdf" ? "application/pdf" : (f.type || "image/jpeg"), data: await fileB64(f) }];
+    else return { file: f.name, error: true, why: "الملف كبير جداً" };
+    body.text = body.text.slice(0, 60000);
+    const { data, error } = await sb.functions.invoke("ai-story", { body });
+    return error || !data || !data.result ? { file: f.name, error: true } : { file: f.name, ...data.result };
+  }
+  // read files, keep the originals, and save each as a snapshot
+  async function saveSnapshots(files, onStep) {
+    const { data: { session } } = await sb.auth.getSession(), user = session && session.user, out = [];
+    for (const [i, f] of [...files].entries()) {
+      onStep && onStep(i, files.length, f.name);
+      const r = await readReport(f);
+      if (r.error) { out.push(r); continue; }
+      const asOf = r.as_of && /^\d{4}-\d{2}-\d{2}$/.test(r.as_of) ? r.as_of : today();
+      const ext = (f.name.match(/\.([a-z0-9]+)$/i) || [, "bin"])[1].toLowerCase();
+      const path = `${user ? user.id : "x"}/snapshots/${asOf}/${Date.now()}-${i}.${ext}`;
+      let fp = null; try { const { error } = await sb.storage.from("receipts").upload(path, f, { contentType: f.type || "application/octet-stream", upsert: false }); if (!error) fp = path; } catch (e) {}
+      const { file, ...data } = r;
+      const { error } = await sb.rpc("acc_snapshot_add", { p: { as_of: asOf, kind: r.kind || "other", file_name: f.name, file_path: fp, data } });
+      out.push(error ? { file: f.name, error: true, why: errText(error) } : { ...r, as_of: asOf });
+    }
+    return out;
+  }
+  // the latest snapshot of each kind for each day
+  function snapDays(snaps) {
+    const D = {};
+    for (const s of [...snaps].sort((a, b) => a.id - b.id)) { (D[s.as_of] = D[s.as_of] || {})[s.kind] = s; }
+    return D;
+  }
+  const tbRows = s => ((s && s.data && s.data.accounts) || []).map(a => ({ id: (a.code || "") + "|" + a.name, code: a.code || "", name: a.name, key: a.key || "ignore", bal: r3(num(a.debit) - num(a.credit)) }));
+  const keySum = (rows, k) => r3(rows.filter(r => r.key === k).reduce((s, r) => s + r.bal, 0));
+  const listSum = (l, f) => r3((l || []).reduce((s, x) => s + num(x[f]), 0));
+  // everything the manager needs for one day: movements against the previous report day, and alerts
+  function analyze(snaps, day, asOfToday) {
+    const D = snapDays(snaps), days = Object.keys(D).sort(), tbDays = days.filter(d => D[d].trial_balance);
+    day = day || tbDays[tbDays.length - 1] || days[days.length - 1];
+    const A = [], add = (lvl, txt) => A.push({ lvl, txt });
+    if (!day) return { days, day: null, alerts: A, moves: [], series: [] };
+    const latestBefore = (kind, d, strict) => { const ds = days.filter(x => (strict ? x < d : x <= d) && D[x][kind]); return ds.length ? D[ds[ds.length - 1]][kind] : null; };
+    const tb = D[day].trial_balance, prevDay = tbDays.filter(d => d < day).pop(), prev = prevDay ? D[prevDay].trial_balance : null;
+    const T = tbRows(tb), P = tbRows(prev), Pm = Object.fromEntries(P.map(r => [r.id, r]));
+    const last = tbDays[tbDays.length - 1];
+    if (asOfToday && last && last < addDays(asOfToday, -1)) add("warn", `آخر ميزان مراجعة مرفوع بتاريخ ${last}. لم تُرفع تقارير منذ ذلك اليوم.`);
+    // reports for the same date uploaded twice with different numbers: something was changed after the fact
+    for (const d of days) for (const kind of ["trial_balance", "customers", "suppliers"]) {
+      const same = snaps.filter(s => s.as_of === d && s.kind === kind).sort((a, b) => a.id - b.id);
+      if (same.length > 1) {
+        const tot = s => kind === "trial_balance" ? JSON.stringify(tbRows(s).map(r => [r.id, r.bal]).sort()) : JSON.stringify((s.data.parties || []).map(p => [p.name, r3(num(p.balance))]).sort());
+        if (tot(same[0]) !== tot(same[same.length - 1])) add("bad", `${MON_KIND[kind]} بتاريخ ${d} رُفع أكثر من مرة بأرقام مختلفة. قد يكون أحدهم عدّل قيوداً قديمة في النظام القديم.`);
+      }
+    }
+    if (tb) {
+      const tot = r3(T.reduce((s, r) => s + r.bal, 0));
+      if (Math.abs(tot) > 0.01) add("bad", `ميزان المراجعة بتاريخ ${day} غير متوازن (الفرق ${money(tot)}).`);
+      const cash = keySum(T, "cash"), bank = keySum(T, "bank");
+      if (cash < -0.005) add("bad", `رصيد الصندوق سالب: ${money(cash)}. غالباً قيد ناقص أو خاطئ.`);
+      if (bank < -0.005) add("warn", `رصيد البنك سالب: ${money(bank)}. تحقق من السحب على المكشوف.`);
+      const cust = D[day].customers, supp = D[day].suppliers, chq = latestBefore("cheques", day);
+      if (cust) { const a = listSum(cust.data.parties, "balance"), b = keySum(T, "customers"); if (Math.abs(a - b) >= 0.01) add("bad", `مجموع كشف العملاء ${money(a)} لا يساوي حساب العملاء في الميزان ${money(b)}.`); }
+      if (supp) { const a = listSum(supp.data.parties, "balance"), b = -keySum(T, "suppliers"); if (Math.abs(a - b) >= 0.01) add("bad", `مجموع كشف الموردين ${money(a)} لا يساوي حساب الموردين في الميزان ${money(b)}.`); }
+      if (chq && chq.as_of === day) { const ci = (chq.data.cheques || []).filter(c => c.direction === "in"), a = listSum(ci, "amount"), b = keySum(T, "cheques_in");
+        if (T.some(r => r.key === "cheques_in") && Math.abs(a - b) >= 0.01) add("bad", `كشف الشيكات الواردة ${money(a)} لا يساوي حسابها في الميزان ${money(b)}.`); }
+      if (prev) {
+        const eq = r3(keySum(T, "equity") - keySum(P, "equity"));
+        if (Math.abs(eq) >= 0.01) add("bad", `رأس المال والأرباح المحتجزة تغيّرت بـ ${money(-eq)} منذ ${prevDay}. هذه الحسابات لا تتحرك يومياً عادةً: اسأل عن السبب.`);
+        const fa = r3(keySum(T, "fixed_assets") - keySum(P, "fixed_assets"));
+        if (Math.abs(fa) >= 0.01) add("info", `الأصول الثابتة تغيّرت بـ ${money(fa)}: شراء أو بيع أصل؟`);
+      }
+    }
+    // movements and unusual jumps
+    const hist = {};   // account id -> earlier movements
+    for (let i = 1; i < tbDays.length && tbDays[i] < day; i++) {
+      const a = Object.fromEntries(tbRows(D[tbDays[i - 1]].trial_balance).map(r => [r.id, r.bal]));
+      for (const r of tbRows(D[tbDays[i]].trial_balance)) (hist[r.id] = hist[r.id] || []).push(r3(r.bal - (a[r.id] || 0)));
+    }
+    const moves = prev ? T.map(r => { const p = Pm[r.id], mv = r3(r.bal - (p ? p.bal : 0)), h = hist[r.id] || [], avg = h.length ? r3(h.reduce((s, x) => s + Math.abs(x), 0) / h.length) : null;
+        return { ...r, prev: p ? p.bal : 0, mv, avg, isNew: !p, unusual: r.key !== "equity" && h.length >= 3 && Math.abs(mv) > Math.max(3 * avg, 50) }; })
+      .concat(P.filter(p => !T.some(r => r.id === p.id)).map(p => ({ ...p, prev: p.bal, bal: 0, mv: r3(-p.bal), avg: null, gone: true })))
+      .filter(m => Math.abs(m.mv) >= 0.005).sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)) : [];
+    moves.filter(m => m.unusual).forEach(m => add("warn", `حركة غير عادية في «${m.name}»: ${money(Math.abs(m.mv))} اليوم، والمعتاد حوالي ${money(m.avg)}.`));
+    moves.filter(m => m.isNew && Math.abs(m.bal) >= 0.005).forEach(m => add("info", `حساب جديد ظهر في الميزان: «${m.name}» (${money(m.bal)}).`));
+    // customers and suppliers
+    const pc = D[day].customers, pcPrev = latestBefore("customers", day, true), ps = D[day].suppliers, psPrev = latestBefore("suppliers", day, true);
+    const custMoves = [];
+    if (pc) {
+      const old = Object.fromEntries(((pcPrev && pcPrev.data.parties) || []).map(p => [p.name, num(p.balance)]));
+      for (const p of pc.data.parties || []) {
+        if (pcPrev && !(p.name in old)) add("info", `عميل جديد: ${p.name} (${money(num(p.balance))}).`);
+        if (p.credit_limit && num(p.balance) > num(p.credit_limit)) add("warn", `${p.name} تجاوز سقف الائتمان: ${money(num(p.balance))} من ${money(num(p.credit_limit))}.`);
+        if (pcPrev) { const d = r3(num(p.balance) - (old[p.name] || 0)); if (Math.abs(d) >= 0.005) custMoves.push({ name: p.name, prev: old[p.name] || 0, bal: num(p.balance), mv: d }); }
+      }
+    }
+    if (ps && psPrev) { const old = new Set((psPrev.data.parties || []).map(p => p.name)); for (const p of ps.data.parties || []) if (!old.has(p.name)) add("info", `مورد جديد: ${p.name} (${money(num(p.balance))}).`); }
+    // cheques
+    const ch = latestBefore("cheques", day);
+    if (ch) for (const c of (ch.data.cheques || []).filter(c => c.direction === "in" && c.due)) {
+      if (c.due < day) add("warn", `شيك وارد مستحق منذ ${c.due} ولم يُودع: ${c.party || ""} رقم ${c.no || "؟"} بقيمة ${money(num(c.amount))}.`);
+      else if (c.due <= addDays(day, 2)) add("info", `شيك وارد يستحق ${c.due}: ${c.party || ""} رقم ${c.no || "؟"} بقيمة ${money(num(c.amount))}. جهّز إيداعه.`);
+    }
+    // daily series for the chart: sales and costs moved, and cash + bank
+    const series = [];
+    for (let i = 0; i < tbDays.length; i++) {
+      const cur = tbRows(D[tbDays[i]].trial_balance), pr = i ? Object.fromEntries(tbRows(D[tbDays[i - 1]].trial_balance).map(r => [r.id, r.bal])) : null;
+      let rev = 0, cost = 0;
+      if (pr) for (const r of cur.filter(r => r.key === "profit_loss")) { const mv = r.bal - (pr[r.id] || 0); if (r.bal < 0 || (pr[r.id] || 0) < 0) rev -= mv; else cost += mv; }
+      series.push({ day: tbDays[i], rev: pr ? r3(rev) : null, cost: pr ? r3(cost) : null, cash: r3(keySum(cur, "cash") + keySum(cur, "bank")) });
+    }
+    const order = { bad: 0, warn: 1, info: 2 };
+    A.sort((a, b) => order[a.lvl] - order[b.lvl]);
+    return { days, tbDays, day, prevDay, kinds: Object.keys(D[day] || {}), alerts: A, moves, custMoves: custMoves.sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)), series,
+      cash: tb ? keySum(T, "cash") : null, bank: tb ? keySum(T, "bank") : null, ar: tb ? keySum(T, "customers") : null, ap: tb ? -keySum(T, "suppliers") : null };
+  }
+  // the reports of one day, shaped for the opening balances wizard
+  function snapshotsForOpening(snaps, day) {
+    const D = snapDays(snaps), days = Object.keys(D).sort(), pick = kind => { const ds = days.filter(d => d <= day && D[d][kind]); return ds.length ? D[ds[ds.length - 1]][kind] : null; };
+    return ["trial_balance", "customers", "suppliers", "cheques", "assets", "employees", "loans"].map(pick).filter(Boolean).map(s => ({ file: s.file_name || MON_KIND[s.kind], ...s.data, kind: s.kind, as_of: day }));
+  }
+  const Monitor = { KIND: MON_KIND, readReport, saveSnapshots, analyze, snapDays, snapshotsForOpening };
+
   window.Books = { sb, ok, today, addDays, monthStart, num, r3, money, esc, TYPES, METHODS, DOCS, STATUS, NEEDS, MONEY_OUT, FLAGS, flagPills, fileHash, CHQ, CHQ_ACTIONS, forecast, chequesHTML,
     amountWords, Data, Reports, voucherHTML, accuracyHTML, exportBooks, dashData, renderDashboard, DASH_CSS, needLib, cashFlowHTML, loanHTML, loanSchedule, loanStatus, LOAN_KIND, supplierPlanHTML, monthChecklist, deadlines, DL, assetBook, ASSET_CATS, PO_STATUS, poHTML, grnHTML, agingHTML, assetsHTML, confirmLetterHTML, employeeYearHTML, invoiceHTML, balanceSheetHTML, taxSummaryHTML, payrollHTML, payslipHTML, stockCountHTML, statementHTML, cashDayHTML, balancesHTML, plHTML, expensesHTML, entriesHTML,
-    printHTML, DOC_CSS, session, roles, errText };
+    printHTML, DOC_CSS, session, roles, errText, Monitor };
 })();

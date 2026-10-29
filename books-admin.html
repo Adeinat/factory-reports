@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>دفاتر المصنع · Books manager</title>
+<title>عون · لوحة المدير</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -97,7 +97,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
 <body>
 <div class="wrap">
   <header>
-    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>الدفاتر<small>Books, manager view</small></h1></div>
+    <div style="display:grid;gap:2px"><span class="eyebrow" id="coName">مصنع المحارم</span><h1>عون<small>Awn · manager view</small></h1></div>
     <div class="bar"><span id="status"></span><a href="books.html">صندوق القصص · Story box</a><a href="admin.html">لوحة الرقابة · HQ board</a><button type="button" id="refresh" hidden>تحديث</button><button type="button" id="signOut" hidden>خروج</button></div>
   </header>
 
@@ -126,7 +126,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
         <div class="wizard">
           <h3>🪄 الأسرع: ارفع تقارير النظام القديم <span class="note">Fastest: upload the old system's reports</span></h3>
           <p class="note" style="margin:0">صدّر من النظام القديم بتاريخ البدء: ميزان المراجعة، أرصدة العملاء، أرصدة الموردين، الشيكات الواردة والصادرة، سجل الأصول، قائمة الموظفين أو آخر كشف رواتب، وكشوف القروض. Excel أو PDF أو صور. سأقرأها، أملأ كل شيء، وأتحقق أنها متطابقة مع بعضها.</p>
-          <div class="row"><button type="button" id="wz_pick">📎 اختر التقارير</button><span class="note" id="wz_fn"></span><button type="button" class="primary" id="wz_read" disabled>اقرأ التقارير</button><input type="file" id="wz_file" multiple accept=".xlsx,.xls,.csv,application/pdf,image/*" hidden></div>
+          <div class="row"><button type="button" id="wz_pick">📎 اختر التقارير</button><span class="note" id="wz_fn"></span><button type="button" class="primary" id="wz_read" disabled>اقرأ التقارير</button><button type="button" id="wz_snap" hidden></button><input type="file" id="wz_file" multiple accept=".xlsx,.xls,.csv,application/pdf,image/*" hidden></div>
           <div id="wz_out"></div>
         </div>
         <p class="note" style="margin:0">أو: نزّل النموذج، اطلب من المحاسب تعبئته من تقارير النظام القديم، ثم ارفعه هنا. ستمتلئ الحقول تلقائياً لتراجعها قبل الحفظ. Easiest: download the template, have the accountant fill it from the old ERP's reports, upload it here, review, then save.</p>
@@ -163,6 +163,13 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
       <section class="panel" id="alertsPanel">
         <h2>تنبيهات <span class="note">Needs your attention</span></h2>
         <div id="alerts" class="alerts"></div>
+      </section>
+      <section class="panel" id="monPanel">
+        <div class="bar" style="justify-content:space-between"><h2>📊 الرقابة اليومية <span class="note">Daily monitoring of the old system</span></h2>
+          <div class="row" style="margin:0"><select id="mon_day" style="width:auto" aria-label="Report day"></select><button type="button" id="mon_pick">⬆️ رفع تقارير</button><input type="file" id="mon_file" hidden multiple accept="application/pdf,image/*,.xlsx,.xls,.csv,text/csv"></div></div>
+        <p class="note" style="margin:0">من تقارير النظام القديم اليومية (ميزان المراجعة، العملاء، الموردون، الشيكات). للتحليل فقط: لا تغيّر دفاتر عون. From the old system's daily reports; analysis only, Awn's books are not changed.</p>
+        <div id="mon_msg" class="note"></div>
+        <div id="mon_body"><div class="empty">لم تُرفع تقارير بعد. يرفعها المحاسب كل مساء من «📋 التقارير ← تقارير الرقابة اليومية»، أو ارفعها أنت من الزر أعلاه.</div></div>
       </section>
       <section class="panel">
         <div class="bar" style="justify-content:space-between"><h2>للمراجعة <span class="note">Worth a look</span></h2><span class="note">قيود لم يكن الذكاء الاصطناعي متأكداً منها، أو غيّر المحاسب اقتراحه، أو تصحيحات. Entries the AI was unsure about, changed by the accountant, or reversed.</span></div>
@@ -489,13 +496,14 @@ async function load(){
   const [pos, assets, assetDep, monthRuns, obls, oblDone, confirms, b1, b2, b3] = await Promise.all([B.Data.pos(), B.Data.assets(), B.Data.assetDep(), B.Data.monthRuns(), B.Data.obligations(), B.Data.obligationDone(), B.Data.confirms(),
     B.Data.budgets(Y - 1), B.Data.budgets(Y), B.Data.budgets(Y + 1)]);
   Object.assign(S, { pos, assets, assetDep, monthRuns, obls, oblDone, confirms, budgets: [...b1, ...b2, ...b3] });
-  [S.loans, S.recurring] = await Promise.all([B.Data.loans(), B.Data.recurring()]);
+  [S.loans, S.recurring, S.snaps] = await Promise.all([B.Data.loans(), B.Data.recurring(), B.Data.snapshots(B.addDays(B.today(), -100)).catch(() => [])]);
   const [cmp, chk, held] = await Promise.all([sb.from("acc_erp_compares").select("*").order("id", { ascending: false }).limit(20), sb.from("acc_erp_checks").select("*").order("id", { ascending: false }).limit(30),
     sb.from("acc_erp_staging").select("*").eq("status", "held").order("created_at")]);
   Object.assign(S, { erpCmp: cmp.data || [], erpChk: chk.data || [], erpHeld: held.data || [] });
-  const [emps, runs, invc, einv, prod] = await Promise.all([B.Data.employees(), B.Data.payrollRuns(), B.Data.invCounts(), B.Data.einvoices(),
-    sb.from("reports").select("date,vals").eq("dept", "production").eq("form", "output").gte("date", B.addDays(B.today(), -400)).then(r => r.data || [], () => [])]);
-  Object.assign(S, { accounts: acc, settings: set, company: set.company || {}, entries, rows, parties, audit: audit.data || [], cheques, bank, recs, counts, emps, runs, invc, einv, prod });
+  const [emps, runs, invc, einv, prod, invDaily] = await Promise.all([B.Data.employees(), B.Data.payrollRuns(), B.Data.invCounts(), B.Data.einvoices(),
+    sb.from("reports").select("date,vals").eq("dept", "production").eq("form", "output").gte("date", B.addDays(B.today(), -400)).then(r => r.data || [], () => []),
+    sb.from("reports").select("date,vals").eq("dept", "inventory").eq("form", "stock").gte("date", B.addDays(B.today(), -10)).then(r => r.data || [], () => [])]);
+  Object.assign(S, { accounts: acc, settings: set, company: set.company || {}, entries, rows, parties, audit: audit.data || [], cheques, bank, recs, counts, emps, runs, invc, einv, prod, invDaily });
   if (S.company.name) $("#coName").textContent = S.company.name;
   render();
   $("#status").textContent = (S.settings.locked_until ? `مقفل حتى ${S.settings.locked_until} · ` : "") + `آخر تحديث ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
@@ -506,6 +514,9 @@ function render(){
   // opening balances (once)
   const hasOpening = S.entries.some(e => e.type === "opening" && e.status === "posted");
   $("#setupPanel").hidden = hasOpening;
+  renderMonitor();
+  const snapTB = (S.snaps || []).filter(x => x.kind === "trial_balance").map(x => x.as_of).sort().pop();
+  $("#wz_snap").hidden = !snapTB; if (snapTB) $("#wz_snap").textContent = `📥 املأ من تقارير الرقابة بتاريخ ${snapTB}`;
   // pending approvals
   const pend = S.entries.filter(e => e.status === "pending").sort((a, b) => a.no - b.no);
   $("#pendPanel").hidden = false;
@@ -690,6 +701,13 @@ function renderAlerts(bal){
   if (S.erpHeld.length) A.push(["warn", `⏸ ${S.erpHeld.length} دفعة من تقرير النظام القديم تنتظر إيصالها (${money(S.erpHeld.reduce((a, h) => a + num(h.line.amount), 0))} دينار)`, "charts", "trialPanel"]);
   const badChk = S.erpChk.filter(c => !c.ok && c.date >= B.addDays(t, -7));
   if (badChk.length) A.push(["bad", `✔️ تحقق نهاية اليوم وجد فروقاً مع النظام القديم في ${badChk.length} يوم هذا الأسبوع`, "charts", "trialPanel"]);
+  // two-point check: cartons production reported vs cartons the warehouse received, day by day
+  for (let i = 1; i <= 7; i++) {
+    const d = B.addDays(t, -i), pr = S.prod.filter(r => r.date === d), wh = (S.invDaily || []).filter(r => r.date === d);
+    if (!pr.length || !wh.length) continue;
+    const made = pr.reduce((a, r) => a + num(r.vals && r.vals.produced), 0), got = wh.reduce((a, r) => a + num(r.vals && r.vals.fgReceived), 0), diff = made - got;
+    if (Math.abs(diff) > Math.max(5, made * 0.005)) A.push([Math.abs(diff) > made * 0.02 ? "bad" : "warn", `🏭 ${d}: الإنتاج سجّل ${money(made, 0)} كرتونة والمستودع استلم ${money(got, 0)} (فرق ${money(diff, 0)})`, "today", "monPanel"]);
+  }
   const missing = S.assets.filter(a => a.status === "active" && a.verify_note && a.verify_note.startsWith("NOT FOUND"));
   if (missing.length) A.push(["bad", `🏭 ${missing.length} أصل مفقود في الجرد`, "books", "bk16"]);
   $("#alerts").innerHTML = A.length ? A.map(([c, txt, v, id]) => `<div class="al ${c}"><span>${txt}</span><button type="button" data-v="${v}" data-id="${id}">عرض</button></div>`).join("")
@@ -1054,23 +1072,22 @@ $("#wz_file").onchange = e => { W = { files: [...e.target.files].slice(0, 10) };
 $("#wz_read").onclick = async () => {
   const out = $("#wz_out"); out.innerHTML = `<span class="note">جارٍ قراءة ${W.files.length} تقرير… Reading</span>`;
   try { await B.needLib("xlsx"); } catch (e) {}
-  const readOne = async f => {
-    const body = { mode: "setup", today: B.today(), text: "", files: [] };
-    if (/\.(xlsx|xls)$/i.test(f.name) && window.XLSX) { const wb = XLSX.read(await f.arrayBuffer()); wb.SheetNames.forEach(n => body.text += `### ${n}\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n], { dateNF: "yyyy-mm-dd" }) + "\n"); }
-    else if (/csv|text/.test(f.type) || /\.csv$/i.test(f.name)) body.text = await f.text();
-    else if (f.size < 6e6) body.files = [{ media_type: f.type === "application/pdf" ? "application/pdf" : (f.type || "image/jpeg"), data: await fileB64(f) }];
-    body.text = body.text.slice(0, 60000);
-    const { data, error } = await sb.functions.invoke("ai-story", { body });
-    return error || !data || !data.result ? { file: f.name, error: true } : { file: f.name, ...data.result };
-  };
+  const readOne = f => B.Monitor.readReport(f);
   const res = []; for (let i = 0; i < W.files.length; i += 3) res.push(...await Promise.all(W.files.slice(i, i + 3).map(readOne)));
+  wzLoad(res);
+};
+$("#wz_snap").onclick = () => {
+  const day = (S.snaps || []).filter(x => x.kind === "trial_balance").map(x => x.as_of).sort().pop(); if (!day) return;
+  W = { files: [] }; wzLoad(B.Monitor.snapshotsForOpening(S.snaps, day));
+};
+function wzLoad(res){
   W.res = res;
   W.tb = res.filter(r => r.kind === "trial_balance").flatMap(r => (r.accounts || []).map(a => ({ ...a, bal: B.r3(num(a.debit) - num(a.credit)) })));
   W.cust = res.filter(r => r.kind === "customers").flatMap(r => r.parties || []); W.supp = res.filter(r => r.kind === "suppliers").flatMap(r => r.parties || []);
   W.chq = res.flatMap(r => r.cheques || []); W.assets = res.flatMap(r => r.assets || []); W.emps = res.flatMap(r => r.employees || []); W.loans = res.flatMap(r => r.loans || []);
   W.asOf = (res.find(r => r.as_of) || {}).as_of || null;
   drawWizard();
-};
+}
 function wzSums(){ const s = {}; W.tb.forEach(a => s[a.key] = B.r3((s[a.key] || 0) + a.bal)); return s; }
 function drawWizard(){
   const out = $("#wz_out"), S2 = wzSums(), sumL = (l, k) => B.r3(l.reduce((a, x) => a + num(x[k]), 0));
@@ -1143,6 +1160,41 @@ async function saveWizardExtras(){
   W = null;
   return ` · أُضيف ${done.emp} موظف، ${done.asset} أصل، ${done.loan} قرض، وشروط ${done.terms} طرف${errs.length ? ` · لم يُضف: ${errs.join("، ")}` : ""}`;
 }
+/* ---------- daily monitoring of the old system ---------- */
+let monChart = null;
+function renderMonitor(){
+  const snaps = S.snaps || [], days = [...new Set(snaps.map(x => x.as_of))].sort().reverse(), sel = $("#mon_day"), keep = sel.value;
+  sel.innerHTML = days.map(d => `<option value="${d}">${d}</option>`).join(""); sel.hidden = !days.length;
+  if (keep && days.includes(keep)) sel.value = keep;
+  if (!days.length) return;
+  const R = B.Monitor.analyze(snaps, sel.value, B.today()), lvl = { bad: "bad", warn: "warn", info: "" }, ic = { bad: "❌", warn: "⚠", info: "ℹ" };
+  const kinds = R.kinds.map(k => B.Monitor.KIND[k] || k).join("، ");
+  $("#mon_body").innerHTML = `<div class="note">تقارير ${R.day}: ${esc(kinds)}${R.prevDay ? ` · مقارنة مع ${R.prevDay}` : " · أول يوم، لا يوجد يوم سابق للمقارنة"}</div>
+    ${R.cash != null ? `<div class="kpis">${[["الصندوق", R.cash], ["البنك", R.bank], ["مستحق لنا على العملاء", R.ar], ["مستحق علينا للموردين", R.ap]].map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${money(v)}</div><div class="s">من النظام القديم</div></div>`).join("")}</div>` : ""}
+    <div class="alerts">${R.alerts.length ? R.alerts.map(a => `<div class="al ${lvl[a.lvl]}"><span>${ic[a.lvl]} ${esc(a.txt)}</span></div>`).join("") : '<div class="empty">✓ لا شيء غير عادي في تقارير هذا اليوم.</div>'}</div>
+    ${R.series.filter(x => x.rev != null).length >= 2 ? '<div style="height:220px"><canvas id="mon_chart"></canvas></div>' : ""}
+    ${R.moves.length ? `<h3>حركة الحسابات اليوم <span class="note">الفرق عن ${R.prevDay}</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>أمس</th><th>اليوم</th><th>الحركة</th><th>المعتاد</th></tr></thead><tbody>
+      ${R.moves.slice(0, 15).map(m => `<tr${m.unusual ? ' style="background:color-mix(in srgb,var(--warn) 14%,transparent)"' : ""}><td>${esc(m.code)} ${esc(m.name)}${m.isNew ? ' <span class="pill">جديد</span>' : ""}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td><td class="n">${m.avg == null ? "" : money(m.avg)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${R.custMoves.length ? `<h3>تغيّر أرصدة العملاء</h3><div class="tablewrap"><table class="t"><thead><tr><th>العميل</th><th>أمس</th><th>اليوم</th><th>الفرق</th></tr></thead><tbody>
+      ${R.custMoves.slice(0, 10).map(m => `<tr><td>${esc(m.name)}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+  const cv = $("#mon_chart");
+  if (cv) B.needLib("chart").then(() => { if (monChart) monChart.destroy(); const ser = R.series.filter(x => x.rev != null).slice(-30);
+    monChart = new Chart(cv, { data: { labels: ser.map(x => x.day.slice(5)), datasets: [
+      { type: "bar", label: "مبيعات اليوم", data: ser.map(x => x.rev), backgroundColor: "#2c5f8a" },
+      { type: "bar", label: "تكاليف اليوم", data: ser.map(x => x.cost), backgroundColor: "#b06a12" },
+      { type: "line", label: "صندوق + بنك", data: ser.map(x => x.cash), borderColor: "#2f7a44", yAxisID: "y2", tension: .25, pointRadius: 2 } ] },
+      options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true }, y2: { position: "right", grid: { display: false } } } } }); }).catch(() => {});
+}
+$("#mon_day").onchange = renderMonitor;
+$("#mon_pick").onclick = () => $("#mon_file").click();
+$("#mon_file").onchange = async e => {
+  const files = [...e.target.files].slice(0, 10); e.target.value = ""; if (!files.length) return;
+  const res = await B.Monitor.saveSnapshots(files, (i, n, name) => { $("#mon_msg").textContent = `جارٍ قراءة ${i + 1} من ${n}: ${name}…`; });
+  const bad = res.filter(r => r.error);
+  $("#mon_msg").textContent = `✓ حُفظ ${res.length - bad.length} تقرير` + (bad.length ? ` · لم يُقرأ: ${bad.map(r => r.file).join("، ")}` : "");
+  S.snaps = await B.Data.snapshots(B.addDays(B.today(), -100)); $("#mon_day").value = ""; renderMonitor();
+};
+
 $("#o_save").onclick = async () => {
   const list = id => [...$(id).querySelectorAll(".pr")].map(r => ({ name: r.querySelector("[data-n]").value.trim(), balance: r.querySelector("[data-b]").value })).filter(x => x.name && num(x.balance));
   const chq = id => [...$(id).querySelectorAll(".pr")].map(r => ({ party: r.querySelector("[data-p]").value.trim(), no: r.querySelector("[data-no]").value.trim(), due: r.querySelector("[data-due]").value, amount: r.querySelector("[data-a]").value })).filter(x => num(x.amount) > 0);
