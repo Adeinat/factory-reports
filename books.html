@@ -200,7 +200,7 @@ label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="books-core.js?v=20261030a"></script>
+<script src="books-core.js?v=20261030c"></script>
 <script>
 (function(){
 const B = window.Books, sb = B.sb, $ = s => document.querySelector(s);
@@ -695,14 +695,16 @@ async function payrollCard(month){
 async function stockCard(){
   const card = document.createElement("div"); card.className = "card";
   const [counts, rows] = await Promise.all([B.Data.invCounts(), B.Data.ledger(null, null)]);
-  const last = counts[0], book = B.Reports.accountBalances(rows)["1401"] || 0;
-  const items = last ? last.items : [{ name: "", kind: "raw", unit: "طن" }, { name: "", kind: "finished", unit: "كرتونة" }];
+  const bals = B.Reports.accountBalances(rows), invAcc = { raw: "1401", packaging: "1403", finished: "1404", spares: "1405" };
+  const last = counts[0], book = B.r3(Object.values(invAcc).reduce((a, c) => a + (bals[c] || 0), 0));
+  const byKind = Object.entries(invAcc).filter(([, c]) => Math.abs(bals[c] || 0) > 0.0005).map(([k, c]) => `${B.STOCK_KINDS[k]} ${B.money(bals[c])}`).join(" · ");
+  const items = last ? last.items : [{ name: "", kind: "raw", unit: "طن" }, { name: "", kind: "packaging", unit: "" }, { name: "", kind: "finished", unit: "كرتونة" }];
   const row = i => `<tr><td><input data-name value="${B.esc(i.name || "")}" style="min-width:130px"></td>
-    <td><select data-kind>${opt("raw", "مادة خام", i.kind)}${opt("finished", "منتج جاهز", i.kind)}</select></td>
+    <td><select data-kind>${Object.entries(B.STOCK_KINDS).map(([k, v]) => opt(k, v, i.kind)).join("")}</select></td>
     <td><input data-unit value="${B.esc(i.unit || "")}" style="width:70px"></td><td><input type="number" step="0.001" min="0" data-qty style="width:90px"></td>
     <td><input type="number" step="0.001" min="0" data-cost value="${i.unit_cost != null ? B.num(i.unit_cost) : ""}" style="width:90px"></td><td class="n" data-val></td></tr>`;
   card.innerHTML = `<div class="sum">📦 جرد المخزون</div>
-    <div class="note">قيمة المخزون حسب الدفاتر الآن ${B.money(book)} دينار${last ? ` · آخر جرد ${last.date}: ${B.money(last.total)}` : ""}. اكتب الكميات الموجودة فعلاً.</div>
+    <div class="note">قيمة المخزون حسب الدفاتر الآن ${B.money(book)} دينار${byKind ? ` (${B.esc(byKind)})` : ""}${last ? ` · آخر جرد ${last.date}: ${B.money(last.total)}` : ""}. اكتب الكميات الموجودة فعلاً، واختر نوع كل صنف: لكل نوع حساب مستقل.</div>
     <div class="fields"><label>تاريخ الجرد<input type="date" data-d value="${B.today()}" max="${B.today()}"></label><label class="wide">ملاحظة<input data-n></label></div>
     <div class="docwrap"><table class="doc-tbl"><thead><tr><th>الصنف</th><th>النوع</th><th>الوحدة</th><th>الكمية</th><th>تكلفة الوحدة</th><th>القيمة</th></tr></thead><tbody data-rows>${items.map(row).join("")}</tbody>
       <tfoot><tr class="doc-total"><td colspan="5">المجموع</td><td class="n" data-tot></td></tr></tfoot></table></div>
@@ -1041,7 +1043,7 @@ function matchReceipts(rows, receipts){
 function monitorCard(){
   const card = document.createElement("div"); card.className = "card";
   card.innerHTML = `<div class="sum">📊 تقارير الرقابة اليومية من النظام القديم</div>
-    <div class="note">آخر الدوام: صدّر من النظام القديم بتاريخ اليوم <b>ميزان المراجعة، أرصدة العملاء، أرصدة الموردين، والشيكات</b> (PDF أو Excel) وارفعها هنا. أقرأها وأحفظها كما هي للتحليل فقط، ولا أغيّر شيئاً في دفاتر عون. مرة في الشهر أضف سجل الأصول والموظفين والقروض.</div>
+    <div class="note">آخر الدوام: صدّر من النظام القديم <b>ميزان المراجعة بتاريخ اليوم (Excel)</b> وارفعه هنا. هذا يكفي يومياً: منه أعرف العملاء والموردين والصندوق والبنك. <b>مرة في الأسبوع</b> أضف أعمار ذمم العملاء وكشف الشيكات. <b>مرة في الشهر</b> أضف سجل الأصول والموظفين والقروض. أقرأها وأحفظها للتحليل فقط، ولا أغيّر شيئاً في دفاتر عون.</div>
     <div class="actions"><button type="button" data-pick>📎 اختر التقارير</button><span class="note" data-f></span><button type="button" class="primary" data-go disabled>ارفع واقرأ</button></div>
     <input type="file" hidden data-file accept="application/pdf,image/*,.xlsx,.xls,.csv,text/csv" multiple>
     <div data-out></div>`;
@@ -1337,7 +1339,7 @@ async function showRequest(rq){
 
 /* ---------- reports menu: every report in one place, no AI needed ---------- */
 const REPORTS = {
-  monitor_upload: { ar: "تقارير الرقابة اليومية", d: "ارفع ميزان المراجعة وأرصدة العملاء والموردين والشيكات من النظام القديم" },
+  monitor_upload: { ar: "تقارير الرقابة اليومية", d: "ارفع ميزان المراجعة اليومي من النظام القديم (وأسبوعياً الذمم والشيكات)" },
   erp_import: { ar: "استيراد تقرير النظام القديم", d: "حوّل تقرير اليوم وإيصالاته إلى قيود" },
   erp_held: { ar: "قيود تنتظر إيصالاً", d: "من تقرير النظام القديم" },
   erp_compare: { ar: "مقارنة مع النظام القديم", d: "هل يطابق صندوق القصص؟" },

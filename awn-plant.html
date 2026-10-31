@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>عون · مدير الإنتاج</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: the production manager's desk. Yesterday and what needs action first, then the plan, stock, quality and maintenance, reports, setup. */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#1a2226; --muted:#5b676d; --line:#dbe1e4;
+  --accent:#a3541c; --accent-soft:#f4e3d6;
+  --good:#2f7a44; --warn:#b06a12; --bad:#b3372e;
+  --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#e59a63;--accent-soft:#3a2a1f;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121619;--surface:#1b2125;--ink:#e6ebee;--muted:#97a3a9;--line:#2f383d;--accent:#e59a63;--accent-soft:#3a2a1f;--good:#6cc487;--warn:#e6a352;--bad:#ef7a70;color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:1200px;margin:0 auto;padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.eyebrow{font-size:12px;color:var(--muted)}
+h1{margin:0;font-size:26px;font-weight:700} h1 small{font-size:14px;font-weight:500;color:var(--muted);margin-inline-start:8px}
+h2{margin:0;font-size:16px;font-weight:600} h3{margin:0;font-size:14px;font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)} .bar a{color:var(--accent)}
+.note{font-size:12px;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.okb{background:var(--good);border-color:var(--good);color:#fff}
+button.nob{color:var(--bad)}
+button.small{font-size:12px;padding:3px 9px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus,select:focus,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input,select{font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+input[type=number]{font-family:var(--f-num);direction:ltr;text-align:right}
+label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted);min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.attn{border-top:4px solid var(--warn)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px;display:grid;gap:2px}
+.kpi .l{font-size:12px;color:var(--muted)} .kpi .v{font-family:var(--f-num);font-size:20px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:11px;color:var(--muted)} .kpi.bad .v{color:var(--bad)} .kpi.good .v{color:var(--good)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.tablewrap{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th,table.t td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:start;white-space:nowrap;vertical-align:top}
+table.t th{font-weight:600;color:var(--muted);font-size:12px}
+table.t td.n{font-family:var(--f-num);direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+table.t td.w{white-space:normal;min-width:180px}
+table.t tr.tot td{font-weight:700}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.pill.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.item{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)} .item:last-child{border-bottom:0}
+.item .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.item .amt{font-family:var(--f-num);direction:ltr;font-weight:600}
+.item .story{font-size:13px;color:var(--muted);white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bars{display:grid;gap:6px}
+.bars .b{display:grid;grid-template-columns:minmax(90px,170px) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px}
+.bars .track{height:10px;background:var(--line);border-radius:5px;overflow:hidden} .bars .track i{display:block;height:100%;background:var(--accent)}
+.bars .v{font-family:var(--f-num);font-size:12px;direction:ltr;color:var(--muted)}
+details.panel>summary{cursor:pointer;font-weight:600}
+details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{max-width:100%}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
+.plist{display:grid;gap:6px} .plist .pr{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:6px}
+.plist.chq .pr{grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,.9fr) auto}
+.plist.emp .pr{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto}
+.msgbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.okbox{font-size:13px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--good) 15%,transparent)}
+.login{max-width:420px;width:100%;margin:40px auto;box-sizing:border-box;border-top:4px solid var(--accent)} .login form{display:grid;gap:12px}
+.empty{font-size:13px;color:var(--muted);padding:8px 0}
+.tabs{display:flex;gap:6px;position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0;flex-wrap:wrap}
+.tabs button{flex:1;min-width:140px;font-size:15px;font-weight:600;padding:10px 12px;border-radius:10px}
+.tabs button.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.tabs .badge{display:inline-block;direction:ltr;unicode-bidi:isolate;min-width:20px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px;line-height:20px;margin-inline-start:6px}
+.view{display:grid;gap:16px} .view[hidden]{display:none}
+.wrap>*,.view>*,.panel>*,.form>*{min-width:0}
+@media (max-width:600px){input,select,textarea{font-size:16px}.tabs button{min-width:calc(50% - 8px);font-size:14px;padding:9px 6px}.panel{padding:12px}h1{font-size:22px}
+  .plist .pr,.plist.chq .pr,.plist.emp .pr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.bars .b{grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto}}
+.jump{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:58px;z-index:4;background:var(--bg);padding:4px 0}
+.jump button{font-size:12.5px;padding:4px 10px;border-radius:999px}
+.anchor{scroll-margin-top:110px;height:0}
+.wizard{display:grid;gap:8px;padding:10px 12px;border:1px dashed var(--accent);border-radius:10px}
+.alerts{display:grid;gap:6px}
+.alerts .al{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border-radius:8px;border:1px solid var(--line)}
+.alerts .al.bad{border-color:var(--bad)} .alerts .al.warn{border-color:var(--warn)}
+.alerts .al button{font-size:12.5px;padding:3px 10px}
+</style>
+<style>
+@media (max-width:600px){.tabs button{min-width:calc(33.3% - 6px);font-size:13px;padding:8px 2px}}
+.cell{display:grid;gap:4px} .cell select,.cell input{font-size:13px;padding:5px 6px}
+table.plan td{vertical-align:top;min-width:120px}
+.bom .pr{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
+.prod-card{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden} .meter i{display:block;height:100%;background:var(--accent)}
+.n{font-family:var(--f-num);direction:ltr;text-align:right;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:grid;gap:2px"><span class="eyebrow">مصنع المحارم</span><h1>عون<small>الإنتاج · Awn production manager</small></h1></div>
+    <div class="bar"><span id="status"></span><a href="awn-production.html">صفحة المشرفين</a><a href="awn-store.html">صفحة المستودع</a><button type="button" id="refresh">تحديث</button><button type="button" id="signOut">خروج</button></div>
+  </header>
+
+  <section class="panel login" id="login" hidden>
+    <h2>تسجيل الدخول <span class="note">Sign in</span></h2>
+    <form id="loginForm"><label>البريد الإلكتروني<input id="l_email" type="email" autocomplete="username" required></label>
+      <label>كلمة المرور<input id="l_pass" type="password" autocomplete="current-password" required></label>
+      <button type="submit" class="primary" id="loginBtn">دخول</button><div class="note" id="l_msg"></div></form>
+  </section>
+
+  <nav class="tabs" id="tabs" role="tablist" hidden>
+    <button type="button" data-view="today" class="on">📌 اليوم <span class="badge" id="todayBadge" hidden></span></button>
+    <button type="button" data-view="plan">🗓️ الخطة</button>
+    <button type="button" data-view="stock">📦 المخزون <span class="badge" id="stockBadge" hidden></span></button>
+    <button type="button" data-view="qm">🛠️ الجودة والصيانة</button>
+    <button type="button" data-view="reports">📈 التقارير</button>
+    <button type="button" data-view="setup">⚙️ الإعداد</button>
+  </nav>
+
+  <div id="app" hidden>
+    <!-- TODAY -->
+    <div class="view" data-view="today">
+      <section class="panel attn" id="firstRun" hidden>
+        <h2>ابدأ من هنا <span class="note">First steps</span></h2>
+        <p class="note" style="margin:0">١) استورد الخطوط والأصناف من نموذج الإنتاج. ٢) أدخل لكل صنف وصفته (ورق كغ لكل كرتونة ومواد التغليف) من «الإعداد». ٣) سجّل الماكينات ومهام الصيانة.</p>
+        <div class="row"><button type="button" class="primary" id="importBtn">استيراد الخطوط والأصناف</button></div>
+      </section>
+      <div class="kpis" id="kpis"></div>
+      <section class="panel"><h2>تنبيهات <span class="note">Needs your attention</span></h2><div id="alerts" class="alerts"></div></section>
+      <section class="panel"><div class="bar" style="justify-content:space-between"><h2>ملخص الأمس لاجتماع الصباح <span class="note">Yesterday, line by line</span></h2><button type="button" id="printMorning">🖨️ طباعة</button></div>
+        <div class="tablewrap" id="yday"></div></section>
+      <section class="panel"><h2>خطة اليوم والمنجز حتى الآن <span class="note">Today's plan vs reported</span></h2><div class="tablewrap" id="todayPlan"></div></section>
+    </div>
+
+    <!-- PLAN -->
+    <div class="view" data-view="plan" hidden>
+      <section class="panel">
+        <div class="bar" style="justify-content:space-between"><h2>خطة الأسبوع <span class="note">Weekly plan per line (cartons)</span></h2>
+          <div class="row" style="margin:0"><button type="button" id="wkPrev">‹ السابق</button><strong id="wkLabel"></strong><button type="button" id="wkNext">التالي ›</button><button type="button" id="wkCopy">نسخ الأسبوع السابق</button></div></div>
+        <div class="tablewrap"><table class="t plan" id="planGrid"></table></div>
+        <div class="row"><button type="button" class="primary" id="planSave">حفظ الخطة</button><span class="note" id="planMsg"></span></div>
+      </section>
+      <section class="panel"><h2>المواد المطلوبة لهذه الخطة <span class="note">Material needs vs stock</span></h2><div class="tablewrap" id="needs"></div></section>
+      <section class="panel"><h2>الخطة مقابل الفعلي <span class="note">Plan vs actual</span></h2><div class="tablewrap" id="planActual"></div></section>
+    </div>
+
+    <!-- STOCK -->
+    <div class="view" data-view="stock" hidden>
+      <section class="panel" id="countsPanel" hidden><h2>جرد بانتظار اعتمادك <span class="note">Counts to review</span></h2><div class="tablewrap" id="counts"></div></section>
+      <section class="panel"><h2>المنتج الجاهز <span class="note">Finished goods (cartons)</span></h2><div class="tablewrap" id="fgStock"></div><div class="note" id="fgNote"></div></section>
+      <section class="panel"><h2>مواد التغليف <span class="note">Packaging</span></h2><div class="tablewrap" id="matStock"></div></section>
+      <section class="panel"><h2>الورق الخام <span class="note">Jumbo rolls</span></h2><div class="kpis" id="rollKpis"></div>
+        <h3>على الخطوط</h3><div class="tablewrap" id="rollsLine"></div>
+        <h3>في المستودع</h3><div class="tablewrap" id="rollsStore"></div>
+        <h3>رولات انتهت (آخر 30 يوم)</h3><div class="tablewrap" id="rollsDone"></div></section>
+      <section class="panel"><h2>جرد مباشر <span class="note">Enter a count yourself</span></h2>
+        <div class="form"><label>النوع<select id="dcKind"><option value="count_fg">منتج جاهز</option><option value="count_mat">مواد تغليف</option></select></label><label>الصنف<select id="dcItem"></select></label><label>العدد الفعلي<input type="number" id="dcQty"></label></div>
+        <div class="row"><button type="button" class="primary" id="dcSave">اعتماد الجرد</button><span class="note" id="dcMsg"></span></div></section>
+    </div>
+
+    <!-- QUALITY + MAINTENANCE -->
+    <div class="view" data-view="qm" hidden>
+      <section class="panel"><h2>متابعات الجودة <span class="note">Quality follow-ups</span></h2><div id="quality"></div>
+        <details><summary class="note">+ تسجيل مشكلة جودة يدوياً</summary>
+          <div class="form"><label>التاريخ<input type="date" id="qDate"></label><label>الخط<select id="qLine"></select></label><label>الصنف<select id="qProd"></select></label><label style="grid-column:1/-1">المشكلة<input id="qIssue" placeholder="مثال: شكوى عميل: عدد المحارم أقل من المكتوب"></label></div>
+          <div class="row"><button type="button" id="qAdd">إضافة</button><span class="note" id="qMsg"></span></div></details></section>
+      <section class="panel"><h2>الصيانة الوقائية <span class="note">Preventive maintenance</span></h2><div class="tablewrap" id="pm"></div></section>
+      <section class="panel"><h2>الأعطال من تقارير الورديات <span class="note">Breakdowns, last 30 days</span></h2><div class="tablewrap" id="breaks"></div></section>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="view" data-view="reports" hidden>
+      <section class="panel"><div class="bar" style="justify-content:space-between"><h2>الفترة</h2>
+        <div class="row" style="margin:0"><select id="rpDays" style="width:auto"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يوم</option><option value="90">آخر 90 يوم</option></select><button type="button" id="printMonth">🖨️ التقرير الشهري</button></div></div>
+        <div class="kpis" id="rpKpis"></div><div style="height:240px"><canvas id="rpChart"></canvas></div></section>
+      <section class="panel"><h2>كفاءة الخطوط <span class="note">OEE: availability × speed × quality</span></h2><div class="tablewrap" id="oee"></div><div class="note">السرعة تحتاج «كرتونة في الساعة» لكل خط من الإعداد.</div></section>
+      <section class="panel"><h2>الورق الفعلي مقابل المعيار <span class="note">Paper usage vs standard, per product</span></h2><div class="tablewrap" id="variance"></div></section>
+      <div class="grid2"><section class="panel"><h2>الهدر حسب السبب <span class="note">kg</span></h2><div class="bars" id="wasteP"></div></section>
+        <section class="panel"><h2>التوقف حسب السبب <span class="note">minutes</span></h2><div class="bars" id="downP"></div></section></div>
+      <section class="panel"><h2>جودة الورق حسب المورد <span class="note">From finished rolls</span></h2><div class="tablewrap" id="suppliers"></div></section>
+    </div>
+
+    <!-- SETUP -->
+    <div class="view" data-view="setup" hidden>
+      <section class="panel attn" id="xlPanel">
+        <h2>📄 الإعداد من ملف Excel <span class="note">Set up from one Excel file</span></h2>
+        <p class="note" style="margin:0">١) نزّل الملف (فيه ما أدخلته حتى الآن). ٢) أعطه لفريق الإنتاج ليعبّئ الخطوط والأصناف ووصفاتها والمواد والماكينات والصيانة. ٣) ارفعه هنا، راجع الملخص، واحفظ. يمكنك تكرار ذلك متى شئت: الموجود يُحدَّث ولا يتكرر.</p>
+        <div class="row"><button type="button" id="xlTpl">⬇️ تنزيل ملف الإعداد</button><button type="button" class="primary" id="xlUp">⬆️ رفع الملف بعد تعبئته</button><input type="file" id="xlFile" accept=".xlsx,.xls" hidden></div>
+        <div id="xlOut"></div>
+      </section>
+      <section class="panel"><h2>الخطوط <span class="note">Lines</span></h2><div class="tablewrap" id="linesT"></div>
+        <div class="form"><label>اسم الخط<input id="ln_name"></label><label>الهدف اليومي (كرتونة)<input type="number" id="ln_target"></label><label>السرعة (كرتونة/ساعة)<input type="number" id="ln_speed"></label><label>ساعات الوردية<input type="number" id="ln_hours" value="8"></label><label>عدد الورديات<input type="number" id="ln_shifts" value="2"></label></div>
+        <div class="row"><button type="button" class="primary" id="ln_save">حفظ الخط</button><span class="note" id="ln_msg"></span></div></section>
+      <section class="panel"><h2>الأصناف ووصفاتها <span class="note">Products and their recipe (BOM)</span></h2>
+        <p class="note" style="margin:0">لكل صنف: الورق الصافي بالكيلو لكل كرتونة (= عدد العبوات × عدد المناديل × مساحة المنديل × وزن الورق GSM × عدد الطبقات)، ونسبة الهدر المسموحة، ومواد التغليف لكل كرتونة. إن لم تعرف الوزن بعد، اتركه فارغاً وسأقترحه من بيانات أول شهر.</p>
+        <div id="prodList" style="display:grid;gap:10px"></div><button type="button" id="prodNew">+ صنف جديد</button></section>
+      <section class="panel"><h2>مواد التغليف <span class="note">Materials</span></h2><div class="tablewrap" id="matsT"></div>
+        <div class="form"><label>المادة<input id="mt_name"></label><label>الوحدة<input id="mt_unit" value="قطعة"></label><label>حد إعادة الطلب<input type="number" id="mt_reorder"></label></div>
+        <div class="row"><button type="button" id="mt_save">حفظ المادة</button><span class="note" id="mt_msg"></span></div></section>
+      <section class="panel"><h2>الماكينات ومهام الصيانة <span class="note">Machines and maintenance tasks</span></h2><div class="tablewrap" id="machT"></div>
+        <div class="form"><label>الماكينة<input id="mc_name" placeholder="مثال: ماكينة الطي خط 1"></label><label>الخط<select id="mc_line"></select></label></div><div class="row"><button type="button" id="mc_save">إضافة ماكينة</button></div>
+        <div class="form"><label>الماكينة<select id="pm_mach"></select></label><label>المهمة<input id="pm_task" placeholder="مثال: تغيير السكاكين"></label><label>كل كم يوم<input type="number" id="pm_every" value="30"></label><label>آخر مرة نُفذت<input type="date" id="pm_last"></label></div>
+        <div class="row"><button type="button" id="pm_save">إضافة مهمة</button><span class="note" id="pm_msg"></span></div></section>
+      <section class="panel" id="staffPanel" hidden><h2>مدير الإنتاج <span class="note">Who can open this page (besides you)</span></h2><div id="staffT"></div>
+        <div class="form"><label>البريد الإلكتروني<input id="st_email" type="email"></label><label>الاسم<input id="st_name"></label></div>
+        <div class="row"><button type="button" id="st_save">إضافة</button><span class="note" id="st_msg"></span></div>
+        <p class="note" style="margin:0">بعد الإضافة، أنشئ له دخولاً في Supabase: Authentication ← Users ← Add user بنفس البريد.</p></section>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="books-core.js?v=20261030c"></script>
+<script>
+"use strict";
+const B = window.Books, sb = B.sb, $ = s => document.querySelector(s), money = B.money, esc = B.esc, num = B.num, r3 = B.r3;
+const S = { week: null };
+const today = () => B.today(), addDays = B.addDays;
+const weekStart = d => { const x = new Date(d + "T00:00"), off = (x.getDay() + 1) % 7; return addDays(d, -off); };   // weeks start on Saturday
+const DAYS = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+const pct = (a, b) => b ? Math.round(a / b * 100) : null;
+const fmt = (v, d = 0) => v == null || !isFinite(v) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pill = (t, c) => `<span class="pill ${c || ""}">${esc(t)}</span>`;
+function table(cols, rows, empty){ return rows.length ? `<table class="t"><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(x => `<td${typeof x === "number" ? ' class="n"' : ""}>${typeof x === "number" ? fmt(x, Number.isInteger(x) ? 0 : 1) : x ?? ""}</td>`).join("")}</tr>`).join("")}</tbody></table>` : `<div class="empty">${empty || "لا يوجد."}</div>`; }
+const err = e => B.errText(e);
+
+/* ---------- sign in ---------- */
+async function boot(){
+  const s = await B.session();
+  if (!s) { $("#login").hidden = false; return; }
+  const { error } = await sb.rpc("awn_me");
+  if (error) { $("#login").hidden = false; $("#l_msg").textContent = "هذا الحساب لا يملك صلاحية صفحة الإنتاج. This account can't open the production page."; return; }
+  S.manager = !!(await sb.rpc("is_manager")).data;
+  $("#login").hidden = true; $("#tabs").hidden = false; $("#app").hidden = false; $("#signOut").hidden = false;
+  await load();
+}
+$("#loginForm").onsubmit = async e => { e.preventDefault(); $("#l_msg").textContent = "";
+  const { error } = await sb.auth.signInWithPassword({ email: $("#l_email").value.trim(), password: $("#l_pass").value });
+  if (error) { $("#l_msg").textContent = "البريد أو كلمة المرور غير صحيحة."; return; } boot(); };
+$("#signOut").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$("#refresh").onclick = () => load();
+document.querySelectorAll("#tabs [data-view]").forEach(b => b.onclick = () => showView(b.dataset.view));
+function showView(v){ document.querySelectorAll("#tabs [data-view]").forEach(b => b.classList.toggle("on", b.dataset.view === v)); document.querySelectorAll(".view").forEach(x => x.hidden = x.dataset.view !== v); if (v === "reports") renderReports(); }
+
+/* ---------- load ---------- */
+async function all(q){ const out = []; for (let i = 0; ; i += 1000) { const { data, error } = await q().range(i, i + 999); if (error || !data) break; out.push(...data); if (data.length < 1000) break; } return out; }
+async function load(){
+  $("#status").textContent = "جارٍ التحميل…";
+  const from = addDays(today(), -120);
+  await sb.rpc("prod_quality_sync").then(() => {}, () => {});
+  const [lines, prods, mats, bom, rolls, moves, counts, reps, inv, plan, qual, mach, pm, opts, staff] = await Promise.all([
+    sb.from("prod_lines").select("*").order("name").then(r => r.data || []),
+    sb.from("prod_products").select("*").order("name").then(r => r.data || []),
+    sb.from("prod_materials").select("*").order("name").then(r => r.data || []),
+    sb.from("prod_bom").select("*").then(r => r.data || []),
+    all(() => sb.from("prod_rolls").select("*").order("id")),
+    all(() => sb.from("prod_moves").select("*").order("id")),
+    sb.from("prod_counts").select("*").eq("status", "pending").order("id").then(r => r.data || []),
+    all(() => sb.from("reports").select("id,date,employee,vals,notes,created_at").eq("dept", "production").eq("form", "output").gte("date", from).order("date").order("id")),
+    sb.from("reports").select("date,vals").eq("dept", "inventory").eq("form", "stock").gte("date", addDays(today(), -14)).then(r => r.data || []),
+    sb.from("prod_plan").select("*").gte("date", addDays(weekStart(today()), -21)).then(r => r.data || []),
+    sb.from("prod_quality").select("*").order("id", { ascending: false }).limit(200).then(r => r.data || []),
+    sb.from("prod_machines").select("*").order("id").then(r => r.data || []),
+    sb.from("prod_pm").select("*").order("id").then(r => r.data || []),
+    sb.rpc("awn_prod_options").then(r => r.data || {}),
+    sb.from("awn_staff").select("*").then(r => r.data || [], () => [])]);
+  const fgFrom = moves.filter(m => m.kind === "fg_in" || m.kind === "count_fg").map(m => m.date).sort()[0] || today();
+  const shipped = await sb.rpc("prod_fg_shipped", { p_from: fgFrom }).then(r => r.data || [], () => []);
+  Object.assign(S, { lines, prods, mats, bom, rolls, moves, counts, reps, inv, plan, qual, mach, pm, staff, shipped,
+    targets: Object.fromEntries((opts.lines || []).map(l => [l.name, num(l.target)])) });
+  S.week = S.week || weekStart(today());
+  render();
+  $("#status").textContent = `آخر تحديث ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+/* ---------- calculations ---------- */
+const V = r => r.vals || {};
+const prodOf = n => S.prods.find(p => p.name === n);
+const bomOf = n => S.bom.filter(b => b.product === n).map(b => ({ ...b, mat: S.mats.find(m => m.id === b.material_id) })).filter(b => b.mat);
+const stdKg = n => { const p = prodOf(n); return p && num(p.paper_kg) > 0 ? num(p.paper_kg) : null; };
+const allowKg = n => { const p = prodOf(n), s = stdKg(n); return s ? s * (1 + num(p.waste_pct) / 100) : null; };
+function sumReps(rs){ const o = { n: rs.length, produced: 0, target: 0, paper: 0, scrap: 0, defects: 0, down: 0 };
+  for (const r of rs) { const v = V(r); o.produced += num(v.produced); o.target += num(v.target); o.paper += num(v.paperUsed); o.scrap += num(v.scrap); o.defects += num(v.defects); o.down += num(v.downtime); } return o; }
+const repsOn = (d1, d2) => S.reps.filter(r => r.date >= d1 && r.date <= d2);
+function matchProduct(name){ const n = String(name || "").replace(/\s+/g, " ").trim(); if (!n) return null;
+  return (S.prods.find(p => p.name === n) || S.prods.find(p => n.includes(p.name)) || S.prods.find(p => p.name.includes(n)) || {}).name || null; }
+// finished goods per product: confirmed by the warehouse + count adjustments - shipped in the books
+function fgStock(){
+  const out = {};
+  for (const p of S.prods) out[p.name] = { name: p.name, inn: 0, adj: 0, out: 0, base: null, pending: 0, lastCount: null };
+  for (const m of S.moves) if ((m.kind === "fg_in" || m.kind === "count_fg") && out[m.item]) { const o = out[m.item];
+    if (m.kind === "fg_in") o.inn += num(m.qty); else { o.adj += num(m.qty); o.lastCount = m.date; } o.base = o.base && o.base < m.date ? o.base : m.date; }
+  const unmatched = {};
+  for (const s of S.shipped) { const p = matchProduct(s.name); if (p && out[p]) { if (out[p].base && s.date >= out[p].base) out[p].out += num(s.qty); } else unmatched[s.name] = (unmatched[s.name] || 0) + num(s.qty); }
+  const conf = {}; for (const m of S.moves) if (m.kind === "fg_in" && m.ref) conf[m.ref] = (conf[m.ref] || 0) + num(m.qty);
+  for (const r of S.reps) if (r.date >= addDays(today(), -14) && !conf[r.id] && out[V(r).product]) out[V(r).product].pending += num(V(r).produced);
+  Object.values(out).forEach(o => o.stock = o.base ? r3(o.inn + o.adj - o.out) : null);
+  return { list: Object.values(out), unmatched, conf };
+}
+// packaging per material: received + count adjustments - used (cartons produced x recipe) since the first movement
+function matStock(){
+  return S.mats.filter(m => m.active).map(m => {
+    const mv = S.moves.filter(x => (x.kind === "mat_in" || x.kind === "count_mat") && x.item === m.name), base = mv.map(x => x.date).sort()[0] || null;
+    let used = 0, used14 = 0;
+    if (base) for (const r of S.reps) { if (r.date < base) continue; const b = S.bom.find(x => x.product === V(r).product && x.material_id === m.id); if (b) { const u = num(V(r).produced) * num(b.qty); used += u; if (r.date >= addDays(today(), -14)) used14 += u; } }
+    const stock = base ? r3(mv.reduce((a, x) => a + num(x.qty), 0) - used) : null, perDay = used14 / 14;
+    return { ...m, stock, perDay, cover: stock != null && perDay > 0 ? Math.floor(stock / perDay) : null, low: stock != null && num(m.reorder_level) > 0 && stock <= num(m.reorder_level) };
+  });
+}
+const rollKg = r => num(r.remaining_kg != null && r.status !== "done" ? r.remaining_kg : r.weight_kg);
+function paperStock(){ const st = S.rolls.filter(r => r.status === "store"), ln = S.rolls.filter(r => r.status === "line");
+  return { store: r3(st.reduce((a, r) => a + rollKg(r), 0)), line: r3(ln.reduce((a, r) => a + rollKg(r), 0)), nStore: st.length, nLine: ln.length }; }
+function pmStatus(t){ if (!t.last_done) return { st: "never", due: null }; const due = addDays(t.last_done, t.every_days), d = today();
+  return { due, st: due < d ? "late" : due <= addDays(d, 3) ? "soon" : "ok" }; }
+function needsFor(rows){ const paper = rows.reduce((a, r) => a + num(r.qty) * (allowKg(r.product) || 0), 0), noStd = [...new Set(rows.filter(r => !stdKg(r.product)).map(r => r.product))];
+  const mats = {}; for (const r of rows) for (const b of bomOf(r.product)) mats[b.mat.name] = (mats[b.mat.name] || 0) + num(r.qty) * num(b.qty);
+  return { paper: r3(paper), mats, noStd }; }
+
+/* ---------- render ---------- */
+function render(){
+  $("#firstRun").hidden = S.lines.length > 0;
+  $("#matNames").innerHTML = S.mats.map(m => `<option value="${esc(m.name)}">`).join("");
+  $("#staffPanel").hidden = !S.manager;
+  renderToday(); renderPlan(); renderStock(); renderQM(); renderSetup();
+  if (!$('[data-view="reports"].view').hidden) renderReports();
+}
+function renderToday(){
+  const t = today(), y = addDays(t, -1), yr = repsOn(y, y), Y = sumReps(yr), A = [];
+  const paperStd = yr.reduce((a, r) => a + num(V(r).produced) * (stdKg(V(r).product) || 0), 0), withStd = yr.filter(r => stdKg(V(r).product));
+  const paperAct = withStd.reduce((a, r) => a + num(V(r).paperUsed), 0);
+  $("#kpis").innerHTML = [["إنتاج الأمس", fmt(Y.produced), "كرتونة"], ["تحقيق الهدف", Y.target ? pct(Y.produced, Y.target) + "%" : "–", "الفعلي ÷ الهدف", Y.target && Y.produced / Y.target < .9 ? "bad" : "good"],
+    ["نسبة الهدر", Y.paper ? fmt(Y.scrap / Y.paper * 100, 1) + "%" : "–", "الهدر ÷ الورق"], ["التوقف", fmt(Y.down / 60, 1), "ساعة"],
+    ["الورق مقابل المعيار", paperStd ? (paperAct >= paperStd ? "+" : "") + fmt((paperAct / paperStd - 1) * 100, 1) + "%" : "–", "للأصناف ذات الوصفة", paperStd && paperAct / paperStd > 1.05 ? "bad" : ""],
+    ["تقارير الأمس", `${yr.length}/${S.lines.filter(l => l.active).reduce((a, l) => a + num(l.shifts), 0) || "–"}`, "مرسلة / متوقعة"]]
+    .map(([l, v, s, c]) => `<div class="kpi ${c || ""}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  // morning table
+  const byLine = S.lines.filter(l => l.active).map(l => { const rs = yr.filter(r => V(r).line === l.name), o = sumReps(rs);
+    const reasons = {}; rs.forEach(r => { if (num(V(r).downtime) > 0) reasons[V(r).downReason || "غير محدد"] = (reasons[V(r).downReason || "غير محدد"] || 0) + num(V(r).downtime); });
+    const topR = Object.entries(reasons).sort((a, b) => b[1] - a[1])[0];
+    const sk = rs.reduce((a, r) => a + num(V(r).produced) * (stdKg(V(r).product) || 0), 0), ak = rs.filter(r => stdKg(V(r).product)).reduce((a, r) => a + num(V(r).paperUsed), 0);
+    const q = rs.filter(r => V(r).quality && V(r).quality !== "تم ومطابق").length;
+    return [esc(l.name), `${rs.length}/${l.shifts}`, o.produced, o.target, o.target ? pill(pct(o.produced, o.target) + "%", o.produced / o.target >= .95 ? "good" : o.produced / o.target >= .8 ? "warn" : "bad") : "–",
+      o.paper ? fmt(o.scrap / o.paper * 100, 1) + "%" : "–", o.down ? `${o.down} د${topR ? " · " + esc(topR[0]) : ""}` : "–",
+      sk ? pill((ak >= sk ? "+" : "") + fmt((ak / sk - 1) * 100, 1) + "%", ak / sk > 1.05 ? "bad" : "good") : "–", q ? pill(q + " مشكلة", "bad") : (rs.length ? pill("سليمة", "good") : "–")]; });
+  $("#yday").innerHTML = table(["الخط", "تقارير", "الإنتاج", "الهدف", "التحقيق", "الهدر", "التوقف", "الورق مقابل المعيار", "الجودة"], byLine, "أضف الخطوط من «الإعداد».");
+  // today's plan
+  const tp = S.plan.filter(p => p.date === t), tr = repsOn(t, t);
+  $("#todayPlan").innerHTML = table(["الخط", "الصنف", "المخطط", "المنجز (من التقارير)", ""], tp.map(p => { const done = tr.filter(r => V(r).line === p.line && V(r).product === p.product).reduce((a, r) => a + num(V(r).produced), 0);
+    return [esc(p.line), esc(p.product), num(p.qty), done, `<div class="meter"><i style="width:${Math.min(100, pct(done, p.qty) || 0)}%"></i></div>`]; }), "لا توجد خطة لليوم. ضعها من «الخطة».");
+  // alerts
+  const yDay = new Date(y + "T00:00").getDay();
+  if (yDay !== 5) for (const l of S.lines.filter(l => l.active)) { const n = yr.filter(r => V(r).line === l.name).length; if (n < num(l.shifts)) A.push(["warn", `📋 ${esc(l.name)}: ${n} من ${l.shifts} تقارير ورديات أمس`, "today"]); }
+  const F = fgStock();
+  const unconf = S.reps.filter(r => r.date < t && r.date >= addDays(t, -4) && !F.conf[r.id]);
+  if (unconf.length) A.push(["warn", `📦 ${unconf.length} وردية لم يؤكد المستودع استلام كراتينها (${fmt(unconf.reduce((a, r) => a + num(V(r).produced), 0))} كرتونة)`, "stock"]);
+  const diffs = S.reps.filter(r => r.date >= addDays(t, -7) && F.conf[r.id] != null && Math.abs(F.conf[r.id] - num(V(r).produced)) > 0);
+  for (const r of diffs.slice(0, 5)) A.push([Math.abs(F.conf[r.id] - num(V(r).produced)) > num(V(r).produced) * .02 ? "bad" : "warn", `🏭 ${r.date} ${esc(V(r).line)} ${esc(V(r).shift)}: المشرف سجّل ${fmt(num(V(r).produced))} والمستودع استلم ${fmt(F.conf[r.id])}`, "stock"]);
+  const openQ = S.qual.filter(q => q.status === "open"); if (openQ.length) A.push(["bad", `🧪 ${openQ.length} مشكلة جودة مفتوحة`, "qm"]);
+  const late = S.pm.filter(p => p.active && pmStatus(p).st === "late"), soon = S.pm.filter(p => p.active && pmStatus(p).st === "soon");
+  if (late.length) A.push(["bad", `🛠️ ${late.length} مهمة صيانة متأخرة: ${late.slice(0, 3).map(p => esc(p.task)).join("، ")}`, "qm"]);
+  if (soon.length) A.push(["warn", `🛠️ ${soon.length} مهمة صيانة خلال 3 أيام`, "qm"]);
+  const M = matStock(); M.filter(m => m.low).forEach(m => A.push(["warn", `📥 ${esc(m.name)} وصل لحد إعادة الطلب: ${fmt(m.stock)} ${esc(m.unit)}${m.cover != null ? ` (يكفي حوالي ${m.cover} يوم)` : ""}`, "stock"]));
+  const wk = S.plan.filter(p => p.date >= t && p.date <= addDays(weekStart(t), 6)), N = needsFor(wk), P = paperStock();
+  if (N.paper > P.store + P.line) A.push(["bad", `🧻 الورق المتوفر ${fmt(P.store + P.line)} كغ لا يكفي بقية خطة الأسبوع (${fmt(N.paper)} كغ)`, "plan"]);
+  for (const [n, q] of Object.entries(N.mats)) { const m = M.find(x => x.name === n); if (m && m.stock != null && m.stock < q) A.push(["warn", `📥 ${esc(n)}: المتوفر ${fmt(m.stock)} والمطلوب لبقية الخطة ${fmt(q)}`, "plan"]); }
+  S.rolls.filter(r => r.status === "line" && r.mounted_at && (Date.now() - new Date(r.mounted_at)) > 3 * 864e5).forEach(r => A.push(["warn", `🧻 رول ${esc(r.roll_no)} على ${esc(r.line)} منذ أكثر من 3 أيام: هل انتهى ولم يُسجل؟`, "stock"]));
+  if (S.counts.length) A.push(["warn", `🔢 ${S.counts.length} جرد من المستودع ينتظر اعتمادك`, "stock"]);
+  F.list.filter(o => o.stock != null && o.stock < 0).forEach(o => A.push(["bad", `📦 رصيد ${esc(o.name)} سالب (${fmt(o.stock)}): مبيعات أكثر من المستلم، اعمل جرداً`, "stock"]));
+  if (!S.prods.some(p => stdKg(p.name))) A.push(["warn", "📐 لا توجد وصفات بعد: أدخل الورق لكل كرتونة لكل صنف من «الإعداد» لتظهر مقارنة الاستهلاك", "setup"]);
+  $("#alerts").innerHTML = A.length ? A.map(([c, txt, v]) => `<div class="al ${c}"><span>${txt}</span><button type="button" data-go="${v}">عرض</button></div>`).join("") : '<div class="empty">لا شيء يحتاج انتباهك ✓</div>';
+  $("#alerts").querySelectorAll("[data-go]").forEach(b => b.onclick = () => showView(b.dataset.go));
+  const n = A.filter(a => a[0] === "bad").length; $("#todayBadge").hidden = !n; $("#todayBadge").textContent = n;
+  $("#stockBadge").hidden = !S.counts.length; $("#stockBadge").textContent = S.counts.length;
+  S.morning = { y, byLine, Y, A };
+}
+$("#printMorning").onclick = () => { const M = S.morning;
+  B.printHTML(`<div class="doc"><div class="doc-head"><div class="doc-co">عون · الإنتاج</div><div class="doc-title">ملخص الإنتاج ليوم ${M.y}</div></div>
+    <div>الإنتاج ${fmt(M.Y.produced)} كرتونة · الهدف ${fmt(M.Y.target)} · الهدر ${M.Y.paper ? fmt(M.Y.scrap / M.Y.paper * 100, 1) + "%" : "–"} · التوقف ${fmt(M.Y.down / 60, 1)} ساعة</div>
+    ${table(["الخط", "تقارير", "الإنتاج", "الهدف", "التحقيق", "الهدر", "التوقف", "الورق مقابل المعيار", "الجودة"], M.byLine)}
+    <h3>للمتابعة</h3><ul>${M.A.map(a => `<li>${a[1]}</li>`).join("") || "<li>لا شيء</li>"}</ul><h3>قرارات اليوم</h3><div style="height:90px;border:1px solid #ccc"></div></div>`); };
+
+/* ---------- plan ---------- */
+function renderPlan(){
+  const w = S.week, days = [...Array(7)].map((_, i) => addDays(w, i)), lines = S.lines.filter(l => l.active);
+  $("#wkLabel").textContent = `${w} ← ${days[6]}`;
+  const cell = (d, l) => { const p = S.plan.find(x => x.date === d && x.line === l.name) || {};
+    return `<div class="cell" data-d="${d}" data-l="${esc(l.name)}"><select data-p><option value="">—</option>${S.prods.filter(x => x.active).map(x => `<option${x.name === p.product ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select><input type="number" data-q placeholder="كرتونة" value="${p.qty ?? ""}"></div>`; };
+  $("#planGrid").innerHTML = lines.length ? `<thead><tr><th>اليوم</th>${lines.map(l => `<th>${esc(l.name)}<div class="note">هدف ${fmt(S.targets[l.name] || 0)}</div></th>`).join("")}</tr></thead><tbody>${days.map((d, i) => `<tr><td>${DAYS[i]}<div class="note">${d.slice(5)}</div></td>${lines.map(l => `<td>${cell(d, l)}</td>`).join("")}</tr>`).join("")}</tbody>` : '<tbody><tr><td>أضف الخطوط من «الإعداد».</td></tr></tbody>';
+  $("#planGrid").querySelectorAll("[data-p]").forEach(s => s.onchange = () => { const q = s.parentNode.querySelector("[data-q]"); if (s.value && !q.value) q.value = S.targets[s.parentNode.dataset.l] || ""; renderNeeds(); });
+  $("#planGrid").querySelectorAll("[data-q]").forEach(q => q.oninput = renderNeeds);
+  renderNeeds();
+  // plan vs actual for this week
+  const rows = []; for (const d of days.filter(d => d <= today())) for (const l of lines) { const p = S.plan.filter(x => x.date === d && x.line === l.name), a = repsOn(d, d).filter(r => V(r).line === l.name);
+    if (!p.length && !a.length) continue; const pq = p.reduce((s, x) => s + num(x.qty), 0), aq = a.reduce((s, r) => s + num(V(r).produced), 0);
+    const wrong = p.length && a.some(r => !p.some(x => x.product === V(r).product));
+    rows.push([d, esc(l.name), esc(p.map(x => x.product).join("، ") || "—"), pq, aq, pq ? pill(pct(aq, pq) + "%", aq / pq >= .95 ? "good" : aq / pq >= .8 ? "warn" : "bad") : "–", wrong ? pill("صنف غير المخطط", "warn") : ""]); }
+  $("#planActual").innerHTML = table(["اليوم", "الخط", "المخطط", "الكمية المخططة", "المنجز", "التحقيق", ""], rows, "لا توجد بيانات لهذا الأسبوع بعد.");
+}
+function planRows(){ return [...$("#planGrid").querySelectorAll(".cell")].map(c => ({ date: c.dataset.d, line: c.dataset.l, product: c.querySelector("[data-p]").value, qty: num(c.querySelector("[data-q]").value) })).filter(r => r.product && r.qty > 0); }
+function renderNeeds(){
+  const rows = planRows(), N = needsFor(rows), P = paperStock(), M = matStock();
+  const list = [["الورق الخام (كغ، مع الهدر المسموح)", N.paper, P.store + P.line]].concat(Object.entries(N.mats).map(([n, q]) => { const m = M.find(x => x.name === n); return [n, q, m ? m.stock : null]; }));
+  $("#needs").innerHTML = rows.length ? table(["المادة", "المطلوب", "المتوفر الآن", "الفرق"], list.map(([n, q, s]) => [esc(n), r3(q), s == null ? "غير معروف" : r3(s), s == null ? "–" : s >= q ? pill("يكفي", "good") : pill("ناقص " + fmt(q - s), "bad")]))
+    + (N.noStd.length ? `<div class="note">⚠ أصناف بلا وصفة، لم تُحسب موادها: ${esc(N.noStd.join("، "))}</div>` : "") : '<div class="empty">ضع كميات في الخطة لتظهر المواد المطلوبة.</div>';
+}
+$("#wkPrev").onclick = () => { S.week = addDays(S.week, -7); renderPlan(); };
+$("#wkNext").onclick = () => { S.week = addDays(S.week, 7); renderPlan(); };
+$("#wkCopy").onclick = () => { const prev = S.plan.filter(p => p.date >= addDays(S.week, -7) && p.date < S.week);
+  $("#planGrid").querySelectorAll(".cell").forEach(c => { const p = prev.find(x => x.date === addDays(c.dataset.d, -7) && x.line === c.dataset.l); if (p) { c.querySelector("[data-p]").value = p.product; c.querySelector("[data-q]").value = p.qty; } }); renderNeeds(); };
+$("#planSave").onclick = async () => { const { error } = await sb.rpc("prod_plan_save", { p_from: S.week, p_rows: planRows() }); $("#planMsg").textContent = error ? err(error) : "تم الحفظ ✓"; if (!error) load(); };
+
+/* ---------- stock ---------- */
+function renderStock(){
+  const F = fgStock(), M = matStock(), P = paperStock();
+  $("#fgStock").innerHTML = table(["الصنف", "الرصيد الآن", "مستلم من الإنتاج", "مبيعات (من الدفاتر)", "تسويات الجرد", "إنتاج لم يؤكد استلامه", "آخر جرد"],
+    F.list.map(o => [esc(o.name), o.stock == null ? pill("ابدأ بجرد", "warn") : o.stock, o.inn, o.out, o.adj, o.pending, o.lastCount || "–"]), "أضف الأصناف.");
+  const un = Object.entries(F.unmatched).filter(([, q]) => q);
+  $("#fgNote").innerHTML = "الرصيد يبدأ من أول جرد أو أول استلام لكل صنف." + (un.length ? ` ⚠ أصناف في فواتير البيع لم أربطها بصنف: ${esc(un.map(([n, q]) => `${n} (${fmt(q)})`).join("، "))}. اجعل أسماء الأصناف في الفواتير مثل أسمائها هنا.` : "");
+  $("#matStock").innerHTML = table(["المادة", "الرصيد", "الوحدة", "الاستهلاك اليومي", "يكفي (يوم)", "حد الطلب"], M.map(m => [esc(m.name), m.stock == null ? pill("ابدأ بجرد", "warn") : (m.low ? pill(fmt(m.stock), "bad") : m.stock), esc(m.unit), r3(m.perDay), m.cover ?? "–", num(m.reorder_level)]), "أضف مواد التغليف من «الإعداد».");
+  $("#rollKpis").innerHTML = [["في المستودع", fmt(P.store), `${P.nStore} رول · كغ`], ["على الخطوط", fmt(P.line), `${P.nLine} رول · كغ`]].map(([l, v, s]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  $("#rollsLine").innerHTML = table(["الرول", "الخط", "منذ", "الوزن كغ", "GSM", "المورد"], S.rolls.filter(r => r.status === "line").map(r => [esc(r.roll_no), esc(r.line), r.mounted_at ? r.mounted_at.slice(0, 16).replace("T", " ") : "–", rollKg(r), r.gsm ?? "–", esc(r.supplier)]), "لا رولات على الخطوط.");
+  $("#rollsStore").innerHTML = table(["الرول", "الاستلام", "الوزن المتاح كغ", "GSM", "المورد"], S.rolls.filter(r => r.status === "store").map(r => [esc(r.roll_no), r.received_on, rollKg(r), r.gsm ?? "–", esc(r.supplier)]), "لا رولات في المستودع.");
+  const done = S.rolls.filter(r => r.status === "done" && r.finished_at && r.finished_at.slice(0, 10) >= addDays(today(), -30));
+  $("#rollsDone").innerHTML = table(["الرول", "انتهى", "الوزن", "الباقي (لب)", "المستهلك", "المورد"], done.map(r => [esc(r.roll_no), r.finished_at.slice(0, 10), num(r.weight_kg), num(r.remaining_kg), r3(num(r.weight_kg) - num(r.remaining_kg)), esc(r.supplier)]), "لا يوجد.");
+  // counts to review, with the system figure
+  const sys = c => c.kind === "count_fg" ? (F.list.find(o => o.name === c.item) || {}).stock : c.kind === "count_mat" ? (M.find(m => m.name === c.item) || {}).stock : (S.rolls.find(r => r.roll_no === c.item) ? rollKg(S.rolls.find(r => r.roll_no === c.item)) : null);
+  $("#countsPanel").hidden = !S.counts.length;
+  $("#counts").innerHTML = table(["التاريخ", "الصنف", "العدّ", "رصيد النظام", "الفرق", ""], S.counts.map(c => { const s = sys(c) ?? 0, d = r3(num(c.counted) - s);
+    return [c.date, esc(c.item), num(c.counted), s, d ? pill(fmt(d), Math.abs(d) > Math.max(5, s * .01) ? "bad" : "warn") : pill("مطابق", "good"),
+      c.kind === "count_raw" ? '<span class="note">صحّح الرول من صفحة المستودع</span>' : `<button type="button" class="small" data-ap="${c.id}" data-s="${s}">اعتماد</button> <button type="button" class="small" data-ig="${c.id}">تجاهل</button>`]; }));
+  $("#counts").querySelectorAll("[data-ap]").forEach(b => b.onclick = async () => { const { error } = await sb.rpc("prod_count_apply", { p_id: +b.dataset.ap, p_system: +b.dataset.s, p_apply: true }); if (error) alertMsg(err(error)); else load(); });
+  $("#counts").querySelectorAll("[data-ig]").forEach(b => b.onclick = async () => { await sb.rpc("prod_count_apply", { p_id: +b.dataset.ig, p_system: null, p_apply: false }); load(); });
+  fillDc();
+}
+function alertMsg(t){ $("#status").textContent = t; }
+function fillDc(){ const k = $("#dcKind").value, items = k === "count_fg" ? S.prods.map(p => p.name) : S.mats.map(m => m.name); $("#dcItem").innerHTML = items.map(n => `<option>${esc(n)}</option>`).join(""); }
+$("#dcKind").onchange = fillDc;
+$("#dcSave").onclick = async () => { if ($("#dcQty").value === "") { $("#dcMsg").textContent = "اكتب العدد."; return; }
+  const k = $("#dcKind").value, item = $("#dcItem").value, s = k === "count_fg" ? (fgStock().list.find(o => o.name === item) || {}).stock : (matStock().find(m => m.name === item) || {}).stock;
+  const { error } = await sb.rpc("prod_count", { p_kind: k, p_date: today(), p_items: [{ item, counted: num($("#dcQty").value), system: s ?? 0 }] });
+  $("#dcMsg").textContent = error ? err(error) : "تم ✓"; if (!error) { $("#dcQty").value = ""; load(); } };
+
+/* ---------- quality and maintenance ---------- */
+function renderQM(){
+  const q = [...S.qual].sort((a, b) => (a.status === "open" ? 0 : 1) - (b.status === "open" ? 0 : 1) || b.id - a.id).slice(0, 40);
+  $("#quality").innerHTML = q.length ? q.map(x => `<div class="item"><div class="bar" style="justify-content:space-between"><strong>${esc(x.date)} · ${esc(x.line || "")} ${esc(x.shift || "")} · ${esc(x.product || "")}</strong>${pill(x.status === "open" ? "مفتوحة" : "مغلقة", x.status === "open" ? "bad" : "good")}</div>
+      <div>${esc(x.issue)}</div>${x.status === "open" ? `<div class="row2" style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px"><input data-act="${x.id}" placeholder="الإجراء المتخذ: السبب والتصحيح" value="${esc(x.action)}"><button type="button" class="small" data-sv="${x.id}">حفظ</button><button type="button" class="small primary" data-cl="${x.id}">إغلاق</button></div>`
+      : `<div class="note">الإجراء: ${esc(x.action || "—")} · أغلقها ${esc(x.closed_by || "")}</div>`}</div>`).join("") : '<div class="empty">لا توجد مشاكل جودة ✓</div>';
+  const save = async (id, close) => { const a = $(`[data-act="${id}"]`).value.trim(); if (close && !a) { alertMsg("اكتب الإجراء قبل الإغلاق."); return; }
+    const { error } = await sb.rpc("prod_quality_save", { p: { id, action: a, status: close ? "closed" : "" } }); if (error) alertMsg(err(error)); else load(); };
+  $("#quality").querySelectorAll("[data-sv]").forEach(b => b.onclick = () => save(+b.dataset.sv, false));
+  $("#quality").querySelectorAll("[data-cl]").forEach(b => b.onclick = () => save(+b.dataset.cl, true));
+  const opt = (list, v) => list.map(n => `<option${n === v ? " selected" : ""}>${esc(n)}</option>`).join("");
+  $("#qLine").innerHTML = '<option value="">—</option>' + opt(S.lines.map(l => l.name)); $("#qProd").innerHTML = '<option value="">—</option>' + opt(S.prods.map(p => p.name)); if (!$("#qDate").value) $("#qDate").value = today();
+  const stl = { late: ["متأخرة", "bad"], soon: ["قريبة", "warn"], ok: ["في موعدها", "good"], never: ["لم تُنفذ بعد", "warn"] };
+  $("#pm").innerHTML = table(["الماكينة", "المهمة", "كل", "آخر مرة", "الموعد القادم", "الحالة", ""], S.pm.filter(p => p.active).map(p => { const s = pmStatus(p), m = S.mach.find(x => x.id === p.machine_id) || {};
+    return [esc(m.name || ""), esc(p.task), p.every_days + " يوم", p.last_done || "–", s.due || "–", pill(stl[s.st][0], stl[s.st][1]), `<input type="date" data-dd="${p.id}" value="${today()}" style="width:auto"> <button type="button" class="small" data-done="${p.id}">✓ نُفذت</button>`]; }), "أضف الماكينات ومهام الصيانة من «الإعداد».");
+  $("#pm").querySelectorAll("[data-done]").forEach(b => b.onclick = async () => { const { error } = await sb.rpc("prod_pm_done", { p_id: +b.dataset.done, p_date: $(`[data-dd="${b.dataset.done}"]`).value, p_note: "" }); if (error) alertMsg(err(error)); else load(); });
+  const br = repsOn(addDays(today(), -30), today()).filter(r => V(r).downReason === "عطل ميكانيكي" && num(V(r).downtime) > 0), g = {};
+  br.forEach(r => { const k = V(r).line || "—"; g[k] = g[k] || { n: 0, m: 0, last: "" }; g[k].n++; g[k].m += num(V(r).downtime); if (r.date > g[k].last) g[k].last = r.date; });
+  $("#breaks").innerHTML = table(["الخط", "عدد الأعطال", "دقائق التوقف", "آخر عطل"], Object.entries(g).sort((a, b) => b[1].m - a[1].m).map(([k, o]) => [esc(k), o.n, o.m, o.last]), "لا أعطال ميكانيكية مسجلة ✓");
+}
+$("#qAdd").onclick = async () => { const { error } = await sb.rpc("prod_quality_save", { p: { date: $("#qDate").value, line: $("#qLine").value, product: $("#qProd").value, issue: $("#qIssue").value.trim() } });
+  $("#qMsg").textContent = error ? err(error) : "تمت الإضافة ✓"; if (!error) { $("#qIssue").value = ""; load(); } };
+
+/* ---------- reports ---------- */
+let rpChart = null;
+function renderReports(){
+  const days = +$("#rpDays").value, d1 = addDays(today(), -days), d2 = addDays(today(), -1), rs = repsOn(d1, d2), O = sumReps(rs);
+  const stdP = rs.reduce((a, r) => a + num(V(r).produced) * (stdKg(V(r).product) || 0), 0), actP = rs.filter(r => stdKg(V(r).product)).reduce((a, r) => a + num(V(r).paperUsed), 0);
+  $("#rpKpis").innerHTML = [["الإنتاج", fmt(O.produced), "كرتونة"], ["تحقيق الهدف", O.target ? pct(O.produced, O.target) + "%" : "–", ""], ["الهدر", O.paper ? fmt(O.scrap / O.paper * 100, 1) + "%" : "–", "من الورق"],
+    ["التالف", O.produced ? fmt(O.defects / O.produced * 100, 1) + "%" : "–", "من الإنتاج"], ["التوقف", fmt(O.down / 60, 1), "ساعة"], ["ورق لكل كرتونة", O.produced ? fmt(O.paper / O.produced, 3) : "–", "كغ"],
+    ["الورق مقابل المعيار", stdP ? (actP >= stdP ? "+" : "") + fmt((actP / stdP - 1) * 100, 1) + "%" : "–", ""]].map(([l, v, s]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  // OEE per line
+  S.oee = S.lines.map(l => { const lr = rs.filter(r => V(r).line === l.name), o = sumReps(lr), planned = lr.length * num(l.shift_hours) * 60;
+    const A = planned ? Math.max(0, planned - o.down) / planned : null, run = planned ? Math.max(0, planned - o.down) / 60 : 0;
+    const P = num(l.speed_cph) && run ? Math.min(1.2, o.produced / (num(l.speed_cph) * run)) : null, Q = o.produced ? (o.produced - o.defects) / o.produced : null;
+    return [esc(l.name), lr.length, A == null ? "–" : fmt(A * 100, 0) + "%", P == null ? "–" : fmt(P * 100, 0) + "%", Q == null ? "–" : fmt(Q * 100, 1) + "%", A != null && P != null && Q != null ? pill(fmt(A * P * Q * 100, 0) + "%", A * P * Q >= .65 ? "good" : A * P * Q >= .5 ? "warn" : "bad") : "–"]; });
+  $("#oee").innerHTML = table(["الخط", "ورديات", "التوفر", "السرعة", "الجودة", "الكفاءة الكلية"], S.oee);
+  S.vari = S.prods.map(p => { const pr = rs.filter(r => V(r).product === p.name), o = sumReps(pr), s = stdKg(p.name);
+    return !pr.length ? null : [esc(p.name), o.produced, o.produced ? r3(o.paper / o.produced) : "–", s ?? pill("بلا وصفة", "warn"), s ? r3(o.produced * s) : "–", o.paper, s ? pill((o.paper >= o.produced * s ? "+" : "") + fmt((o.paper / (o.produced * s) - 1) * 100, 1) + "%", o.paper / (o.produced * s) > 1 + num(p.waste_pct) / 100 ? "bad" : "good") : "–",
+      s ? fmt(o.paper - o.produced * allowKg(p.name), 0) : "–"]; }).filter(Boolean);
+  $("#variance").innerHTML = table(["الصنف", "الإنتاج", "ورق/كرتونة فعلي", "المعيار", "الورق المعياري كغ", "الفعلي كغ", "الفرق", "زيادة عن المسموح كغ"], S.vari, "لا يوجد إنتاج في الفترة.");
+  const bars = (el, f, v) => { const g = {}; rs.forEach(r => { const x = num(V(r)[v]); if (x > 0) { const k = V(r)[f] || "غير محدد"; g[k] = (g[k] || 0) + x; } }); const e = Object.entries(g).sort((a, b) => b[1] - a[1]), mx = e.length ? e[0][1] : 1;
+    $(el).innerHTML = e.length ? e.map(([k, x]) => `<div class="b"><span>${esc(k)}</span><div class="meter"><i style="width:${x / mx * 100}%"></i></div><span class="v">${fmt(x)}</span></div>`).join("") : '<div class="empty">لا يوجد.</div>'; };
+  bars("#wasteP", "scrapReason", "scrap"); bars("#downP", "downReason", "downtime");
+  const sup = {}; S.rolls.filter(r => r.status === "done" && r.finished_at && r.finished_at.slice(0, 10) >= d1).forEach(r => { const k = r.supplier || "—"; sup[k] = sup[k] || { n: 0, kg: 0, stub: 0, gsm: [] }; sup[k].n++; sup[k].kg += num(r.weight_kg); sup[k].stub += num(r.remaining_kg); if (r.gsm) sup[k].gsm.push(num(r.gsm)); });
+  $("#suppliers").innerHTML = table(["المورد", "رولات منتهية", "متوسط الوزن", "متوسط اللب المتبقي", "اللب %", "GSM"], Object.entries(sup).map(([k, o]) => [esc(k), o.n, r3(o.kg / o.n), r3(o.stub / o.n), fmt(o.stub / o.kg * 100, 1) + "%", o.gsm.length ? fmt(Math.min(...o.gsm), 1) + "–" + fmt(Math.max(...o.gsm), 1) : "–"]), "تظهر بعد تسجيل انتهاء الرولات من صفحة المشرفين.");
+  const dl = [...Array(days)].map((_, i) => addDays(d1, i));
+  B.needLib("chart").then(() => { if (rpChart) rpChart.destroy();
+    rpChart = new Chart($("#rpChart"), { type: "bar", data: { labels: dl.map(d => d.slice(5)), datasets: [
+      { type: "bar", label: "الإنتاج", data: dl.map(d => repsOn(d, d).reduce((a, r) => a + num(V(r).produced), 0)), backgroundColor: "#a3541c" },
+      { type: "line", label: "الهدف", data: dl.map(d => repsOn(d, d).reduce((a, r) => a + num(V(r).target), 0)), borderColor: "#5f6862", borderDash: [5, 4], pointRadius: 0 } ] },
+      options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true } } } }); }).catch(() => {});
+}
+$("#rpDays").onchange = renderReports;
+$("#printMonth").onclick = () => { $("#rpDays").value = "30"; renderReports();
+  B.printHTML(`<div class="doc"><div class="doc-head"><div class="doc-co">عون · الإنتاج</div><div class="doc-title">تقرير الإنتاج: آخر 30 يوم حتى ${addDays(today(), -1)}</div></div>
+    <div class="kpis">${$("#rpKpis").innerHTML}</div><h3>كفاءة الخطوط</h3>${table(["الخط", "ورديات", "التوفر", "السرعة", "الجودة", "الكفاءة الكلية"], S.oee)}
+    <h3>الورق مقابل المعيار</h3>${table(["الصنف", "الإنتاج", "ورق/كرتونة فعلي", "المعيار", "الورق المعياري كغ", "الفعلي كغ", "الفرق", "زيادة عن المسموح كغ"], S.vari)}
+    <h3>الهدر حسب السبب</h3>${$("#wasteP").innerHTML}<h3>التوقف حسب السبب</h3>${$("#downP").innerHTML}</div>`); };
+
+/* ---------- setup ---------- */
+function renderSetup(){
+  $("#linesT").innerHTML = table(["الخط", "الهدف اليومي", "السرعة (كرتونة/ساعة)", "ساعات الوردية", "الورديات", ""], S.lines.map(l => [esc(l.name), S.targets[l.name] || "–", l.speed_cph ?? "–", num(l.shift_hours), num(l.shifts), `<button type="button" class="small" data-el="${esc(l.name)}">تعديل</button>`]), "لا خطوط بعد.");
+  $("#linesT").querySelectorAll("[data-el]").forEach(b => b.onclick = () => { const l = S.lines.find(x => x.name === b.dataset.el); $("#ln_name").value = l.name; $("#ln_target").value = S.targets[l.name] || ""; $("#ln_speed").value = l.speed_cph ?? ""; $("#ln_hours").value = l.shift_hours; $("#ln_shifts").value = l.shifts; $("#ln_name").focus(); });
+  $("#prodList").innerHTML = ""; S.prods.forEach(p => $("#prodList").appendChild(prodCard(p)));
+  $("#matsT").innerHTML = table(["المادة", "الوحدة", "حد إعادة الطلب", "تُستخدم في"], S.mats.map(m => [esc(m.name), esc(m.unit), num(m.reorder_level), esc(S.bom.filter(b => b.material_id === m.id).map(b => b.product).join("، "))]), "تُضاف المواد من وصفات الأصناف أو من هنا.");
+  const lineOpts = '<option value="">—</option>' + S.lines.map(l => `<option>${esc(l.name)}</option>`).join("");
+  $("#mc_line").innerHTML = lineOpts; $("#pm_mach").innerHTML = S.mach.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("");
+  $("#machT").innerHTML = table(["الماكينة", "الخط", "مهام الصيانة"], S.mach.map(m => [esc(m.name), esc(m.line || "—"), esc(S.pm.filter(p => p.machine_id === m.id).map(p => `${p.task} (كل ${p.every_days} يوم)`).join("، ") || "—")]), "لا ماكينات بعد.");
+  if (S.manager) $("#staffT").innerHTML = table(["البريد", "الاسم", ""], S.staff.map(s => [esc(s.email), esc(s.name || ""), `<button type="button" class="small" data-rm="${esc(s.email)}">إزالة</button>`]), "لا أحد غيرك بعد.");
+  $("#staffT").querySelectorAll("[data-rm]").forEach(b => b.onclick = async () => { await sb.rpc("awn_staff_save", { p_email: b.dataset.rm, p_name: "", p_remove: true }); load(); });
+}
+function prodCard(p){
+  p = p || { name: "", paper_kg: null, waste_pct: 3, carton_desc: "", active: true, isNew: true };
+  const d = document.createElement("div"); d.className = "prod-card";
+  const rows = bomOf(p.name).map(b => ({ material: b.mat.name, qty: b.qty, unit: b.mat.unit }));
+  d.innerHTML = `<div class="form"><label>الصنف<input data-f="name" value="${esc(p.name)}"></label><label>محتوى الكرتونة<input data-f="carton_desc" value="${esc(p.carton_desc || "")}" placeholder="مثال: 40 عبوة × 200 منديل"></label>
+    <label>ورق صافٍ كغ لكل كرتونة<input type="number" step="0.001" data-f="paper_kg" value="${p.paper_kg ?? ""}"></label><label>الهدر المسموح %<input type="number" step="0.1" data-f="waste_pct" value="${p.waste_pct ?? 3}"></label></div>
+    <div class="note" data-sug></div>
+    <div class="plist bom" data-bom><h3>مواد التغليف لكل كرتونة</h3></div><button type="button" class="small" data-addb>+ مادة</button>
+    <div class="row"><button type="button" class="primary" data-sv>حفظ الصنف</button><label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" data-f="active" ${p.active ? "checked" : ""} style="width:auto"> فعّال</label><span class="note" data-m></span></div>`;
+  const addB = (r = {}) => { const x = document.createElement("div"); x.className = "pr"; x.innerHTML = `<input placeholder="المادة" list="matNames" data-n value="${esc(r.material || "")}"><input type="number" step="0.001" placeholder="الكمية" data-q value="${r.qty ?? ""}"><input placeholder="الوحدة" data-u value="${esc(r.unit || "قطعة")}"><button type="button" class="small">×</button>`;
+    x.querySelector("button").onclick = () => x.remove(); d.querySelector("[data-bom]").appendChild(x); };
+  rows.forEach(addB); if (!rows.length) addB();
+  d.querySelector("[data-addb]").onclick = () => addB();
+  // suggest a standard from real shift reports when none is set
+  const pr = repsOn(addDays(today(), -60), today()).filter(r => V(r).product === p.name), o = sumReps(pr);
+  if (p.name && o.produced > 0) d.querySelector("[data-sug]").textContent = `من آخر 60 يوم: ${fmt(o.paper / o.produced, 3)} كغ ورق لكل كرتونة فعلياً (${pr.length} وردية)${!p.paper_kg ? ". يمكنك استخدامه كمعيار مبدئي." : ""}`;
+  d.querySelector("[data-sv]").onclick = async () => {
+    const f = k => d.querySelector(`[data-f="${k}"]`);
+    const body = { old_name: p.isNew ? null : p.name, name: f("name").value.trim(), carton_desc: f("carton_desc").value.trim(), paper_kg: f("paper_kg").value, waste_pct: f("waste_pct").value, active: f("active").checked,
+      bom: [...d.querySelectorAll("[data-bom] .pr")].map(x => ({ material: x.querySelector("[data-n]").value.trim(), qty: x.querySelector("[data-q]").value, unit: x.querySelector("[data-u]").value.trim() })).filter(x => x.material) };
+    const { error } = await sb.rpc("prod_product_save", { p: body }); d.querySelector("[data-m]").textContent = error ? err(error) : "تم الحفظ ✓"; if (!error) load(); };
+  return d;
+}
+/* ---------- setup from one Excel file ---------- */
+const XL = { lines: "الخطوط", prods: "الأصناف", bom: "الوصفات", mats: "المواد", mach: "الماكينات", pm: "الصيانة" };
+function xlDate(v){
+  if (typeof v === "number" && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 864e5)).toISOString().slice(0, 10);
+  const t = String(v || "").trim(); let m;
+  if ((m = t.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/))) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  if ((m = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/))) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return "";
+}
+const xn = v => { const t = String(v ?? "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[,٬\s]/g, "").replace("٫", "."); return t === "" || isNaN(+t) ? null : +t; };
+const txt = v => String(v ?? "").trim();
+$("#xlTpl").onclick = async () => {
+  try { await B.needLib("xlsx"); } catch (e) { $("#xlOut").textContent = "تعذر تحميل مكتبة Excel."; return; }
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  const add = (name, rows, widths) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  add("تعليمات", [["ملف إعداد الإنتاج · عون"], ["1. عبّئ كل ورقة. صف لكل خط، لكل صنف، لكل مادة في الوصفة، لكل ماكينة، لكل مهمة صيانة."], ["2. لا تغيّر أسماء الأوراق أو ترتيب الأعمدة. الصف الأول عناوين."],
+    ["3. ورق الكرتونة: اكتبه مباشرة بالكيلو، أو اتركه فارغاً واكتب مواصفات المنديل (الطول والعرض بالسم، GSM، الطبقات، المناديل في العبوة، العبوات في الكرتونة) وأحسبه أنا."],
+    ["   الحساب: الطول × العرض ÷ 10000 × GSM × الطبقات × المناديل × العبوات ÷ 1000 = كغ ورق صافٍ لكل كرتونة."],
+    ["4. إذا لم تعرف الورق ولا المواصفات، اتركهما فارغين: يقترح عون المعيار من تقارير الورديات بعد أسابيع."],
+    ["5. حد إعادة الطلب = الاستهلاك اليومي × أيام توريد المورد + أيام أمان. التواريخ بصيغة 2026-11-15."], ["6. أرسل الملف لمدير الإنتاج ليرفعه في صفحة عون ← الإعداد."]], [110]);
+  add(XL.lines, [["الخط", "الهدف اليومي (كرتونة)", "السرعة (كرتونة في الساعة)", "ساعات الوردية", "عدد الورديات في اليوم"],
+    ...S.lines.map(l => [l.name, S.targets[l.name] || "", l.speed_cph ?? "", num(l.shift_hours) || 8, num(l.shifts) || 2])], [18, 20, 24, 14, 22]);
+  add(XL.prods, [["الصنف", "محتوى الكرتونة (وصف)", "ورق صافٍ كغ لكل كرتونة", "الهدر المسموح %", "طول المنديل سم", "عرض المنديل سم", "GSM", "عدد الطبقات", "مناديل في العبوة", "عبوات في الكرتونة"],
+    ...S.prods.map(p => [p.name, p.carton_desc || "", p.paper_kg ?? "", p.waste_pct ?? 3, "", "", "", "", "", ""])], [20, 24, 22, 16, 14, 14, 8, 12, 16, 18]);
+  add(XL.bom, [["الصنف", "المادة", "الكمية لكل كرتونة", "الوحدة"], ...S.bom.map(b => { const m = S.mats.find(x => x.id === b.material_id) || {}; return [b.product, m.name || "", num(b.qty), m.unit || ""]; })], [20, 26, 18, 12]);
+  add(XL.mats, [["المادة", "الوحدة", "حد إعادة الطلب"], ...S.mats.map(m => [m.name, m.unit, num(m.reorder_level)])], [26, 12, 18]);
+  add(XL.mach, [["الماكينة", "الخط"], ...S.mach.map(m => [m.name, m.line || ""])], [28, 16]);
+  add(XL.pm, [["الماكينة", "المهمة", "كل كم يوم", "آخر مرة نُفذت (تاريخ)"], ...S.pm.map(p => [(S.mach.find(m => m.id === p.machine_id) || {}).name || "", p.task, p.every_days, p.last_done || ""])], [28, 30, 12, 22]);
+  XLSX.writeFile(wb, "awn-production-setup.xlsx");
+};
+$("#xlUp").onclick = () => $("#xlFile").click();
+$("#xlFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { await B.needLib("xlsx"); } catch (er) { $("#xlOut").textContent = "تعذر تحميل مكتبة Excel."; return; }
+  const wb = XLSX.read(await f.arrayBuffer()), rows = n => wb.Sheets[n] ? XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }).slice(1).filter(r => r.some(c => txt(c) !== "")) : null;
+  const errs = [], D = { lines: [], prods: [], mats: [], mach: [], pm: [] };
+  if (!Object.values(XL).some(n => wb.Sheets[n])) { $("#xlOut").innerHTML = '<div class="msgbox">هذا ليس ملف إعداد الإنتاج. نزّل الملف من الزر أعلاه.</div>'; return; }
+  (rows(XL.lines) || []).forEach((r, i) => { if (!txt(r[0])) return errs.push(`الخطوط، صف ${i + 2}: اسم الخط فارغ`);
+    D.lines.push({ name: txt(r[0]), target: xn(r[1]) ?? "", speed_cph: xn(r[2]) ?? "", shift_hours: xn(r[3]) ?? 8, shifts: xn(r[4]) ?? 2 }); });
+  (rows(XL.mats) || []).forEach((r, i) => { if (!txt(r[0])) return; D.mats.push({ name: txt(r[0]), unit: txt(r[1]) || "قطعة", reorder_level: xn(r[2]) ?? 0 }); });
+  const bom = {}; (rows(XL.bom) || []).forEach((r, i) => { if (!txt(r[0]) && !txt(r[1])) return; if (!txt(r[0]) || !txt(r[1]) || !(xn(r[2]) > 0)) return errs.push(`الوصفات، صف ${i + 2}: الصنف والمادة والكمية مطلوبة`);
+    (bom[txt(r[0])] = bom[txt(r[0])] || []).push({ material: txt(r[1]), qty: xn(r[2]), unit: txt(r[3]) || (D.mats.find(m => m.name === txt(r[1])) || {}).unit || "قطعة" }); });
+  (rows(XL.prods) || []).forEach((r, i) => { if (!txt(r[0])) return errs.push(`الأصناف، صف ${i + 2}: اسم الصنف فارغ`);
+    let kg = xn(r[2]), calc = false; const spec = [r[4], r[5], r[6], r[7], r[8], r[9]].map(xn);
+    if (kg == null && spec.every(x => x > 0)) { kg = Math.round(spec[0] * spec[1] / 10000 * spec[2] * spec[3] * spec[4] * spec[5] / 1000 * 1000) / 1000; calc = true; }
+    const ex = S.prods.find(p => p.name === txt(r[0]));
+    D.prods.push({ name: txt(r[0]), carton_desc: txt(r[1]), paper_kg: kg ?? "", waste_pct: xn(r[3]) ?? 3, calc, active: true, bom: bom[txt(r[0])] || (ex ? bomOf(ex.name).map(b => ({ material: b.mat.name, qty: b.qty, unit: b.mat.unit })) : []) }); });
+  Object.keys(bom).filter(n => !D.prods.some(p => p.name === n) && !S.prods.some(p => p.name === n)).forEach(n => errs.push(`الوصفات: الصنف «${n}» غير موجود في ورقة الأصناف`));
+  Object.keys(bom).filter(n => !D.prods.some(p => p.name === n) && S.prods.some(p => p.name === n)).forEach(n => { const p = S.prods.find(x => x.name === n); D.prods.push({ name: n, carton_desc: p.carton_desc, paper_kg: p.paper_kg ?? "", waste_pct: p.waste_pct, active: true, bom: bom[n] }); });
+  (rows(XL.mach) || []).forEach((r, i) => { if (!txt(r[0])) return; D.mach.push({ name: txt(r[0]), line: txt(r[1]) }); });
+  (rows(XL.pm) || []).forEach((r, i) => { if (!txt(r[0]) && !txt(r[1])) return; if (!txt(r[0]) || !txt(r[1]) || !(xn(r[2]) > 0)) return errs.push(`الصيانة، صف ${i + 2}: الماكينة والمهمة وكل كم يوم مطلوبة`);
+    if (!D.mach.some(m => m.name === txt(r[0])) && !S.mach.some(m => m.name === txt(r[0]))) return errs.push(`الصيانة، صف ${i + 2}: الماكينة «${txt(r[0])}» غير موجودة في ورقة الماكينات`);
+    D.pm.push({ machine: txt(r[0]), task: txt(r[1]), every_days: Math.round(xn(r[2])), last_done: xlDate(r[3]) }); });
+  D.lines.filter(l => !l.target).forEach(l => errs.push(`الخطوط: «${l.name}» بلا هدف يومي (اختياري لكن مفيد)`));
+  const noKg = D.prods.filter(p => p.paper_kg === "");
+  S.xl = D;
+  $("#xlOut").innerHTML = `<div class="tablewrap"><table class="t"><thead><tr><th>الورقة</th><th>صفوف</th></tr></thead><tbody>
+      <tr><td>الخطوط</td><td class="n">${D.lines.length}</td></tr><tr><td>الأصناف</td><td class="n">${D.prods.length}</td></tr><tr><td>مواد في الوصفات</td><td class="n">${D.prods.reduce((a, p) => a + p.bom.length, 0)}</td></tr>
+      <tr><td>المواد</td><td class="n">${D.mats.length}</td></tr><tr><td>الماكينات</td><td class="n">${D.mach.length}</td></tr><tr><td>مهام الصيانة</td><td class="n">${D.pm.length}</td></tr></tbody></table></div>
+    ${D.prods.filter(p => p.calc).length ? `<div class="okbox">✓ حسبت الورق من المواصفات: ${D.prods.filter(p => p.calc).map(p => `${esc(p.name)} = ${p.paper_kg} كغ`).join("، ")}</div>` : ""}
+    ${noKg.length ? `<div class="note">أصناف بلا ورق معياري (سيقترحه عون لاحقاً): ${esc(noKg.map(p => p.name).join("، "))}</div>` : ""}
+    ${errs.length ? `<div class="msgbox">${errs.map(esc).join("<br>")}</div>` : ""}
+    <div class="row"><button type="button" class="primary" id="xlSave">حفظ الكل</button><span class="note" id="xlMsg"></span></div>`;
+  $("#xlSave").onclick = saveXl;
+};
+async function saveXl(){
+  const D = S.xl, bad = []; let n = 0; $("#xlSave").disabled = true;
+  const call = async (fn, args, label) => { const { data, error } = await sb.rpc(fn, args); if (error) bad.push(`${label}: ${err(error)}`); else n++; $("#xlMsg").textContent = `جارٍ الحفظ… ${n}`; return data; };
+  for (const l of D.lines) await call("prod_line_save", { p: l }, l.name);
+  for (const m of D.mats) { const ex = S.mats.find(x => x.name === m.name); await call("prod_material_save", { p: { ...m, id: ex ? ex.id : null } }, m.name); }
+  for (const p of D.prods) await call("prod_product_save", { p }, p.name);
+  const machId = {}; S.mach.forEach(m => machId[m.name] = m.id);
+  for (const m of D.mach) { const ex = S.mach.find(x => x.name === m.name); const id = await call("prod_machine_save", { p: { ...m, id: ex ? ex.id : null } }, m.name); if (id) machId[m.name] = id; }
+  for (const t of D.pm) { const mid = machId[t.machine], ex = S.pm.find(x => x.machine_id === mid && x.task === t.task);
+    await call("prod_pm_save", { p: { id: ex ? ex.id : null, machine_id: mid, task: t.task, every_days: t.every_days, last_done: t.last_done } }, t.task); }
+  $("#xlMsg").innerHTML = bad.length ? `<span style="color:var(--bad)">حُفظ ${n}، ولم يُحفظ ${bad.length}: ${esc(bad.join(" · "))}</span>` : `✓ حُفظ كل شيء (${n})`;
+  $("#xlSave").disabled = false; S.xl = null; load();
+}
+$("#prodNew").onclick = () => $("#prodList").prepend(prodCard(null));
+$("#ln_save").onclick = async () => { const { error } = await sb.rpc("prod_line_save", { p: { name: $("#ln_name").value.trim(), target: $("#ln_target").value, speed_cph: $("#ln_speed").value, shift_hours: $("#ln_hours").value, shifts: $("#ln_shifts").value } });
+  $("#ln_msg").textContent = error ? err(error) : "تم الحفظ ✓"; if (!error) load(); };
+$("#mt_save").onclick = async () => { const ex = S.mats.find(m => m.name === $("#mt_name").value.trim());
+  const { error } = await sb.rpc("prod_material_save", { p: { id: ex ? ex.id : null, name: $("#mt_name").value.trim(), unit: $("#mt_unit").value.trim(), reorder_level: $("#mt_reorder").value } });
+  $("#mt_msg").textContent = error ? err(error) : "تم الحفظ ✓"; if (!error) load(); };
+$("#mc_save").onclick = async () => { const { error } = await sb.rpc("prod_machine_save", { p: { name: $("#mc_name").value.trim(), line: $("#mc_line").value } }); $("#pm_msg").textContent = error ? err(error) : "تمت إضافة الماكينة ✓"; if (!error) { $("#mc_name").value = ""; load(); } };
+$("#pm_save").onclick = async () => { const { error } = await sb.rpc("prod_pm_save", { p: { machine_id: $("#pm_mach").value, task: $("#pm_task").value.trim(), every_days: $("#pm_every").value, last_done: $("#pm_last").value } });
+  $("#pm_msg").textContent = error ? err(error) : "تمت إضافة المهمة ✓"; if (!error) { $("#pm_task").value = ""; load(); } };
+$("#st_save").onclick = async () => { const { error } = await sb.rpc("awn_staff_save", { p_email: $("#st_email").value.trim(), p_name: $("#st_name").value.trim(), p_remove: false }); $("#st_msg").textContent = error ? err(error) : "تمت الإضافة ✓"; if (!error) load(); };
+$("#importBtn").onclick = async () => { const { error } = await sb.rpc("prod_import_settings"); if (error) alertMsg(err(error)); else load(); };
+document.body.insertAdjacentHTML("beforeend", '<datalist id="matNames"></datalist>');
+document.head.insertAdjacentHTML("beforeend", `<style>${B.DOC_CSS}</style>`);
+boot();
+</script>
+</body>
+</html>

@@ -298,7 +298,15 @@
       const R = rows.filter(r => r.date <= asOf), by = {};
       R.forEach(r => by[r.account] = (by[r.account] || 0) + num(r.debit) - num(r.credit));
       const pick = (type, sign) => accounts.filter(a => a.type === type).map(a => ({ code: a.code, name: a.name_ar, v: r3(sign * (by[a.code] || 0)) })).filter(l => Math.abs(l.v) > 0.0005);
-      const assets = pick("asset", 1), liab = pick("liability", -1), equity = pick("equity", -1);
+      let assets = pick("asset", 1), liab = pick("liability", -1), equity = pick("equity", -1);
+      // a supplier we paid in advance is something we own, and a customer who paid in advance is something we owe
+      const opp = (acc, sg) => { const P = {}; R.filter(r => r.account === acc && r.party_id).forEach(r => P[r.party_id] = (P[r.party_id] || 0) + num(r.debit) - num(r.credit));
+        return r3(Object.values(P).filter(v => sg * v > 0.0005).reduce((a, v) => a + sg * v, 0)); };
+      const supAdv = opp("2101", 1), cusAdv = opp("1201", -1);
+      if (supAdv) { liab = liab.map(l => l.code === "2101" ? { ...l, v: r3(l.v + supAdv) } : l); if (!liab.some(l => l.code === "2101")) liab.unshift({ code: "2101", name: (accounts.find(a => a.code === "2101") || {}).name_ar, v: supAdv });
+        assets.push({ code: "2101a", name: "دفعات مقدمة للموردين", v: supAdv }); }
+      if (cusAdv) { assets = assets.map(l => l.code === "1201" ? { ...l, v: r3(l.v + cusAdv) } : l); if (!assets.some(l => l.code === "1201")) assets.unshift({ code: "1201", name: (accounts.find(a => a.code === "1201") || {}).name_ar, v: cusAdv });
+        liab.push({ code: "1201a", name: "دفعات مقدمة من العملاء", v: cusAdv }); }
       const profit = r3(-accounts.filter(a => a.type === "income" || a.type === "expense").reduce((x, a) => x + (by[a.code] || 0), 0));
       const ta = r3(assets.reduce((x, l) => x + l.v, 0)), tl = r3(liab.reduce((x, l) => x + l.v, 0)), te = r3(equity.reduce((x, l) => x + l.v, 0) + profit);
       return { assets, liab, equity, profit, ta, tl, te, balanced: Math.abs(ta - tl - te) < 0.0005 };
@@ -307,10 +315,11 @@
       const inP = rows.filter(r => r.date >= from && r.date <= to);
       const out = r3(inP.filter(r => r.account === "2201" && ["sale", "sales_return", "other_income"].includes(r.type)).reduce((x, r) => x + num(r.credit) - num(r.debit), 0));
       const inp = r3(inP.filter(r => r.account === "1301" && ["purchase", "expense"].includes(r.type)).reduce((x, r) => x + num(r.debit) - num(r.credit), 0));
-      const sales = r3(inP.filter(r => r.account === "4101" || r.account === "4102").reduce((x, r) => x + num(r.credit) - num(r.debit), 0));
+      const sumA = codes => r3(inP.filter(r => codes.includes(r.account)).reduce((x, r) => x + num(r.credit) - num(r.debit), 0));
+      const sales = sumA(["4101", "4102"]), zero = sumA(["4105"]), exp = sumA(["4106"]), fz = sumA(["4107"]);
       const owedNow = r3(-rows.filter(r => r.account === "2201").reduce((x, r) => x + num(r.debit) - num(r.credit), 0));
       const inputNow = r3(rows.filter(r => r.account === "1301").reduce((x, r) => x + num(r.debit) - num(r.credit), 0));
-      return { from, to, out, inp, net: r3(out - inp), sales, owedNow, inputNow };
+      return { from, to, out, inp, net: r3(out - inp), sales, zero, exp, fz, owedNow, inputNow };
     },
     // How often the AI's draft was right before the accountant confirmed it (story box entries only)
     accuracy(entries, accounts) {
@@ -366,7 +375,8 @@
       const cl = sumK(["ap", "cheques_out", "tax_out", "salaries_payable", "ss_payable", "tax_withheld", "accrued"], -1);
       const inv = sumK(["inventory"]), pre = sumK(["prepaid"]);
       const d90 = addDays(asOf, -90), R = rows.filter(r => r.date > d90 && r.date <= asOf && r.type !== "year_close");
-      const sales90 = R.filter(r => r.account === "4101").reduce((a, r) => a + num(r.credit) - num(r.debit), 0) * (1 + num(taxRate) / 100);
+      const s90 = c => R.filter(r => r.account === c).reduce((a, r) => a + num(r.credit) - num(r.debit), 0);
+      const sales90 = s90("4101") * (1 + num(taxRate) / 100) + s90("4105") + s90("4106") + s90("4107");
       const buy90 = R.filter(r => ["purchase", "inventory"].includes(kind[r.account]) && ["purchase", "import_cost", "purchase_return"].includes(r.type)).reduce((a, r) => a + num(r.debit) - num(r.credit), 0);
       const cogs90 = R.filter(r => ["purchase", "inventory_change"].includes(kind[r.account])).reduce((a, r) => a + num(r.debit) - num(r.credit), 0);
       const ar = sumK(["ar", "cheques_in"]), ap = sumK(["ap", "cheques_out"], -1);
@@ -402,9 +412,14 @@
       const line = a => ({ code: a.code, name: a.name_ar, v: r3(by[a.code] || 0) });
       const income = accounts.filter(a => a.type === "income").map(line).filter(l => l.v);
       const purchases = accounts.filter(a => a.kind === "purchase" || a.kind === "inventory_change").map(line).map(l => ({ ...l, v: -l.v })).filter(l => l.v);
-      const expenses = accounts.filter(a => a.type === "expense" && a.kind !== "purchase" && a.kind !== "inventory_change").map(line).map(l => ({ ...l, v: -l.v })).filter(l => l.v);
+      const expAcc = accounts.filter(a => a.type === "expense" && a.kind !== "purchase" && a.kind !== "inventory_change");
+      const fn = a => a.func || (a.in_product_cost ? "factory" : "admin");
+      const expenses = expAcc.map(a => ({ ...line(a), func: fn(a) })).map(l => ({ ...l, v: -l.v })).filter(l => l.v);
       const ti = r3(income.reduce((a, l) => a + l.v, 0)), tp = r3(purchases.reduce((a, l) => a + l.v, 0)), te = r3(expenses.reduce((a, l) => a + l.v, 0));
-      return { income, purchases, expenses, ti, tp, te, gross: r3(ti - tp), net: r3(ti - tp - te) };
+      // factory costs are part of the cost of goods sold, so gross profit is after them
+      const by2 = f => expenses.filter(l => l.func === f), sum = l => r3(l.reduce((a, x) => a + x.v, 0));
+      const factory = by2("factory"), selling = by2("selling"), admin = by2("admin"), finance = by2("finance"), tf = sum(factory);
+      return { income, purchases, expenses, factory, selling, admin, finance, ti, tp, te, tf, ts: sum(selling), ta: sum(admin), tfin: sum(finance), cogs: r3(tp + tf), gross: r3(ti - tp - tf), net: r3(ti - tp - te) };
     },
   };
 
@@ -444,6 +459,8 @@
     return assets.map(a => { const acc = r3(deps.filter(d => d.asset_id === a.id).reduce((x, d) => x + num(d.amount), 0));
       return { ...a, accumulated: acc, book: r3(num(a.cost) - acc), monthly: r3((num(a.cost) - num(a.salvage)) / a.life_months) }; });
   }
+  const STOCK_KINDS = { raw: "ورق خام ومواد أولية", packaging: "مواد تغليف", finished: "بضاعة جاهزة", spares: "قطع غيار" };
+  const FUNCS = { factory: "صناعية (ضمن تكلفة الكرتونة)", selling: "بيع وتوزيع", admin: "إدارية", finance: "تمويل" };
   const ASSET_CATS = { machines: "آلات ومعدات", vehicles: "سيارات", buildings: "مباني", furniture: "أثاث", computers: "أجهزة حاسوب", other: "أخرى" };
   const PO_STATUS = { pending: ["بانتظار موافقة المدير", "warn"], open: ["مفتوح", ""], received: ["استُلم بالكامل", "good"], closed: ["مغلق", "good"], cancelled: ["ملغى", "bad"] };
 
@@ -537,12 +554,22 @@
       `<tr class="doc-total"><td>الإجمالي</td><td class="n">${money(list.reduce((a, x) => a + x.balance, 0))}</td></tr>`);
     return docShell(company, "أرصدة العملاء والموردين", `<h4>مستحق لنا على العملاء</h4>${t(cust, "العميل")}<h4>مستحق علينا للموردين</h4>${t(supp, "المورد")}`, `حتى ${today()}`);
   }
-  function plHTML(p, from, to, company) {
+  // the rows of a profit and loss statement: sales, cost of goods (purchases, stock change, factory costs), gross profit, then selling, office and finance costs
+  function plRows(p, tot = "doc-total") {
     const sec = (title, list) => list.length ? `<tr><th colspan="2">${title}</th></tr>` + list.map(l => `<tr><td>${esc(l.name)}</td><td class="n">${money(l.v)}</td></tr>`).join("") : "";
-    const body = `<table class="doc-tbl"><tbody>${sec("الإيرادات", p.income)}<tr class="doc-total"><td>إجمالي الإيرادات</td><td class="n">${money(p.ti)}</td></tr>
-      ${sec("المشتريات", p.purchases)}<tr class="doc-total"><td>مجمل الربح</td><td class="n">${money(p.gross)}</td></tr>
-      ${sec("المصاريف", p.expenses)}<tr class="doc-total"><td>صافي ${p.net >= 0 ? "الربح" : "الخسارة"}</td><td class="n">${money(p.net)}</td></tr></tbody></table>
-      <div class="doc-small">تكلفة البضاعة = المشتريات ± تغيّر المخزون حسب آخر جرد. لا يشمل الاستهلاك بعد. Cost of goods = purchases ± the stock change from the last count; depreciation is not included yet.</div>`;
+    const sub = (t, v, list) => list.length ? `<tr class="${tot}"><td>${t}</td><td class="n">${money(v)}</td></tr>` : "";
+    return `${sec("الإيرادات", p.income)}<tr class="${tot}"><td>صافي المبيعات والإيرادات</td><td class="n">${money(p.ti)}</td></tr>
+      ${sec("المشتريات وتغيّر المخزون", p.purchases)}${sec("المصاريف الصناعية", p.factory || [])}
+      <tr class="${tot}"><td>تكلفة المبيعات</td><td class="n">${money(p.cogs != null ? p.cogs : p.tp)}</td></tr>
+      <tr class="${tot}"><td>مجمل الربح${p.ti ? ` (${Math.round(p.gross / p.ti * 1000) / 10}%)` : ""}</td><td class="n">${money(p.gross)}</td></tr>
+      ${sec("مصاريف البيع والتوزيع", p.selling || [])}${sub("مجموع مصاريف البيع والتوزيع", p.ts, p.selling || [])}
+      ${sec("المصاريف الإدارية", p.admin || [])}${sub("مجموع المصاريف الإدارية", p.ta, p.admin || [])}
+      ${sec("مصاريف التمويل", p.finance || [])}
+      <tr class="${tot}"><td>صافي ${p.net >= 0 ? "الربح" : "الخسارة"}</td><td class="n">${money(p.net)}</td></tr>`;
+  }
+  function plHTML(p, from, to, company) {
+    const body = `<table class="doc-tbl"><tbody>${plRows(p)}</tbody></table>
+      <div class="doc-small">تكلفة المبيعات = المشتريات ± تغيّر المخزون حسب آخر جرد + المصاريف الصناعية. Cost of goods = purchases ± the stock change from the last count + factory costs.</div>`;
     return docShell(company, "الأرباح والخسائر", body, `${from} إلى ${to}`);
   }
   function expensesHTML(rows, from, to, accounts, company) {
@@ -592,7 +619,8 @@
       <div class="doc-small">${b.balanced ? "✓ متوازنة" : "⚠ غير متوازنة"} · لا يشمل الاستهلاك بعد.</div>`, `كما في ${asOf}`);
   }
   function taxSummaryHTML(t, company) {
-    return docShell(company, "ملخص ضريبة المبيعات", `<table class="doc-kv"><tr><th>المبيعات الخاضعة (صافي)</th><td class="n">${money(t.sales)}</td></tr>
+    return docShell(company, "ملخص ضريبة المبيعات", `<table class="doc-kv"><tr><th>المبيعات المحلية الخاضعة (صافي بعد المردودات)</th><td class="n">${money(t.sales)}</td></tr>
+      <tr><th>مبيعات خاضعة لنسبة الصفر</th><td class="n">${money(t.zero || 0)}</td></tr><tr><th>مبيعات تصدير</th><td class="n">${money(t.exp || 0)}</td></tr><tr><th>مبيعات المناطق الحرة والتنموية</th><td class="n">${money(t.fz || 0)}</td></tr>
       <tr><th>ضريبة على المبيعات</th><td class="n">${money(t.out)}</td></tr><tr><th>ضريبة مدفوعة على المشتريات</th><td class="n">${money(t.inp)}</td></tr>
       <tr><th>الصافي المستحق عن الفترة</th><td class="doc-amt">${money(t.net)}</td></tr></table>
       <div class="doc-small">للمراجعة قبل تقديم الإقرار. راجع المحاسب القانوني للتأكد من المواعيد والإعفاءات. For review before filing.</div>`, `${t.from} إلى ${t.to}`);
@@ -615,7 +643,7 @@
   }
   function stockCountHTML(c, company) {
     return docShell(company, "محضر جرد المخزون", tableHTML([{ t: "الصنف" }, { t: "النوع" }, { t: "الوحدة" }, { t: "الكمية", n: 1 }, { t: "تكلفة الوحدة", n: 1 }, { t: "القيمة", n: 1 }],
-      (c.items || []).map(i => [i.name, i.kind === "raw" ? "مادة خام" : "منتج جاهز", i.unit, num(i.qty), num(i.unit_cost), num(i.value)]),
+      (c.items || []).map(i => [i.name, STOCK_KINDS[i.kind] || i.kind, i.unit, num(i.qty), num(i.unit_cost), num(i.value)]),
       `<tr class="doc-total"><td colspan="5">قيمة المخزون</td><td class="n">${money(c.total)}</td></tr><tr><td colspan="5">حسب الدفاتر قبل الجرد</td><td class="n">${money(c.book_before)}</td></tr>`) + sig("أمين المستودع", "المحاسب"), `التاريخ ${c.date}`);
   }
 
@@ -899,6 +927,8 @@
     if (/item not on the order/.test(m)) return "هذا الصنف ليس في أمر الشراء. That item isn't on the order.";
     if (/goods already received/.test(m)) return "استُلمت بضاعة على هذا الأمر؛ المدير فقط يغلقه. Goods were received; only the manager can close it.";
     if (/duplicate_erp/.test(m)) return `هذا السطر مستورد سابقاً (قيد رقم ${(m.match(/duplicate_erp:\s*(\d+)/) || [])[1] || "؟"}). Already imported.`;
+    if (/zero-rated sale with tax/.test(m)) return "هذا البيع على حساب تصدير أو نسبة صفر أو منطقة حرة، فلا ضريبة عليه. اجعل الضريبة صفراً، أو غيّر حساب المبيعات للعميل. No sales tax on export, zero-rated or free zone sales.";
+    if (/invalid: department/.test(m)) return "اختر قسم الموظف. Pick the employee's department.";
     if (/name already used/.test(m)) return "هذا الاسم مستخدم لحساب آخر. That name is already used.";
     if (/code range/.test(m)) return "الرقم خارج المدى: المصاريف 6102 إلى 6198، المشتريات 5102 إلى 5198. Code out of range.";
     if (/code used/.test(m)) return "هذا الرقم مستخدم. That code is taken.";
@@ -1182,8 +1212,10 @@
       if (cash < -0.005) add("bad", `رصيد الصندوق سالب: ${money(cash)}. غالباً قيد ناقص أو خاطئ.`);
       if (bank < -0.005) add("warn", `رصيد البنك سالب: ${money(bank)}. تحقق من السحب على المكشوف.`);
       const cust = D[day].customers, supp = D[day].suppliers, chq = latestBefore("cheques", day);
-      if (cust) { const a = listSum(cust.data.parties, "balance"), b = keySum(T, "customers"); if (Math.abs(a - b) >= 0.01) add("bad", `مجموع كشف العملاء ${money(a)} لا يساوي حساب العملاء في الميزان ${money(b)}.`); }
-      if (supp) { const a = listSum(supp.data.parties, "balance"), b = -keySum(T, "suppliers"); if (Math.abs(a - b) >= 0.01) add("bad", `مجموع كشف الموردين ${money(a)} لا يساوي حساب الموردين في الميزان ${money(b)}.`); }
+      // the old system's reports often leave out balances on the opposite side, so either total is accepted
+      const sideSum = (k, sg) => r3(T.filter(r => r.key === k && sg * r.bal > 0).reduce((s, r) => s + sg * r.bal, 0));
+      if (cust) { const a = listSum(cust.data.parties, "balance"), b = keySum(T, "customers"); if (Math.abs(a - b) >= 0.01 && Math.abs(a - sideSum("customers", 1)) >= 0.01) add("bad", `مجموع كشف العملاء ${money(a)} لا يساوي حساب العملاء في الميزان ${money(b)}.`); }
+      if (supp) { const a = listSum(supp.data.parties, "balance"), b = -keySum(T, "suppliers"); if (Math.abs(a - b) >= 0.01 && Math.abs(a - sideSum("suppliers", -1)) >= 0.01) add("bad", `مجموع كشف الموردين ${money(a)} لا يساوي حساب الموردين في الميزان ${money(b)}.`); }
       if (chq && chq.as_of === day) { const ci = (chq.data.cheques || []).filter(c => c.direction === "in"), a = listSum(ci, "amount"), b = keySum(T, "cheques_in");
         if (T.some(r => r.key === "cheques_in") && Math.abs(a - b) >= 0.01) add("bad", `كشف الشيكات الواردة ${money(a)} لا يساوي حسابها في الميزان ${money(b)}.`); }
       if (prev) {
@@ -1204,19 +1236,58 @@
       .concat(P.filter(p => !T.some(r => r.id === p.id)).map(p => ({ ...p, prev: p.bal, bal: 0, mv: r3(-p.bal), avg: null, gone: true })))
       .filter(m => Math.abs(m.mv) >= 0.005).sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)) : [];
     moves.filter(m => m.unusual).forEach(m => add("warn", `حركة غير عادية في «${m.name}»: ${money(Math.abs(m.mv))} اليوم، والمعتاد حوالي ${money(m.avg)}.`));
-    moves.filter(m => m.isNew && Math.abs(m.bal) >= 0.005).forEach(m => add("info", `حساب جديد ظهر في الميزان: «${m.name}» (${money(m.bal)}).`));
-    // customers and suppliers
+    // customers and suppliers come from the trial balance accounts (one account per customer or supplier).
+    // The separate customer and supplier reports are only used for credit limits, or when the trial balance has no such accounts.
+    const fromTB = k => T.filter(r => r.key === k).length >= 3;
+    const tbC = fromTB("customers"), tbS = fromTB("suppliers");
+    moves.filter(m => m.isNew && Math.abs(m.bal) >= 0.005 && !((tbC && m.key === "customers") || (tbS && m.key === "suppliers")))
+      .forEach(m => add("info", `حساب جديد ظهر في الميزان: «${m.name}» (${money(m.bal)}).`));
     const pc = D[day].customers, pcPrev = latestBefore("customers", day, true), ps = D[day].suppliers, psPrev = latestBefore("suppliers", day, true);
-    const custMoves = [];
-    if (pc) {
+    const limRep = latestBefore("customers", day), limits = Object.fromEntries(((limRep && limRep.data.parties) || []).filter(p => num(p.credit_limit) > 0).map(p => [p.name, num(p.credit_limit)]));
+    const custMoves = [], suppMoves = [], custNow = [];
+    if (tbC) {
+      for (const r of T.filter(r => r.key === "customers")) {
+        const p = Pm[r.id];
+        custNow.push({ id: r.id, name: r.name, bal: r.bal });
+        if (prev && !p && Math.abs(r.bal) >= 0.005) add("info", `عميل جديد: ${r.name} (${money(r.bal)}).`);
+        if (prev) { const d = r3(r.bal - (p ? p.bal : 0)); if (Math.abs(d) >= 0.005) custMoves.push({ name: r.name, prev: p ? p.bal : 0, bal: r.bal, mv: d }); }
+      }
+    } else if (pc) {
       const old = Object.fromEntries(((pcPrev && pcPrev.data.parties) || []).map(p => [p.name, num(p.balance)]));
       for (const p of pc.data.parties || []) {
+        custNow.push({ name: p.name, bal: num(p.balance) });
         if (pcPrev && !(p.name in old)) add("info", `عميل جديد: ${p.name} (${money(num(p.balance))}).`);
-        if (p.credit_limit && num(p.balance) > num(p.credit_limit)) add("warn", `${p.name} تجاوز سقف الائتمان: ${money(num(p.balance))} من ${money(num(p.credit_limit))}.`);
         if (pcPrev) { const d = r3(num(p.balance) - (old[p.name] || 0)); if (Math.abs(d) >= 0.005) custMoves.push({ name: p.name, prev: old[p.name] || 0, bal: num(p.balance), mv: d }); }
       }
     }
-    if (ps && psPrev) { const old = new Set((psPrev.data.parties || []).map(p => p.name)); for (const p of ps.data.parties || []) if (!old.has(p.name)) add("info", `مورد جديد: ${p.name} (${money(num(p.balance))}).`); }
+    for (const c of custNow) if (limits[c.name] && c.bal > limits[c.name]) add("warn", `${c.name} تجاوز سقف الائتمان: ${money(c.bal)} من ${money(limits[c.name])}.`);
+    // customers who owe us and have not paid anything in 30 days (their balance never went down)
+    if (tbC) {
+      const start = addDays(day, -30), base = tbDays.filter(d => d <= start).pop();
+      if (base) {
+        const win = tbDays.filter(d => d >= base && d <= day).map(d => Object.fromEntries(tbRows(D[d].trial_balance).map(r => [r.id, r.bal])));
+        const late = custNow.filter(c => c.bal >= 1 && win.every((w, i) => !i || (w[c.id] || 0) >= (win[i - 1][c.id] || 0) - 0.005)).sort((a, b) => b.bal - a.bal);
+        if (late.length) add("warn", `عملاء لم يدفعوا شيئاً منذ 30 يوماً (${late.length})، مجموع ذممهم ${money(late.reduce((s, c) => s + c.bal, 0))}: ` +
+          late.slice(0, 8).map(c => `${c.name} (${money(c.bal)})`).join("، ") + (late.length > 8 ? "، وغيرهم." : "."));
+      }
+      const inCredit = custNow.filter(c => c.bal <= -0.005);
+      if (inCredit.length) add("info", `عملاء رصيدهم دائن (دفعوا أكثر مما عليهم أو دفعة مقدمة): ` + inCredit.map(c => `${c.name} (${money(-c.bal)})`).join("، ") + ".");
+    }
+    if (tbS) {
+      // suppliers: a debit balance means we paid them in advance
+      const adv = [];
+      for (const r of T.filter(r => r.key === "suppliers")) {
+        const p = Pm[r.id], pb = p ? p.bal : 0;
+        if (prev && !p && Math.abs(r.bal) >= 0.005) add("info", `مورد جديد: ${r.name} (${money(-r.bal)}).`);
+        if (prev) { const d = r3(-(r.bal - pb)); if (Math.abs(d) >= 0.005) suppMoves.push({ name: r.name, prev: -pb, bal: -r.bal, mv: d }); }
+        if (r.bal >= 0.005) {
+          adv.push(r);
+          if (prev && pb < 0.005) add("warn", `دفعة مقدمة جديدة للمورد ${r.name}: ${money(r.bal)}. تأكد أن البضاعة ستصل أو أن الدفعة مقابل فاتورة.`);
+          else if (prev && r.bal > pb + 0.005) add("warn", `الدفعة المقدمة للمورد ${r.name} زادت من ${money(pb)} إلى ${money(r.bal)}.`);
+        }
+      }
+      if (adv.length) add("info", `دفعات مقدمة للموردين لم تُسوَّ بعد: ${money(adv.reduce((s, r) => s + r.bal, 0))} عند ${adv.length} مورد.`);
+    } else if (ps && psPrev) { const old = new Set((psPrev.data.parties || []).map(p => p.name)); for (const p of ps.data.parties || []) if (!old.has(p.name)) add("info", `مورد جديد: ${p.name} (${money(num(p.balance))}).`); }
     // cheques
     const ch = latestBefore("cheques", day);
     if (ch) for (const c of (ch.data.cheques || []).filter(c => c.direction === "in" && c.due)) {
@@ -1233,7 +1304,7 @@
     }
     const order = { bad: 0, warn: 1, info: 2 };
     A.sort((a, b) => order[a.lvl] - order[b.lvl]);
-    return { days, tbDays, day, prevDay, kinds: Object.keys(D[day] || {}), alerts: A, moves, custMoves: custMoves.sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)), series,
+    return { days, tbDays, day, prevDay, kinds: Object.keys(D[day] || {}), alerts: A, moves, custMoves: custMoves.sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)), suppMoves: suppMoves.sort((a, b) => Math.abs(b.mv) - Math.abs(a.mv)), series,
       cash: tb ? keySum(T, "cash") : null, bank: tb ? keySum(T, "bank") : null, ar: tb ? keySum(T, "customers") : null, ap: tb ? -keySum(T, "suppliers") : null };
   }
   // the reports of one day, shaped for the opening balances wizard
@@ -1245,5 +1316,5 @@
 
   window.Books = { sb, ok, today, addDays, monthStart, num, r3, money, esc, TYPES, METHODS, DOCS, STATUS, NEEDS, MONEY_OUT, FLAGS, flagPills, fileHash, CHQ, CHQ_ACTIONS, forecast, chequesHTML,
     amountWords, Data, Reports, voucherHTML, accuracyHTML, exportBooks, dashData, renderDashboard, DASH_CSS, needLib, cashFlowHTML, loanHTML, loanSchedule, loanStatus, LOAN_KIND, supplierPlanHTML, monthChecklist, deadlines, DL, assetBook, ASSET_CATS, PO_STATUS, poHTML, grnHTML, agingHTML, assetsHTML, confirmLetterHTML, employeeYearHTML, invoiceHTML, balanceSheetHTML, taxSummaryHTML, payrollHTML, payslipHTML, stockCountHTML, statementHTML, cashDayHTML, balancesHTML, plHTML, expensesHTML, entriesHTML,
-    printHTML, DOC_CSS, session, roles, errText, Monitor };
+    printHTML, DOC_CSS, session, roles, errText, Monitor, plRows, STOCK_KINDS, FUNCS };
 })();

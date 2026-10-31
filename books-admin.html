@@ -394,6 +394,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
           <label>الراتب الأساسي<input id="e_basic" type="number" step="0.001" min="0"></label><label>العلاوات<input id="e_allow" type="number" step="0.001" min="0"></label>
           <label>تاريخ التعيين<input id="e_start" type="date"></label>
           <label>عمولة المبيعات % (للمندوبين)<input id="e_comm" type="number" step="0.01" min="0" max="20"></label>
+          <label>القسم (يحدد حساب الراتب)<select id="e_func"><option value="factory">الإنتاج والمصنع</option><option value="selling">المبيعات والتوزيع</option><option value="admin">الإدارة والمكاتب</option></select></label>
           <label><span><input id="e_ss" type="checkbox" checked style="width:auto"> مشترك بالضمان</span></label>
           <label><span><input id="e_dep" type="checkbox" style="width:auto"> إعفاء المعالين</span></label>
           <label><span><input id="e_act" type="checkbox" checked style="width:auto"> على رأس عمله</span></label>
@@ -413,6 +414,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
           <label>النوع<select id="ac_kind"><option value="expense">مصروف تشغيلي (6xxx)</option><option value="purchase">مشتريات ومواد (5xxx)</option></select></label>
           <label>الاسم بالعربية<input id="ac_name"></label><label>الاسم بالإنجليزية (اختياري)<input id="ac_en"></label>
           <label>الرقم (اختياري، يُختار تلقائياً)<input id="ac_code" inputmode="numeric"></label>
+          <label>القسم (للمصاريف)<select id="ac_fn"><option value="factory">صناعية (ضمن تكلفة الكرتونة)</option><option value="selling">بيع وتوزيع</option><option value="admin" selected>إدارية</option><option value="finance">تمويل</option></select></label>
           <label><span><input id="ac_pc" type="checkbox" style="width:auto"> يدخل في تكلفة الكرتونة</span></label>
         </div>
         <div class="row"><button type="button" class="primary" id="ac_save">أضف البند</button><span class="note" id="ac_msg"></span></div>
@@ -463,7 +465,7 @@ details.panel{display:block}details.panel>*+*{margin-top:12px}details.panel>*{ma
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="books-core.js?v=20261030a"></script>
+<script src="books-core.js?v=20261030c"></script>
 <script>
 (function(){
 const B = window.Books, sb = B.sb, $ = s => document.querySelector(s);
@@ -728,22 +730,23 @@ function renderCOA(bal){
     L.forEach(a => rows.push(`<tr data-c="${a.code}"${a.active === false ? ' style="opacity:.55"' : ""}><td>${a.code}</td>
       <td>${a.system ? `🔒 ${esc(a.name_ar)}` : `<input data-n value="${esc(a.name_ar)}" style="max-width:220px">`} <span class="note">${esc(a.name_en || "")}</span>${a.active === false ? ' <span class="pill">مخفي</span>' : ""}</td>
       <td class="n">${Math.abs(bal[a.code] || 0) > 0.0005 ? money(a.type === "asset" || a.type === "expense" ? bal[a.code] : -bal[a.code]) : "–"}</td>
-      <td>${a.type === "expense" ? `<label style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="checkbox" data-pc style="width:auto"${a.in_product_cost ? " checked" : ""}> تكلفة الكرتونة</label>` : ""}</td>
+      <td>${a.type === "expense" ? `${a.kind === "purchase" || a.kind === "inventory_change" ? "" : `<select data-fn style="max-width:190px;font-size:12px">${Object.entries(B.FUNCS).map(([k, v]) => `<option value="${k}"${(a.func || (a.in_product_cost ? "factory" : "admin")) === k ? " selected" : ""}>${v}</option>`).join("")}</select>`}<label style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="checkbox" data-pc style="width:auto"${a.in_product_cost ? " checked" : ""}> تكلفة الكرتونة</label>` : ""}</td>
       <td class="row">${a.system ? "" : `<button type="button" class="small" data-sv>حفظ</button><button type="button" class="small" data-hide>${a.active === false ? "إظهار" : "إخفاء"}</button>`}<span class="note" data-m></span></td></tr>`)); });
   $("#coa").innerHTML = `<thead><tr><th>الرقم</th><th>الحساب</th><th>الرصيد</th><th></th><th></th></tr></thead><tbody>${rows.join("")}</tbody>`;
-  const save = async (tr, extra) => { const a = S.accounts.find(x => x.code === tr.dataset.c), n = tr.querySelector("[data-n]"), pc = tr.querySelector("[data-pc]");
-    const { error } = await sb.rpc("acc_account_save", { p: Object.assign({ mode: "edit", code: a.code, name_ar: n ? n.value.trim() : a.name_ar, in_product_cost: pc ? pc.checked : a.in_product_cost }, extra || {}) });
-    tr.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓"; if (!error && extra) load(); else if (!error) { if (n) a.name_ar = n.value.trim(); if (pc) a.in_product_cost = pc.checked; } };
+  const save = async (tr, extra) => { const a = S.accounts.find(x => x.code === tr.dataset.c), n = tr.querySelector("[data-n]"), pc = tr.querySelector("[data-pc]"), fn = tr.querySelector("[data-fn]");
+    const { error } = await sb.rpc("acc_account_save", { p: Object.assign({ mode: "edit", code: a.code, name_ar: n ? n.value.trim() : a.name_ar, in_product_cost: pc ? pc.checked : a.in_product_cost }, fn ? { func: fn.value } : {}, extra || {}) });
+    tr.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓"; if (!error && extra) load(); else if (!error) { if (n) a.name_ar = n.value.trim(); if (pc) a.in_product_cost = pc.checked; if (fn) a.func = fn.value; } };
   $("#coa").querySelectorAll("tr[data-c]").forEach(tr => {
     const sv = tr.querySelector("[data-sv]"); if (sv) sv.onclick = () => save(tr);
     const hd = tr.querySelector("[data-hide]"); if (hd) hd.onclick = () => save(tr, { active: S.accounts.find(x => x.code === tr.dataset.c).active === false });
-    const pc = tr.querySelector("[data-pc]"); if (pc) pc.onchange = () => save(tr); });
+    const pc = tr.querySelector("[data-pc]"); if (pc) pc.onchange = () => save(tr);
+    const fn = tr.querySelector("[data-fn]"); if (fn) fn.onchange = () => { if (pc && fn.value === "factory" && !pc.checked) pc.checked = true; else if (pc && fn.value !== "factory" && pc.checked) pc.checked = false; save(tr); }; });
   $("#coaPrint").onclick = () => B.printHTML(`<div class="doc"><div class="doc-head"><div><div class="doc-co">${esc(S.company.name || "")}</div></div><div class="doc-title">شجرة الحسابات<div class="doc-small">${B.today()}</div></div></div>
     <table class="doc-tbl"><thead><tr><th>الرقم</th><th>الحساب</th><th>Account</th><th>الرصيد</th></tr></thead><tbody>${Object.entries(T).map(([t, label]) => `<tr><th colspan="4">${label}</th></tr>` + accs.filter(a => a.type === t && a.active !== false)
       .map(a => `<tr><td>${a.code}</td><td>${esc(a.name_ar)}</td><td>${esc(a.name_en || "")}</td><td class="n">${Math.abs(bal[a.code] || 0) > 0.0005 ? money(a.type === "asset" || a.type === "expense" ? bal[a.code] : -bal[a.code]) : ""}</td></tr>`).join("")).join("")}</tbody></table></div>`);
 }
 $("#ac_save").onclick = async () => {
-  const { data, error } = await sb.rpc("acc_account_save", { p: { kind: $("#ac_kind").value, name_ar: $("#ac_name").value.trim(), name_en: $("#ac_en").value.trim(), code: $("#ac_code").value.trim() || null, in_product_cost: $("#ac_pc").checked } });
+  const { data, error } = await sb.rpc("acc_account_save", { p: { kind: $("#ac_kind").value, name_ar: $("#ac_name").value.trim(), name_en: $("#ac_en").value.trim(), code: $("#ac_code").value.trim() || null, in_product_cost: $("#ac_pc").checked || ($("#ac_kind").value === "expense" && $("#ac_fn").value === "factory"), func: $("#ac_fn").value } });
   $("#ac_msg").textContent = error ? B.errText(error) : `✓ أُضيف البند برقم ${data}. يستطيع المحاسب استخدامه الآن.`;
   if (!error) { ["#ac_name", "#ac_en", "#ac_code"].forEach(i => $(i).value = ""); load(); }
 };
@@ -822,15 +825,19 @@ function renderPhase3(bal){
   // credit control and aging
   const ag = B.Reports.aging(S.rows, "customer", S.parties, today), custs = S.parties.filter(p => p.kind === "customer");
   const rowsA = custs.map(p => ({ p, a: ag.find(x => x.id === p.id) })).sort((x, y) => (y.a ? y.a.late : 0) - (x.a ? x.a.late : 0) || (y.a ? y.a.total : 0) - (x.a ? x.a.total : 0));
-  table($("#aging"), [{ t: "العميل" }, { t: "الرصيد" }, { t: "0 إلى 30" }, { t: "31 إلى 60" }, { t: "61 إلى 90" }, { t: "+90" }, { t: "متأخر" }, { t: "حد الائتمان" }, { t: "مدة السداد (يوم)" }, { t: "" }],
+  const salesAccs = S.accounts.filter(a => a.kind === "sales" && a.active !== false);
+  const saSel = p => `<select data-sa style="max-width:150px">${salesAccs.map(a => `<option value="${a.code}"${(p.sales_account || "4101") === a.code ? " selected" : ""}>${esc(a.name_ar)}</option>`).join("")}</select>`;
+  table($("#aging"), [{ t: "العميل" }, { t: "الرصيد" }, { t: "0 إلى 30" }, { t: "31 إلى 60" }, { t: "61 إلى 90" }, { t: "+90" }, { t: "متأخر" }, { t: "حد الائتمان" }, { t: "مدة السداد (يوم)" }, { t: "نوع المبيعات" }, { t: "" }],
     rowsA.map(({ p, a }) => `<tr data-p="${p.id}"><td>${esc(p.name)}</td><td class="n">${money(a ? a.total : 0)}</td>${(a ? a.b : [0, 0, 0, 0]).map((v, i) => `<td class="n">${v ? `<span class="${i >= 2 ? "pill bad" : ""}">${money(v)}</span>` : "–"}</td>`).join("")}
       <td class="n">${a && a.late ? `<span class="pill bad">${money(a.late)}</span>` : "–"}</td>
       <td><input data-l type="number" step="1" min="0" value="${p.credit_limit != null ? num(p.credit_limit) : ""}" placeholder="بدون حد" style="width:100px"></td>
-      <td><input data-t type="number" step="1" min="0" value="${p.terms_days != null ? p.terms_days : ""}" placeholder="30" style="width:70px"></td><td><button type="button" class="small">حفظ</button> <span class="note" data-m></span></td></tr>`),
-    rowsA.length ? `<tfoot><tr class="tot"><td>المجموع</td><td class="n">${money(ag.reduce((x, a) => x + a.total, 0))}</td>${[0, 1, 2, 3].map(i => `<td class="n">${money(ag.reduce((x, a) => x + a.b[i], 0))}</td>`).join("")}<td class="n">${money(ag.reduce((x, a) => x + a.late, 0))}</td><td colspan="3"></td></tr></tfoot>` : "", "لا يوجد عملاء بعد.");
+      <td><input data-t type="number" step="1" min="0" value="${p.terms_days != null ? p.terms_days : ""}" placeholder="30" style="width:70px"></td><td>${saSel(p)}</td><td><button type="button" class="small">حفظ</button> <span class="note" data-m></span></td></tr>`),
+    rowsA.length ? `<tfoot><tr class="tot"><td>المجموع</td><td class="n">${money(ag.reduce((x, a) => x + a.total, 0))}</td>${[0, 1, 2, 3].map(i => `<td class="n">${money(ag.reduce((x, a) => x + a.b[i], 0))}</td>`).join("")}<td class="n">${money(ag.reduce((x, a) => x + a.late, 0))}</td><td colspan="4"></td></tr></tfoot>` : "", "لا يوجد عملاء بعد.");
   const saveTerms = el => async () => { const l = el.querySelector("[data-l]"), t = el.querySelector("[data-t]");
     const { error } = await sb.rpc("acc_party_terms", { p_id: el.dataset.p, p_limit: l && l.value !== "" ? num(l.value) : null, p_terms: t.value !== "" ? Math.round(num(t.value)) : null });
-    el.querySelector("[data-m]").textContent = error ? B.errText(error) : "✓"; if (!error) { const p = S.parties.find(x => x.id === el.dataset.p); if (l) p.credit_limit = l.value === "" ? null : num(l.value); p.terms_days = t.value === "" ? null : num(t.value); } };
+    let err = error; const sa = el.querySelector("[data-sa]"), p = S.parties.find(x => x.id === el.dataset.p);
+    if (!err && sa && sa.value !== (p.sales_account || "4101")) { const r = await sb.rpc("acc_party_sales_account", { p_id: p.id, p_code: sa.value === "4101" ? null : sa.value }); err = r.error; if (!err) p.sales_account = sa.value === "4101" ? null : sa.value; }
+    el.querySelector("[data-m]").textContent = err ? B.errText(err) : "✓"; if (!error) { if (l) p.credit_limit = l.value === "" ? null : num(l.value); p.terms_days = t.value === "" ? null : num(t.value); } };
   $("#aging").querySelectorAll("tr[data-p]").forEach(el => el.querySelector("button").onclick = saveTerms(el));
   const sag = B.Reports.aging(S.rows, "supplier", S.parties, today);
   table($("#supTerms"), [{ t: "المورد" }, { t: "الرصيد" }, { t: "مستحق الآن" }, { t: "مدة السداد (يوم)" }, { t: "" }],
@@ -950,7 +957,7 @@ function renderPhase2(bal){
   // sales tax
   if (!$("#tx_from").value) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (d.getMonth() % 2 === 0 ? 2 : 1)); $("#tx_from").value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; $("#tx_to").value = today; }
   const tx = () => { const t = B.Reports.taxSummary(S.rows, $("#tx_from").value, $("#tx_to").value);
-    $("#tx").innerHTML = `<tbody><tr><td>المبيعات (صافي)</td><td class="n">${money(t.sales)}</td></tr><tr><td>ضريبة على المبيعات</td><td class="n">${money(t.out)}</td></tr>
+    $("#tx").innerHTML = `<tbody><tr><td>المبيعات المحلية (صافي)</td><td class="n">${money(t.sales)}</td></tr>${[["مبيعات نسبة الصفر", t.zero], ["مبيعات تصدير", t.exp], ["مبيعات المناطق الحرة", t.fz]].filter(x => x[1]).map(x => `<tr><td>${x[0]}</td><td class="n">${money(x[1])}</td></tr>`).join("")}<tr><td>ضريبة على المبيعات</td><td class="n">${money(t.out)}</td></tr>
       <tr><td>ضريبة مدفوعة على المشتريات</td><td class="n">${money(t.inp)}</td></tr><tr class="tot"><td>الصافي عن الفترة</td><td class="n">${money(t.net)}</td></tr>
       <tr><td class="note">الرصيد الحالي: مستحق للدائرة ${money(t.owedNow)} · ضريبة مشتريات لم تُقاصّ ${money(t.inputNow)}</td><td></td></tr></tbody>`; return t; };
   tx(); $("#tx_from").onchange = tx; $("#tx_to").onchange = tx;
@@ -980,7 +987,7 @@ function renderPhase2(bal){
       <td>${e.ss_enrolled ? "✓" : "–"}</td><td class="n">${advBal(e.party_id) ? money(advBal(e.party_id)) : "–"}</td><td class="n">${cusBal(e.party_id) ? money(cusBal(e.party_id)) : "–"}</td><td><button type="button" class="small">تعديل</button></td></tr>`), "", "لا يوجد موظفون. أضفهم بالنموذج أدناه. No employees yet.");
   $("#emps").querySelectorAll("tr[data-e]").forEach(tr => tr.querySelector("button").onclick = () => { const e = S.emps.find(x => x.party_id === tr.dataset.e);
     $("#e_id").value = e.party_id; $("#e_name").value = e.party ? e.party.name : ""; $("#e_job").value = e.job || ""; $("#e_basic").value = num(e.basic); $("#e_allow").value = num(e.allowances);
-    $("#e_start").value = e.start_date || ""; $("#e_comm").value = num(e.commission_rate) || ""; $("#e_ss").checked = e.ss_enrolled; $("#e_dep").checked = e.dependents; $("#e_act").checked = e.active; $("#e_name").focus(); });
+    $("#e_start").value = e.start_date || ""; $("#e_comm").value = num(e.commission_rate) || ""; $("#e_func").value = e.func || "factory"; $("#e_ss").checked = e.ss_enrolled; $("#e_dep").checked = e.dependents; $("#e_act").checked = e.active; $("#e_name").focus(); });
   // payroll runs
   table($("#runs"), [{ t: "الشهر" }, { t: "الإجمالي" }, { t: "الضمان" }, { t: "الضريبة" }, { t: "الصافي" }, { t: "الحالة" }, { t: "" }],
     S.runs.map(r => { const e = S.entries.find(x => x.id === r.entry_id) || {}; const T = r.totals || {};
@@ -991,10 +998,7 @@ function renderPhase2(bal){
 function renderPL(){
   const m = $("#plMonth").value, from = m + "-01", end = new Date(+m.slice(0, 4), +m.slice(5, 7), 0), to = m + "-" + String(end.getDate()).padStart(2, "0");
   const p = B.Reports.profitLoss(S.rows, from, to, S.accounts);
-  const sec = (t, l) => l.length ? `<tr><th colspan="2">${t}</th></tr>` + l.map(x => `<tr><td>${esc(x.name)}</td><td class="n">${money(x.v)}</td></tr>`).join("") : "";
-  $("#pl").innerHTML = `<tbody>${sec("الإيرادات", p.income)}<tr class="tot"><td>إجمالي الإيرادات</td><td class="n">${money(p.ti)}</td></tr>${sec("المشتريات", p.purchases)}
-    <tr class="tot"><td>مجمل الربح</td><td class="n">${money(p.gross)}</td></tr>${sec("المصاريف", p.expenses)}
-    <tr class="tot"><td>صافي ${p.net >= 0 ? "الربح" : "الخسارة"}</td><td class="n">${money(p.net)}</td></tr></tbody>`;
+  $("#pl").innerHTML = `<tbody>${B.plRows(p, "tot")}</tbody>`;
 }
 $("#plMonth").onchange = renderPL;
 
@@ -1094,7 +1098,7 @@ function wzLoad(res){
 }
 function wzSums(){ const s = {}; W.tb.forEach(a => s[a.key] = B.r3((s[a.key] || 0) + a.bal)); return s; }
 // customers and suppliers straight from the trial balance, when it lists each one as its own account
-function tbParties(key, sign){ const l = W.tb.filter(a => a.key === key && Math.abs(a.bal) > 0.0005).map(a => ({ name: String(a.name).trim(), balance: B.r3(sign * a.bal), code: a.code }));
+function tbParties(key, sign){ const l = W.tb.filter(a => a.key === key && Math.abs(a.bal) > 0.0005).map(a => ({ name: String(a.name).trim(), balance: B.r3(sign * a.bal), code: a.code, group: a.group || "" }));
   return W.tb.filter(a => a.key === key).length >= 3 ? l : []; }
 function drawWizard(){
   const out = $("#wz_out"), S2 = wzSums(), sumL = (l, k) => B.r3(l.reduce((a, x) => a + num(x[k]), 0));
@@ -1176,8 +1180,12 @@ async function saveWizardExtras(){
   const parties = await B.Data.parties();
   for (const r of [...W.cust, ...W.supp]) { if (r.credit_limit == null && r.terms_days == null) continue; const p = parties.find(x => x.name === r.name); if (!p) continue;
     const { error } = await sb.rpc("acc_party_terms", { p_id: p.id, p_limit: r.credit_limit == null ? null : num(r.credit_limit), p_terms: r.terms_days == null ? null : r.terms_days }); if (!error) done.terms++; }
+  // customers listed under an export or free zone group in the old chart get that sales account
+  for (const r of W.custTB || []) { const g = String(r.group || ""), code = /حر[ةه]|تنموي/.test(g) ? "4107" : /تصدير|خارج/.test(g) ? "4106" : null; if (!code) continue;
+    const p = parties.find(x => x.kind === "customer" && x.name === r.name); if (!p) continue;
+    const { error } = await sb.rpc("acc_party_sales_account", { p_id: p.id, p_code: code }); if (!error) done.sales = (done.sales || 0) + 1; }
   W = null;
-  return ` · أُضيف ${done.emp} موظف، ${done.asset} أصل، ${done.loan} قرض، وشروط ${done.terms} طرف${errs.length ? ` · لم يُضف: ${errs.join("، ")}` : ""}`;
+  return ` · أُضيف ${done.emp} موظف، ${done.asset} أصل، ${done.loan} قرض، وشروط ${done.terms} طرف${done.sales ? `، و${done.sales} عميل تصدير أو منطقة حرة` : ""}${errs.length ? ` · لم يُضف: ${errs.join("، ")}` : ""}`;
 }
 /* ---------- daily monitoring of the old system ---------- */
 let monChart = null;
@@ -1192,10 +1200,12 @@ function renderMonitor(){
     ${R.cash != null ? `<div class="kpis">${[["الصندوق", R.cash], ["البنك", R.bank], ["مستحق لنا على العملاء", R.ar], ["مستحق علينا للموردين", R.ap]].map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${money(v)}</div><div class="s">من النظام القديم</div></div>`).join("")}</div>` : ""}
     <div class="alerts">${R.alerts.length ? R.alerts.map(a => `<div class="al ${lvl[a.lvl]}"><span>${ic[a.lvl]} ${esc(a.txt)}</span></div>`).join("") : '<div class="empty">✓ لا شيء غير عادي في تقارير هذا اليوم.</div>'}</div>
     ${R.series.filter(x => x.rev != null).length >= 2 ? '<div style="height:220px"><canvas id="mon_chart"></canvas></div>' : ""}
-    ${R.moves.length ? `<h3>حركة الحسابات اليوم <span class="note">الفرق عن ${R.prevDay}</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>أمس</th><th>اليوم</th><th>الحركة</th><th>المعتاد</th></tr></thead><tbody>
+    ${(R.moves = R.moves.filter(m => !((R.custMoves.length && m.key === "customers") || (R.suppMoves.length && m.key === "suppliers")))).length ? `<h3>حركة الحسابات اليوم <span class="note">الفرق عن ${R.prevDay}</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>الحساب</th><th>أمس</th><th>اليوم</th><th>الحركة</th><th>المعتاد</th></tr></thead><tbody>
       ${R.moves.slice(0, 15).map(m => `<tr${m.unusual ? ' style="background:color-mix(in srgb,var(--warn) 14%,transparent)"' : ""}><td>${esc(m.code)} ${esc(m.name)}${m.isNew ? ' <span class="pill">جديد</span>' : ""}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td><td class="n">${m.avg == null ? "" : money(m.avg)}</td></tr>`).join("")}</tbody></table></div>` : ""}
     ${R.custMoves.length ? `<h3>تغيّر أرصدة العملاء</h3><div class="tablewrap"><table class="t"><thead><tr><th>العميل</th><th>أمس</th><th>اليوم</th><th>الفرق</th></tr></thead><tbody>
-      ${R.custMoves.slice(0, 10).map(m => `<tr><td>${esc(m.name)}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+      ${R.custMoves.slice(0, 10).map(m => `<tr><td>${esc(m.name)}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${R.suppMoves.length ? `<h3>تغيّر أرصدة الموردين <span class="note">السالب = دفعة مقدمة لهم</span></h3><div class="tablewrap"><table class="t"><thead><tr><th>المورد</th><th>أمس</th><th>اليوم</th><th>الفرق</th></tr></thead><tbody>
+      ${R.suppMoves.slice(0, 10).map(m => `<tr><td>${esc(m.name)}</td><td class="n">${money(m.prev)}</td><td class="n">${money(m.bal)}</td><td class="n">${money(m.mv)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
   const cv = $("#mon_chart");
   if (cv) B.needLib("chart").then(() => { if (monChart) monChart.destroy(); const ser = R.series.filter(x => x.rev != null).slice(-30);
     monChart = new Chart(cv, { data: { labels: ser.map(x => x.day.slice(5)), datasets: [
@@ -1250,11 +1260,11 @@ $("#s_save").onclick = async () => {
   const { error } = await sb.rpc("acc_save_settings", { p }); $("#s_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) load();
 };
 /* employees */
-$("#e_new").onclick = () => { ["#e_id", "#e_name", "#e_job", "#e_basic", "#e_allow", "#e_start", "#e_comm"].forEach(id => $(id).value = ""); $("#e_ss").checked = true; $("#e_dep").checked = false; $("#e_act").checked = true; $("#e_name").focus(); };
+$("#e_new").onclick = () => { ["#e_id", "#e_name", "#e_job", "#e_basic", "#e_allow", "#e_start", "#e_comm"].forEach(id => $(id).value = ""); $("#e_func").value = "factory"; $("#e_ss").checked = true; $("#e_dep").checked = false; $("#e_act").checked = true; $("#e_name").focus(); };
 $("#e_save").onclick = async () => {
   if (!$("#e_name").value.trim()) { $("#e_msg").textContent = "اكتب اسم الموظف."; return; }
   const p = { party_id: $("#e_id").value || null, name: $("#e_name").value.trim(), job: $("#e_job").value.trim(), basic: num($("#e_basic").value), allowances: num($("#e_allow").value),
-    start_date: $("#e_start").value || null, commission_rate: num($("#e_comm").value), ss_enrolled: $("#e_ss").checked, dependents: $("#e_dep").checked, active: $("#e_act").checked };
+    start_date: $("#e_start").value || null, commission_rate: num($("#e_comm").value), func: $("#e_func").value, ss_enrolled: $("#e_ss").checked, dependents: $("#e_dep").checked, active: $("#e_act").checked };
   const { error } = await sb.rpc("acc_employee_save", { p }); $("#e_msg").textContent = error ? B.errText(error) : "تم الحفظ ✓"; if (!error) { $("#e_new").click(); load(); }
 };
 
